@@ -1,0 +1,18 @@
+version=1
+id=3776311538
+title=Traka - Player Shops
+description=[h2]Copyright & License[/h2]
+description=Original work by [b]AKA[/b]. Copyright (c) 2026 AKA. All Rights Reserved.
+description=[b]You may:[/b] subscribe and play; use on your own server; modify for personal use.
+description=[b]You may NOT:[/b] re-upload, repackage, redistribute, or publish this mod or any derivative (in whole or in part) under another name or account without the author's written permission.
+description=
+description=[h3]Note on the "HaftFull" tag[/h3]
+description=HaftFull is the private server this mod was made for. The name is included only so the author can recognize and keep track of their own work for easier maintenance - it is not a claim of anything else.
+description=
+description=[h3]Note on the word "Official"[/h3]
+description=On the poster, "official asset" means an official asset for our own private HaftFull server only. It is NOT affiliated with or endorsed by The Indie Stone and is not presented as an official Project Zomboid product. The wording exists only to discourage re-uploads or copies made without the author's permission.
+description=
+description=[h3]Discord[/h3]
+description=[url=https://discord.gg/WWFyqpVZ8N]HaftFull Discord[/url]
+tags=Build 42;Building;Interface;Multiplayer
+visibility=public

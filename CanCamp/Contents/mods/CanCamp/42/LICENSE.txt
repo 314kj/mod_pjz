@@ -1,0 +1,63 @@
+================================================================================
+  LICENSE / สัญญาอนุญาตการใช้งาน
+================================================================================
+
+Copyright (c) 2026 AKA & Haftfull. All Rights Reserved.
+
+Created by : the AKA brand
+Made for   : Haftfull
+Copyright  : Jointly held by AKA and Haftfull / ถือลิขสิทธิ์ร่วมกัน
+
+--------------------------------------------------------------------------------
+ENGLISH
+--------------------------------------------------------------------------------
+
+This mod and all of its contents (code, scripts, textures, assets, and
+documentation) are the joint property of AKA and Haftfull.
+
+YOU MAY:
+  - Subscribe to and play this mod.
+  - Use this mod on your own private game or private server.
+
+YOU MAY NOT, without prior written permission from BOTH copyright holders:
+  - Modify, edit, or alter the mod in any way.
+  - Re-upload, redistribute, or repackage the mod (in whole or in part)
+    to the Steam Workshop or any other platform.
+  - Create derivative works, ports, or forks based on this mod.
+  - Claim authorship of this mod or any part of it.
+
+To request permission for any of the above, contact the authors before
+making any change. Permission is required PRIOR to any alteration.
+
+--------------------------------------------------------------------------------
+ภาษาไทย
+--------------------------------------------------------------------------------
+
+ม็อดนี้และเนื้อหาทั้งหมด (โค้ด สคริปต์ เท็กซ์เจอร์ assets และเอกสาร)
+เป็นทรัพย์สินที่ถือลิขสิทธิ์ร่วมกันระหว่าง AKA และ Haftfull
+
+สิ่งที่ทำได้:
+  - Subscribe และเล่นม็อดนี้ได้
+  - นำไปใช้ในเกมหรือเซิร์ฟเวอร์ส่วนตัวของตัวเองได้
+
+สิ่งที่ห้ามทำ หากไม่ได้รับอนุญาตเป็นลายลักษณ์อักษรจากผู้ถือลิขสิทธิ์ทั้งสองฝ่ายก่อน:
+  - ดัดแปลง แก้ไข หรือเปลี่ยนแปลงม็อดในทุกกรณี
+  - Reupload แจกจ่ายซ้ำ หรือนำไปแพ็กใหม่ (ทั้งหมดหรือบางส่วน)
+    ขึ้น Steam Workshop หรือแพลตฟอร์มอื่นใด
+  - สร้างผลงานดัดแปลง พอร์ต หรือ fork จากม็อดนี้
+  - อ้างตนเป็นผู้สร้างม็อดนี้หรือส่วนหนึ่งส่วนใดของม็อด
+
+หากต้องการขออนุญาตในเรื่องข้างต้น กรุณาติดต่อผู้สร้างก่อนทำการเปลี่ยนแปลงใดๆ
+ต้องได้รับอนุญาตก่อนการเปลี่ยนแปลงทุกครั้ง
+
+================================================================================
+
+--------------------------------------------------------------------------------
+NOTE ON BRANDING / INTENT
+--------------------------------------------------------------------------------
+* "HaftFull" is the private server this mod was made for. It is tagged only so the
+  authors can recognize and maintain their own work - not a claim of anything else.
+* "Official asset" on the poster means an official asset for our own private HaftFull
+  server ONLY. It is not affiliated with or endorsed by The Indie Stone and is not an
+  official Project Zomboid product. The wording exists only to discourage re-uploads
+  or copies made without the authors' permission.

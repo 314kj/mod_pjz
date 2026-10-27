@@ -1,0 +1,3 @@
+Tooltip_EN = {
+    Tooltip_AkaDiary = "Everything these hands actually learned - nothing you were born with. <LINE> Sign it, keep it up to date, and the next you can read it.",
+}

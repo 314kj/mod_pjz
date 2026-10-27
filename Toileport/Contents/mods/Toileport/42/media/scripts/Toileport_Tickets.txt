@@ -1,0 +1,122 @@
+/*
+================================================================
+  TOILEPORT  [MP]   --   travel ticket items            KACHASIG
+  These are the ONLY items the mod ships. Stock them in a vending
+  machine (e.g. TraderVendingMachine) to sell. Each ticket type's
+  DESTINATION is bound in-world by an admin (right-click the
+  destination toilet -> Set as destination for ticket NN).
+  All items use B42 ItemType = base:normal.
+================================================================
+*/
+
+module Base
+{
+    item Toileport_Ticket_01
+    {
+        DisplayCategory = Toileport,
+        ItemType        = base:normal,
+        DisplayName     = Travel Ticket 01,
+        Icon            = Toileport_Ticket,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_Toileport_Ticket,
+    }
+    item Toileport_Ticket_02
+    {
+        DisplayCategory = Toileport,
+        ItemType        = base:normal,
+        DisplayName     = Travel Ticket 02,
+        Icon            = Toileport_Ticket,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_Toileport_Ticket,
+    }
+    item Toileport_Ticket_03
+    {
+        DisplayCategory = Toileport,
+        ItemType        = base:normal,
+        DisplayName     = Travel Ticket 03,
+        Icon            = Toileport_Ticket,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_Toileport_Ticket,
+    }
+    item Toileport_Ticket_04
+    {
+        DisplayCategory = Toileport,
+        ItemType        = base:normal,
+        DisplayName     = Travel Ticket 04,
+        Icon            = Toileport_Ticket,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_Toileport_Ticket,
+    }
+    item Toileport_Ticket_05
+    {
+        DisplayCategory = Toileport,
+        ItemType        = base:normal,
+        DisplayName     = Travel Ticket 05,
+        Icon            = Toileport_Ticket,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_Toileport_Ticket,
+    }
+    item Toileport_Ticket_06
+    {
+        DisplayCategory = Toileport,
+        ItemType        = base:normal,
+        DisplayName     = Travel Ticket 06,
+        Icon            = Toileport_Ticket,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_Toileport_Ticket,
+    }
+    item Toileport_Ticket_07
+    {
+        DisplayCategory = Toileport,
+        ItemType        = base:normal,
+        DisplayName     = Travel Ticket 07,
+        Icon            = Toileport_Ticket,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_Toileport_Ticket,
+    }
+    item Toileport_Ticket_08
+    {
+        DisplayCategory = Toileport,
+        ItemType        = base:normal,
+        DisplayName     = Travel Ticket 08,
+        Icon            = Toileport_Ticket,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_Toileport_Ticket,
+    }
+    item Toileport_Ticket_09
+    {
+        DisplayCategory = Toileport,
+        ItemType        = base:normal,
+        DisplayName     = Travel Ticket 09,
+        Icon            = Toileport_Ticket,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_Toileport_Ticket,
+    }
+    item Toileport_Ticket_10
+    {
+        DisplayCategory = Toileport,
+        ItemType        = base:normal,
+        DisplayName     = Travel Ticket 10,
+        Icon            = Toileport_Ticket,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_Toileport_Ticket,
+    }
+    item Toileport_Ticket_11
+    {
+        DisplayCategory = Toileport,
+        ItemType        = base:normal,
+        DisplayName     = Travel Ticket 11,
+        Icon            = Toileport_Ticket,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_Toileport_Ticket,
+    }
+    item Toileport_Ticket_12
+    {
+        DisplayCategory = Toileport,
+        ItemType        = base:normal,
+        DisplayName     = Travel Ticket 12,
+        Icon            = Toileport_Ticket,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_Toileport_Ticket,
+    }
+}

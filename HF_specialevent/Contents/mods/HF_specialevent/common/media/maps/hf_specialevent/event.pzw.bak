@@ -1,0 +1,2496 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<world version="1.0" width="4" height="4" cellFormat="legacy-300">
+ <BMPToTMX>
+  <tmxexportdir path="Worlded"/>
+  <rulesfile path=""/>
+  <blendsfile path=""/>
+  <mapbasefile path=""/>
+  <assign-maps-to-world checked="true"/>
+  <warn-unknown-colors checked="true"/>
+  <repair-unknown-colors checked="true" ground="ff000000" vegetation="ff000000"/>
+  <compress checked="true"/>
+  <copy-pixels checked="true"/>
+  <update-existing checked="false"/>
+  <metadata-only checked="false"/>
+ </BMPToTMX>
+ <TMXToBMP>
+  <mainImage generate="true"/>
+  <vegetationImage generate="true"/>
+  <buildingsImage path="" generate="false"/>
+ </TMXToBMP>
+ <GenerateLots>
+  <exportdir path="lots"/>
+  <ZombieSpawnMap path="image/conc_0,0_ZombieSpawn.png"/>
+  <BiomeMap path=""/>
+  <TileDefFolder path="../../zomboid/B42 Mapping Tools/Tiles"/>
+  <worldOrigin origin="0,0"/>
+  <numberOfThreads count="16"/>
+ </GenerateLots>
+ <LuaSettings>
+  <spawnPointsFile path="spawnpoints.lua"/>
+  <worldObjectsFile path="Worlded/objects.lua"/>
+  <roomTonesFile path=""/>
+ </LuaSettings>
+ <bmp path="image/one_0,0.png" x="0" y="0" width="1" height="1"/>
+ <bmp path="image/one_0,0.png" x="0" y="1" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="0" y="0" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="0" y="1" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="0" y="2" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="0" y="3" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="1" y="3" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="1" y="2" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="1" y="1" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="1" y="0" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="2" y="0" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="2" y="1" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="2" y="2" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="2" y="3" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="3" y="3" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="3" y="2" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="3" y="1" width="1" height="1"/>
+ <bmp path="image/conc_0,0.png" x="3" y="0" width="1" height="1"/>
+ <propertyenum name="Direction" choices="N,S,W,E" multi="false"/>
+ <propertyenum name="Professions" choices="burglar,burgerflipper,carpenter,chef,constructionworker,doctor,electrician,engineer,farmer,fireofficer,fisherman,fitnessInstructor,lumberjack,mechanics,metalworker,nurse,parkranger,policeofficer,rancher,repairman,securityguard,smither,tailor,unemployed,veteran" multi="true"/>
+ <propertyenum name="Pose" choices="pose01,pose02,pose03" multi="false"/>
+ <propertyenum name="Skin" choices="White,Black" multi="false"/>
+ <propertyenum name="RoomTone" choices="Generic,AbandonedGrainmill,Airport,AirstripOffice,AnimalsanctuaryKennels,AnimalsanctuaryMain,AnimalShelter,ApartmentBuilding,Arena01Derby,Arena02Stables,Arena04Publicbathroom,Arena07Offices,Arena08Changerooms,Arena10Broadcasting,Arena12Baseball,Arena13Indoors,Bakery,Bank,BarWood,BarStone,Bargnclothes,Barn,BasementApartmnetBuilding,BasementBank,BasementBar,BasementDestroyedBuilding,BasementChurch,BasementColdwarBunker,BasementConstruction01Factory,BasementDetentionCentre,BasementFactoryAbandoned,BasementFirestation,BasementGas,BasementGeneralstore,BasementGovernmentSecret,BasementGunclub,BasementHouse,BasementHouseEastereggSpiffo,BasementIndustrialMedium,BasementOffices,BasementPaddlewheeler,BasementPlaza,BasementPolice,BasementRestaurant,BasementSchool,BasementStorefront,Bedandbreakfast,Boatclub,Boathouse,Bookstore,Bowlingalley,Brewery,BrownbrickTownhouse,BuildingDestroyed,Busshelter,Cabin,CabinAbandoned,Cardealership,Carsupplystore,Cattleauction,Cattlelot,Changerooms,Church,ChurchAbandoned,ChurchBurnt,CivilianMedia,CivilianTent,Cleaningservices,Clothesstore,Coffeeshop,CaldwarBunker,CommunityCentre,ConvenienceStoreBurnt,ConventionHall,Cornerstore,Countryclub,CountryclubGolfcarts,CountryclubMaintenance,CountryclubMechanic,CountryclubClubhouse,CountryclubChangerooms,CountryclubSauna,CountryclubSnackbar,CountryclubGuardbooth,Departmentstore,Depository,Detentioncenter,Diner,Distillery,Dock,Emptystore,Factory,FarmStorage,Farmhouse,Farmhousing,Farmstore,Firestation,Fishbait,Fitnesscenter,Freight,Funeralhome,Furniturestore,Gallery,GarageBurnt,Garage,Garagestorage,Gardenstore,Gas,GasBurnt,Gatehouse,Generalstore,Government,Greenhouse,Grocery,Groundskeeper,Guardbooth,Gunclub,Gym,Hairdresser,Hanger,Hayshipping,HighriseMgCenter,HorseridingCentre,Hospital,Hotel,HouseAbandoned,HouseBurnt,HouseCountry,HouseDestroyed,HouseGarage,HouseGarageDamaged,HouseLake,HouseLarge,HouseMedium,HouseMediumDamaged,HouseSmall,HouseSmallDamaged,HouseSuburb,HouseSuburbGarage,HouseTrapper,IndustrialWarehouse,IndustryDorm,Kicthenshowroom,Lakehouse,Lasertag,Laundromat,LaundromatBurnt,Library,LibraryBurnt,Liquorstore,Lofts,Mall,Mansion,Mausoleum,Mechanic,Medical,MilitaryApartments,MilitaryBorder,MilitaryCommunications,MilitaryHouse,MilitaryTent,MilitaryTower,MilitaryTownhouse,MilitaryTrailer,Motel,MotelDestroyed,Movierental,MusicfestivalTower,MusicfestivalTrailer,Musicstore,Nursinghome,Office,Offices,Officesupplies,Optometrist,Outhouse,Paddlewheeler,Paintshop,ParkTreehouse,ParkRestrooms,ParkPlayhouse,Pawnshop,Paybooth,Pharmacy,Photobooth,Pizzawhirled,PizaawhirledBurnt,Plaza,PlazaBurnt,Police,PoliceBurnt,Portacabin,Post,Prison,PrisonGuardbooth,PrisonGuardtower,Publicwashroom,RadioTowerHouse,RadioTowerStation,Radiostation,Rangerstation,Reccenter,Recordingstudio,RedbrickTownhouse,Refinery,Resort,ResortCabin,RestareaBathrooms,Restaurant,Rollerrink,Sanatorium,School,SchoolColege,SchoolDorms,ScrapyardGarage,Security,Shack,Shed,Shelter,Shootingrange,ShopCamping,ShopHunting,Singleapartment,Slaughterhouse,Spa,Speedway,Sportstore,Stables,StoreAbandoned,Storefront,Summercamp,Taxi,TaxiGarage,Theatre,Thermalpowerstation,Tobaccostore,Tollbooth,Toolstore,Tornadoshelter,Townhouse,Trailer,TrailerBurnt,TrailerNice,TrailerOffice,Traincar,Trainstation,TrainstationAbadoned,Trainyard,TrainyardOffice,Transportcompany,Treehouse,Truck,Tvstudio,Vetrenarian,WadsworthBasemenet,Warehousestorage,WaterpurificationCheckpoint,WaterpurificationMainBuilding,WaterpurificationOffice,Weddingstore,Weldingshop,Westpointcaboose,Wildwestoffice,WoodCabin,WreckingyardOffice,Zippee,Victorian" multi="false"/>
+ <propertyenum name="AnimalAction" choices="Eat,Sleep,Follow" multi="false"/>
+ <propertyenum name="Animal" choices="small,medium,large,predator,deer,rabbit" multi="false"/>
+ <propertydef name="Direction" default="N" enum="Direction">
+  <description>Cardinal direction used by vehicle, mannequin, and stair properties.</description>
+ </propertydef>
+ <propertydef name="Professions" default="unemployed" enum="Professions">
+  <description>Professions allowed to use this spawn point. Choose one or more explicit values.</description>
+ </propertydef>
+ <propertydef name="FaceDirection" default="true">
+  <description>When enabled, vehicles face the selected Direction.</description>
+ </propertydef>
+ <propertydef name="WaterDirection" default="0.0">
+  <description>Water flow direction in degrees.</description>
+ </propertydef>
+ <propertydef name="WaterSpeed" default="0.0">
+  <description>Water flow speed. Zero creates still water.</description>
+ </propertydef>
+ <propertydef name="WaterGround" default="false">
+  <description>Marks the zone as water ground for the water renderer.</description>
+ </propertydef>
+ <propertydef name="WaterShore" default="true">
+  <description>Enables shoreline behavior around the water zone.</description>
+ </propertydef>
+ <propertydef name="Female" default="true">
+  <description>Selects the mannequin gender when no script overrides it.</description>
+ </propertydef>
+ <propertydef name="Outfit" default=""/>
+ <propertydef name="Pose" default="pose01" enum="Pose"/>
+ <propertydef name="Script" default=""/>
+ <propertydef name="Skin" default="White" enum="Skin">
+  <description>Selects the mannequin skin variant.</description>
+ </propertydef>
+ <propertydef name="RoomTone" default="Generic" enum="RoomTone">
+  <description>Build 42 room audio profile applied at this location.</description>
+ </propertydef>
+ <propertydef name="EntireBuilding" default="false">
+  <description>Applies the selected RoomTone to the complete building.</description>
+ </propertydef>
+ <propertydef name="Action" default="" enum="AnimalAction">
+  <description>Animal route action used by this zone or polyline.</description>
+ </propertydef>
+ <propertydef name="AnimalType" default="" enum="Animal">
+  <description>Animal category associated with a Follow route.</description>
+ </propertydef>
+ <propertydef name="SpawnAnimals" default="true">
+  <description>Allows animals to spawn from this Animal zone.</description>
+ </propertydef>
+ <propertydef name="Access" default="">
+  <description>Name of basement access file.</description>
+ </propertydef>
+ <propertydef name="StairDirection" default="N" enum="Direction">
+  <description>Direction of the basement access stair.</description>
+ </propertydef>
+ <propertydef name="StairX" default="0">
+  <description>Stair X coordinate within the basement zone.</description>
+ </propertydef>
+ <propertydef name="StairY" default="0">
+  <description>Stair Y coordinate within the basement zone.</description>
+ </propertydef>
+ <propertydef name="Rocks" default="false">
+  <description>Enables WorldGen rock placement in this zone.</description>
+ </propertydef>
+ <template name="SpawnPoint">
+  <description>Default properties for a player spawn point.</description>
+  <property name="Professions" value="unemployed"/>
+ </template>
+ <template name="ParkingStallN">
+  <property name="Direction" value="N"/>
+ </template>
+ <template name="ParkingStallS">
+  <property name="Direction" value="S"/>
+ </template>
+ <template name="ParkingStallW">
+  <property name="Direction" value="W"/>
+ </template>
+ <template name="ParkingStallE">
+  <property name="Direction" value="E"/>
+ </template>
+ <template name="WaterFlowN">
+  <property name="WaterDirection" value="0"/>
+  <property name="WaterSpeed" value="1.0"/>
+ </template>
+ <template name="WaterFlowS">
+  <property name="WaterDirection" value="180"/>
+  <property name="WaterSpeed" value="1.0"/>
+ </template>
+ <template name="WaterFlowE">
+  <property name="WaterDirection" value="90"/>
+  <property name="WaterSpeed" value="1.0"/>
+ </template>
+ <template name="WaterFlowW">
+  <property name="WaterDirection" value="270"/>
+  <property name="WaterSpeed" value="1.0"/>
+ </template>
+ <template name="WaterFlow">
+  <property name="WaterDirection" value="0"/>
+  <property name="WaterSpeed" value="0.0"/>
+ </template>
+ <template name="WaterZone">
+  <property name="WaterGround" value="false"/>
+  <property name="WaterShore" value="true"/>
+ </template>
+ <template name="RoomTone">
+  <property name="RoomTone" value="Generic"/>
+  <property name="EntireBuilding" value="false"/>
+ </template>
+ <template name="Basement">
+  <property name="StairDirection" value="N"/>
+  <property name="StairX" value="0"/>
+  <property name="StairY" value="0"/>
+ </template>
+ <template name="WorldGen">
+  <property name="Rocks" value="false"/>
+ </template>
+ <objecttype name="SpawnPoint"/>
+ <objecttype name="TownZone"/>
+ <objecttype name="Forest"/>
+ <objecttype name="DeepForest"/>
+ <objecttype name="Nav"/>
+ <objecttype name="Vegitation"/>
+ <objecttype name="TrailerPark"/>
+ <objecttype name="Farm"/>
+ <objecttype name="ParkingStall"/>
+ <objecttype name="FarmLand"/>
+ <objecttype name="LootZone"/>
+ <objecttype name="NoPowerOrWater"/>
+ <objecttype name="Ranch"/>
+ <objecttype name="ZombiesType"/>
+ <objecttype name="ZoneStory"/>
+ <objecttype name="WaterFlow"/>
+ <objecttype name="WaterZone"/>
+ <objecttype name="Mannequin"/>
+ <objecttype name="RoomTone"/>
+ <objecttype name="Animal"/>
+ <objecttype name="Basement"/>
+ <objecttype name="WorldGen"/>
+ <objecttype name="BuildingName"/>
+ <objecttype name="NoGas"/>
+ <objecttype name="Region"/>
+ <objectgroup name="SpawnPoint" color="#00b7ff" defaulttype="SpawnPoint"/>
+ <objectgroup name="ParkingStall" color="#ff007f" defaulttype="ParkingStall"/>
+ <objectgroup name="TownZone" color="#aa0000" defaulttype="TownZone"/>
+ <objectgroup name="Forest" color="#00aa00" defaulttype="Forest"/>
+ <objectgroup name="Nav" color="#55aaff" defaulttype="Nav"/>
+ <objectgroup name="DeepForest" color="#003500" defaulttype="DeepForest"/>
+ <objectgroup name="Vegitation" color="#b3b300" defaulttype="Vegitation"/>
+ <objectgroup name="TrailerPark" color="#f50000" defaulttype="TrailerPark"/>
+ <objectgroup name="Farm" color="#55ff7f" defaulttype="Farm"/>
+ <objectgroup name="FarmLand" color="#bcff7d" defaulttype="FarmLand"/>
+ <objectgroup name="LootZone" color="#c060ff" defaulttype="LootZone"/>
+ <objectgroup name="NoPowerOrWater" color="#7f7f7f" defaulttype="NoPowerOrWater"/>
+ <objectgroup name="Ranch" color="#ff8000" defaulttype="Ranch"/>
+ <objectgroup name="ZombiesType" color="#ff4040" defaulttype="ZombiesType"/>
+ <objectgroup name="ZoneStory" color="#b05080" defaulttype="ZoneStory"/>
+ <objectgroup name="WaterFlow" color="#0000ff" defaulttype="WaterFlow"/>
+ <objectgroup name="WaterZone" color="#0000ff" defaulttype="WaterZone"/>
+ <objectgroup name="Mannequin" color="#0000ff" defaulttype="Mannequin"/>
+ <objectgroup name="RoomTone" color="#0000ff" defaulttype="RoomTone"/>
+ <objectgroup name="Animal" defaulttype="Animal"/>
+ <objectgroup name="Basement" defaulttype="Basement"/>
+ <objectgroup name="WorldGen" color="#ffaa00" defaulttype="WorldGen"/>
+ <objectgroup name="BuildingName" color="#ea3680" defaulttype="BuildingName"/>
+ <objectgroup name="NoGas" color="#f08650" defaulttype="NoGas"/>
+ <objectgroup name="Region" color="#75163f" defaulttype="Region"/>
+ <cell x="0" y="0" map="Worlded/conc_0,0_0_0.tmx">
+  <lot x="38" y="35" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="0" y="135" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="0" y="290" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="186" y="133" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="185" y="102" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="165" y="112" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="183" y="119" level="8" width="43" height="18" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/March Ridge/Residential/lot_military_townhouse_01_S_01.tbx"/>
+  <lot x="178" y="140" level="8" width="43" height="17" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/March Ridge/Residential/lot_military_townhouse_01_N_01.tbx"/>
+  <lot x="104" y="109" level="8" width="11" height="13" map="buildings/sand1.tbx"/>
+  <lot x="268" y="128" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="106" y="46" level="8" width="11" height="13" map="buildings/soil1.tbx"/>
+  <lot x="165" y="34" level="8" width="11" height="13" map="buildings/soil1.tbx"/>
+  <lot x="86" y="185" level="8" width="11" height="13" map="buildings/soil1.tbx"/>
+  <lot x="128" y="241" level="8" width="11" height="13" map="buildings/soil1.tbx"/>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="9" y="9"/>
+     <point x="0" y="9"/>
+     <point x="0" y="0"/>
+     <point x="9" y="0"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="9" y="144"/>
+     <point x="0" y="144"/>
+     <point x="0" y="135"/>
+     <point x="9" y="135"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="9" y="299"/>
+     <point x="0" y="299"/>
+     <point x="0" y="290"/>
+     <point x="9" y="290"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="214" y="131"/>
+     <point x="214" y="133"/>
+     <point x="206" y="133"/>
+     <point x="206" y="131"/>
+     <point x="202" y="131"/>
+     <point x="202" y="133"/>
+     <point x="194" y="133"/>
+     <point x="194" y="131"/>
+     <point x="190" y="131"/>
+     <point x="190" y="133"/>
+     <point x="186" y="133"/>
+     <point x="186" y="122"/>
+     <point x="222" y="122"/>
+     <point x="222" y="133"/>
+     <point x="218" y="133"/>
+     <point x="218" y="131"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="201" y="144"/>
+     <point x="201" y="142"/>
+     <point x="209" y="142"/>
+     <point x="209" y="144"/>
+     <point x="213" y="144"/>
+     <point x="213" y="142"/>
+     <point x="217" y="142"/>
+     <point x="217" y="153"/>
+     <point x="181" y="153"/>
+     <point x="181" y="142"/>
+     <point x="185" y="142"/>
+     <point x="185" y="144"/>
+     <point x="189" y="144"/>
+     <point x="189" y="142"/>
+     <point x="197" y="142"/>
+     <point x="197" y="144"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+ </cell>
+ <cell x="1" y="0" map="Worlded/conc_0,0_1_0.tmx"/>
+ <cell x="2" y="0" map="Worlded/conc_0,0_2_0.tmx"/>
+ <cell x="3" y="0" map="Worlded/conc_0,0_3_0.tmx">
+  <lot x="290" y="99" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="290" y="0" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="20" y="199" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="67" y="11" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="22" y="206" level="8" width="18" height="18" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Residential/lot_trailer_E_01a.tbx"/>
+  <lot x="30" y="206" level="8" width="18" height="18" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Residential/lot_trailer_E_02.tbx"/>
+  <lot x="38" y="207" level="8" width="18" height="18" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Residential/lot_trailer_E_02a.tbx"/>
+  <lot x="30" y="225" level="8" width="18" height="18" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Residential/lot_trailer_E_03.tbx"/>
+  <lot x="45" y="213" level="8" width="18" height="18" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Residential/lot_trailer_E_04_small.tbx"/>
+  <lot x="37" y="225" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Residential/lot_trailer_office_02.tbx"/>
+  <lot x="81" y="15" level="8" width="15" height="17" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Retail and Commercial/lot_bakery_01.tbx"/>
+  <lot x="89" y="31" level="8" width="21" height="25" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/March Ridge/Restaurants and Entertainment/lot_bar_04_military.tbx"/>
+  <lot x="76" y="38" level="8" width="16" height="16" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Rosewood/Residential/lot_house_small_113_87v.tbx"/>
+  <lot x="44" y="97" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="198" y="75" level="8" width="11" height="13" map="buildings/soil2.tbx"/>
+  <lot x="145" y="196" level="8" width="11" height="13" map="buildings/soil2.tbx"/>
+  <lot x="223" y="140" level="8" width="11" height="13" map="buildings/sand1.tbx"/>
+  <lot x="185" y="196" level="8" width="11" height="13" map="buildings/stone1.tbx"/>
+  <lot x="177" y="53" level="8" width="11" height="13" map="buildings/stone1.tbx"/>
+  <lot x="290" y="199" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="299" y="108"/>
+     <point x="290" y="108"/>
+     <point x="290" y="99"/>
+     <point x="299" y="99"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="299" y="9"/>
+     <point x="290" y="9"/>
+     <point x="290" y="0"/>
+     <point x="299" y="0"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="32" y="208"/>
+     <point x="32" y="221"/>
+     <point x="28" y="221"/>
+     <point x="28" y="208"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="40" y="208"/>
+     <point x="40" y="221"/>
+     <point x="36" y="221"/>
+     <point x="36" y="208"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="48" y="209"/>
+     <point x="48" y="222"/>
+     <point x="44" y="222"/>
+     <point x="44" y="209"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="40" y="227"/>
+     <point x="40" y="240"/>
+     <point x="36" y="240"/>
+     <point x="36" y="227"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="55" y="215"/>
+     <point x="55" y="225"/>
+     <point x="51" y="225"/>
+     <point x="51" y="215"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="50" y="241"/>
+     <point x="45" y="241"/>
+     <point x="45" y="235"/>
+     <point x="43" y="235"/>
+     <point x="43" y="228"/>
+     <point x="50" y="228"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="92" y="19"/>
+     <point x="92" y="26"/>
+     <point x="84" y="26"/>
+     <point x="84" y="19"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="93" y="52"/>
+     <point x="93" y="35"/>
+     <point x="98" y="35"/>
+     <point x="98" y="33"/>
+     <point x="103" y="33"/>
+     <point x="103" y="52"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RestaurantsAndEntertainment"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="87" y="47"/>
+     <point x="86" y="47"/>
+     <point x="86" y="52"/>
+     <point x="81" y="52"/>
+     <point x="81" y="48"/>
+     <point x="78" y="48"/>
+     <point x="78" y="39"/>
+     <point x="85" y="39"/>
+     <point x="85" y="42"/>
+     <point x="87" y="42"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="299" y="208"/>
+     <point x="290" y="208"/>
+     <point x="290" y="199"/>
+     <point x="299" y="199"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+ </cell>
+ <cell x="0" y="1" map="Worlded/conc_0,0_0_1.tmx">
+  <lot x="2" y="195" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="0" y="290" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="91" y="180" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="125" y="6" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="112" y="209" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Retail and Commercial/lot_gunstore_01.tbx"/>
+  <lot x="103" y="193" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Retail and Commercial/lot_generalstore_01.tbx"/>
+  <lot x="148" y="22" level="8" width="19" height="17" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Retail and Commercial/lot_laundromat_02.tbx"/>
+  <lot x="132" y="10" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Retail and Commercial/lot_gas_03_generic.tbx"/>
+  <lot x="138" y="35" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Retail and Commercial/lot_gunstore_01.tbx"/>
+  <lot x="116" y="95" level="8" width="11" height="13" map="buildings/soil2.tbx"/>
+  <lot x="127" y="135" level="8" width="11" height="13" map="buildings/stone1.tbx"/>
+  <lot x="92" y="32" level="8" width="11" height="13" map="buildings/stone1.tbx"/>
+  <lot x="83" y="250" level="8" width="11" height="13" map="buildings/sand1.tbx"/>
+  <lot x="184" y="117" level="8" width="11" height="13" map="buildings/soil3.tbx"/>
+  <lot x="235" y="124" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="0" y="94" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="9" y="138"/>
+     <point x="0" y="138"/>
+     <point x="0" y="129"/>
+     <point x="9" y="129"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="9" y="299"/>
+     <point x="0" y="299"/>
+     <point x="0" y="290"/>
+     <point x="9" y="290"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="122" y="210"/>
+     <point x="122" y="211"/>
+     <point x="124" y="211"/>
+     <point x="124" y="220"/>
+     <point x="115" y="220"/>
+     <point x="115" y="216"/>
+     <point x="113" y="216"/>
+     <point x="113" y="211"/>
+     <point x="115" y="211"/>
+     <point x="115" y="210"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="105" y="205"/>
+     <point x="105" y="193"/>
+     <point x="121" y="193"/>
+     <point x="121" y="205"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="150" y="35"/>
+     <point x="150" y="27"/>
+     <point x="162" y="27"/>
+     <point x="162" y="35"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="149" y="14"/>
+     <point x="149" y="20"/>
+     <point x="138" y="20"/>
+     <point x="138" y="14"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="148" y="36"/>
+     <point x="148" y="37"/>
+     <point x="150" y="37"/>
+     <point x="150" y="46"/>
+     <point x="141" y="46"/>
+     <point x="141" y="42"/>
+     <point x="139" y="42"/>
+     <point x="139" y="37"/>
+     <point x="141" y="37"/>
+     <point x="141" y="36"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+ </cell>
+ <cell x="1" y="1" map="Worlded/conc_0,0_1_1.tmx">
+  <lot x="151" y="262" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="150" y="225" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="147" y="242" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="180" y="182" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="211" y="177" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="247" y="188" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="272" y="181" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="34" y="47" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="152" y="203" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="157" y="181" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="195" y="181" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="231" y="179" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="127" y="196" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="128" y="165" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="145" y="183" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="149" y="155" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="121" y="224" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="136" y="251" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="176" y="288" level="8" width="12" height="11" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Residential/lot_house_abandoned_14.tbx"/>
+  <lot x="163" y="287" level="8" width="9" height="10" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Residential/lot_house_abandoned_22.tbx"/>
+  <lot x="151" y="270" level="8" width="19" height="13" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Community Services/lot_restarea_04_bathrooms.tbx"/>
+  <lot x="170" y="270" level="8" width="20" height="18" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Community Services/lot_police_05_smalltown.tbx"/>
+  <lot x="136" y="234" level="8" width="18" height="31" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Industrial/lot_construction_05.tbx"/>
+  <lot x="166" y="237" level="8" width="21" height="30" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Industrial/lot_mechanic_05.tbx"/>
+  <lot x="157" y="243" level="8" width="13" height="25" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Retail and Commercial/lot_gas_13_tiny.tbx"/>
+  <lot x="170" y="205" level="8" width="22" height="37" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Restaurants and Entertainment/lot_countryclub_02_golfcarts.tbx"/>
+  <lot x="126" y="163" level="8" width="51" height="55" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Industrial/lot_garagestorage_09.tbx"/>
+  <lot x="186" y="210" level="8" width="13" height="8" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Industrial/lot_trainyard_12_storagesmall.tbx"/>
+  <lot x="173" y="182" level="8" width="27" height="27" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Industrial/lot_farm_storage_03.tbx"/>
+  <lot x="195" y="190" level="8" width="42" height="35" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Community Services/lot_church_05_westpointrural.tbx"/>
+  <lot x="220" y="198" level="8" width="38" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Community Services/lot_restarea_02_bathrooms.tbx"/>
+  <lot x="240" y="190" level="8" width="18" height="14" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/March Ridge/Residential/lot_military_house_01_E_01x.tbx"/>
+  <lot x="249" y="202" level="8" width="14" height="17" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Restaurants and Entertainment/lot_countryclub_08_snackbar.tbx"/>
+  <lot x="264" y="197" level="8" width="23" height="31" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Restaurants and Entertainment/lot_diner_08.tbx"/>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="185" y="289"/>
+     <point x="185" y="298"/>
+     <point x="177" y="298"/>
+     <point x="177" y="293"/>
+     <point x="178" y="293"/>
+     <point x="178" y="289"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="168" y="296"/>
+     <point x="168" y="295"/>
+     <point x="163" y="295"/>
+     <point x="163" y="291"/>
+     <point x="164" y="291"/>
+     <point x="164" y="289"/>
+     <point x="167" y="289"/>
+     <point x="167" y="287"/>
+     <point x="171" y="287"/>
+     <point x="171" y="296"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="154" y="278"/>
+     <point x="154" y="272"/>
+     <point x="166" y="272"/>
+     <point x="166" y="278"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="CommunityServices"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="175" y="276"/>
+     <point x="175" y="271"/>
+     <point x="183" y="271"/>
+     <point x="183" y="276"/>
+     <point x="186" y="276"/>
+     <point x="186" y="284"/>
+     <point x="171" y="284"/>
+     <point x="171" y="276"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="CommunityServices"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="172" y="240"/>
+     <point x="181" y="240"/>
+     <point x="181" y="252"/>
+     <point x="183" y="252"/>
+     <point x="183" y="258"/>
+     <point x="172" y="258"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="163" y="254"/>
+     <point x="163" y="257"/>
+     <point x="164" y="257"/>
+     <point x="164" y="261"/>
+     <point x="163" y="261"/>
+     <point x="163" y="264"/>
+     <point x="158" y="264"/>
+     <point x="158" y="254"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="186" y="220"/>
+     <point x="186" y="236"/>
+     <point x="175" y="236"/>
+     <point x="175" y="220"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RestaurantsAndEntertainment"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="140" y="207"/>
+     <point x="169" y="207"/>
+     <point x="169" y="213"/>
+     <point x="140" y="213"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="140" y="190"/>
+     <point x="169" y="190"/>
+     <point x="169" y="196"/>
+     <point x="140" y="196"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="148" y="175"/>
+     <point x="169" y="175"/>
+     <point x="169" y="178"/>
+     <point x="148" y="178"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="146" y="178"/>
+     <point x="142" y="178"/>
+     <point x="142" y="180"/>
+     <point x="134" y="180"/>
+     <point x="134" y="175"/>
+     <point x="146" y="175"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="197" y="217"/>
+     <point x="186" y="217"/>
+     <point x="186" y="210"/>
+     <point x="197" y="210"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="191" y="203"/>
+     <point x="185" y="203"/>
+     <point x="185" y="188"/>
+     <point x="191" y="188"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="214" y="207"/>
+     <point x="204" y="207"/>
+     <point x="204" y="192"/>
+     <point x="214" y="192"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="CommunityServices"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="229" y="192"/>
+     <point x="229" y="202"/>
+     <point x="218" y="202"/>
+     <point x="218" y="192"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="CommunityServices"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="245" y="205"/>
+     <point x="245" y="216"/>
+     <point x="223" y="216"/>
+     <point x="223" y="205"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="CommunityServices"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="242" y="192"/>
+     <point x="254" y="192"/>
+     <point x="254" y="197"/>
+     <point x="253" y="197"/>
+     <point x="253" y="201"/>
+     <point x="242" y="201"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="256" y="216"/>
+     <point x="252" y="216"/>
+     <point x="252" y="207"/>
+     <point x="256" y="207"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RestaurantsAndEntertainment"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="272" y="202"/>
+     <point x="280" y="202"/>
+     <point x="280" y="209"/>
+     <point x="279" y="209"/>
+     <point x="279" y="213"/>
+     <point x="280" y="213"/>
+     <point x="280" y="220"/>
+     <point x="268" y="220"/>
+     <point x="268" y="210"/>
+     <point x="272" y="210"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RestaurantsAndEntertainment"/>
+   </properties>
+  </feature>
+ </cell>
+ <cell x="2" y="1" map="Worlded/conc_0,0_2_1.tmx">
+  <lot x="-4" y="186" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="21" y="176" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="45" y="170" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="163" y="285" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="156" y="249" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="149" y="247" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="147" y="211" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="119" y="188" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="91" y="164" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="68" y="167" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="52" y="141" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="79" y="138" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="110" y="153" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="137" y="175" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="31" y="147" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="13" y="215" level="8" width="18" height="14" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/March Ridge/Residential/lot_house_suburb_02_E_05.tbx"/>
+  <lot x="16" y="199" level="8" width="18" height="14" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/March Ridge/Residential/lot_house_suburb_02_E_15.tbx"/>
+  <lot x="36" y="182" level="8" width="23" height="32" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/March Ridge/Restaurants and Entertainment/lot_restaurant_12_generic.tbx"/>
+  <lot x="47" y="155" level="8" width="36" height="36" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Restaurants and Entertainment/lot_diner_02.tbx"/>
+  <lot x="70" y="177" level="8" width="35" height="35" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Restaurants and Entertainment/lot_restaurant_spiffos_03.tbx"/>
+  <lot x="67" y="197" level="8" width="2" height="2" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Restaurants and Entertainment/lot_restaurant_jayschicken_sign_s.tbx"/>
+  <lot x="68" y="156" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Medical/lot_medical_tutorial_01.tbx"/>
+  <lot x="94" y="156" level="8" width="40" height="40" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Industrial/lot_construction_01_factory.tbx"/>
+  <lot x="144" y="188" level="8" width="32" height="28" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Industrial/lot_garagestorage_01.tbx"/>
+  <lot x="120" y="196" level="8" width="27" height="27" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Industrial/lot_trainyard_06.tbx"/>
+  <lot x="157" y="219" level="8" width="15" height="15" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Industrial/lot_warehousestorage_01.tbx"/>
+  <lot x="148" y="223" level="8" width="9" height="9" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Other/lot_billboard_06_ponyroamo.tbx"/>
+  <lot x="174" y="231" level="8" width="7" height="7" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Other/lot_garage_canopy_04.tbx"/>
+  <lot x="164" y="234" level="8" width="7" height="7" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Other/lot_outhouse_small_03.tbx"/>
+  <lot x="138" y="216" level="8" width="10" height="10" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Other/lot_traincar_05.tbx"/>
+  <lot x="161" y="202" level="8" width="10" height="10" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Other/lot_truck_03_logging.tbx"/>
+  <lot x="157" y="259" level="8" width="10" height="10" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Other/lot_truck_06_citr-8.tbx"/>
+  <lot x="158" y="242" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Other/lot_barn_01.tbx"/>
+  <lot x="167" y="261" level="8" width="36" height="36" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Restaurants and Entertainment/lot_diner_06.tbx"/>
+  <lot x="180" y="53" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="259" y="174" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="-1" y="8" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="27" y="217"/>
+     <point x="27" y="223"/>
+     <point x="26" y="223"/>
+     <point x="26" y="226"/>
+     <point x="15" y="226"/>
+     <point x="15" y="217"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="27" y="204"/>
+     <point x="30" y="204"/>
+     <point x="30" y="210"/>
+     <point x="18" y="210"/>
+     <point x="18" y="201"/>
+     <point x="27" y="201"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="38" y="195"/>
+     <point x="38" y="187"/>
+     <point x="50" y="187"/>
+     <point x="50" y="195"/>
+     <point x="54" y="195"/>
+     <point x="54" y="212"/>
+     <point x="37" y="212"/>
+     <point x="37" y="195"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RestaurantsAndEntertainment"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="66" y="161"/>
+     <point x="66" y="163"/>
+     <point x="67" y="163"/>
+     <point x="67" y="177"/>
+     <point x="66" y="177"/>
+     <point x="66" y="179"/>
+     <point x="56" y="179"/>
+     <point x="56" y="182"/>
+     <point x="50" y="182"/>
+     <point x="50" y="172"/>
+     <point x="52" y="172"/>
+     <point x="52" y="170"/>
+     <point x="54" y="170"/>
+     <point x="54" y="161"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RestaurantsAndEntertainment"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="88" y="182"/>
+     <point x="88" y="199"/>
+     <point x="72" y="199"/>
+     <point x="72" y="182"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RestaurantsAndEntertainment"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="77" y="170"/>
+     <point x="77" y="168"/>
+     <point x="72" y="168"/>
+     <point x="72" y="160"/>
+     <point x="82" y="160"/>
+     <point x="82" y="170"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Medical"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="166" y="191"/>
+     <point x="166" y="197"/>
+     <point x="150" y="197"/>
+     <point x="150" y="214"/>
+     <point x="145" y="214"/>
+     <point x="145" y="191"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="171" y="196"/>
+     <point x="168" y="196"/>
+     <point x="168" y="192"/>
+     <point x="171" y="192"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="140" y="216"/>
+     <point x="132" y="216"/>
+     <point x="132" y="198"/>
+     <point x="140" y="198"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="158" y="232"/>
+     <point x="158" y="220"/>
+     <point x="170" y="220"/>
+     <point x="170" y="232"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="179" y="236"/>
+     <point x="175" y="236"/>
+     <point x="175" y="232"/>
+     <point x="179" y="232"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="168" y="238"/>
+     <point x="166" y="238"/>
+     <point x="166" y="236"/>
+     <point x="168" y="236"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="167" y="211"/>
+     <point x="164" y="211"/>
+     <point x="164" y="203"/>
+     <point x="167" y="203"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="163" y="267"/>
+     <point x="160" y="267"/>
+     <point x="160" y="260"/>
+     <point x="163" y="260"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="173" y="255"/>
+     <point x="162" y="255"/>
+     <point x="162" y="248"/>
+     <point x="173" y="248"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="184" y="264"/>
+     <point x="184" y="285"/>
+     <point x="176" y="285"/>
+     <point x="176" y="288"/>
+     <point x="170" y="288"/>
+     <point x="170" y="276"/>
+     <point x="174" y="276"/>
+     <point x="174" y="264"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RestaurantsAndEntertainment"/>
+   </properties>
+  </feature>
+ </cell>
+ <cell x="3" y="1" map="Worlded/conc_0,0_3_1.tmx">
+  <lot x="290" y="111" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="289" y="1" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="115" y="142" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="35" y="2" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="132" y="150" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Medical/lot_medical_tutorial_01.tbx"/>
+  <lot x="126" y="164" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Residential/lot_house_small_23.tbx"/>
+  <lot x="138" y="167" level="8" width="22" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Industrial/lot_warehousestorage_04.tbx"/>
+  <lot x="45" y="17" level="8" width="26" height="26" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Community Services/lot_police_01_small.tbx"/>
+  <lot x="50" y="9" level="8" width="14" height="14" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Community Services/lot_church_04_muldraugh.tbx"/>
+  <lot x="38" y="10" level="8" width="19" height="15" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Residential/lot_house_small_02.tbx"/>
+  <lot x="210" y="227" level="8" width="11" height="13" map="buildings/soil3.tbx"/>
+  <lot x="190" y="93" level="8" width="11" height="13" map="buildings/soil2.tbx"/>
+  <lot x="223" y="153" level="8" width="11" height="13" map="buildings/sand1.tbx"/>
+  <lot x="154" y="31" level="8" width="11" height="13" map="buildings/sand1.tbx"/>
+  <lot x="152" y="65" level="8" width="11" height="13" map="buildings/stone1.tbx"/>
+  <lot x="253" y="235" level="8" width="11" height="13" map="buildings/stone1.tbx"/>
+  <lot x="83" y="97" level="8" width="11" height="13" map="buildings/stone1.tbx"/>
+  <lot x="107" y="225" level="8" width="11" height="13" map="buildings/soil3.tbx"/>
+  <lot x="290" y="212" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="299" y="120"/>
+     <point x="290" y="120"/>
+     <point x="290" y="111"/>
+     <point x="299" y="111"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="298" y="10"/>
+     <point x="289" y="10"/>
+     <point x="289" y="1"/>
+     <point x="298" y="1"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="141" y="164"/>
+     <point x="141" y="162"/>
+     <point x="136" y="162"/>
+     <point x="136" y="154"/>
+     <point x="146" y="154"/>
+     <point x="146" y="164"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Medical"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="134" y="179"/>
+     <point x="136" y="179"/>
+     <point x="136" y="183"/>
+     <point x="129" y="183"/>
+     <point x="129" y="177"/>
+     <point x="134" y="177"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="139" y="169"/>
+     <point x="150" y="169"/>
+     <point x="150" y="182"/>
+     <point x="142" y="182"/>
+     <point x="142" y="179"/>
+     <point x="139" y="179"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="67" y="30"/>
+     <point x="65" y="30"/>
+     <point x="65" y="36"/>
+     <point x="61" y="36"/>
+     <point x="61" y="41"/>
+     <point x="57" y="41"/>
+     <point x="57" y="42"/>
+     <point x="54" y="42"/>
+     <point x="54" y="41"/>
+     <point x="53" y="41"/>
+     <point x="53" y="33"/>
+     <point x="54" y="33"/>
+     <point x="54" y="24"/>
+     <point x="60" y="24"/>
+     <point x="60" y="23"/>
+     <point x="67" y="23"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="CommunityServices"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="61" y="19"/>
+     <point x="53" y="19"/>
+     <point x="53" y="14"/>
+     <point x="61" y="14"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="CommunityServices"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="51" y="13"/>
+     <point x="51" y="22"/>
+     <point x="45" y="22"/>
+     <point x="45" y="19"/>
+     <point x="44" y="19"/>
+     <point x="44" y="13"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="299" y="221"/>
+     <point x="290" y="221"/>
+     <point x="290" y="212"/>
+     <point x="299" y="212"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+ </cell>
+ <cell x="0" y="2" map="Worlded/conc_0,0_0_2.tmx">
+  <lot x="0" y="183" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="0" y="290" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="151" y="138" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="215" y="9" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="243" y="32" level="8" width="14" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/B42 Vanilla Map Building Exports/b42_all_buildings_alpha/building_1_38_7.tbx"/>
+  <lot x="224" y="37" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Other/lot_barn_02.tbx"/>
+  <lot x="223" y="19" level="8" width="18" height="17" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Residential/lot_house_construction_17.tbx"/>
+  <lot x="165" y="158" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Restaurants and Entertainment/lot_pizzawhirled_02.tbx"/>
+  <lot x="0" y="93" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="9" y="125"/>
+     <point x="0" y="125"/>
+     <point x="0" y="116"/>
+     <point x="9" y="116"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="9" y="299"/>
+     <point x="0" y="299"/>
+     <point x="0" y="290"/>
+     <point x="9" y="290"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="243" y="51"/>
+     <point x="243" y="32"/>
+     <point x="255" y="32"/>
+     <point x="255" y="51"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="237" y="50"/>
+     <point x="228" y="50"/>
+     <point x="228" y="43"/>
+     <point x="237" y="43"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="233" y="35"/>
+     <point x="233" y="30"/>
+     <point x="230" y="30"/>
+     <point x="230" y="33"/>
+     <point x="225" y="33"/>
+     <point x="225" y="30"/>
+     <point x="223" y="30"/>
+     <point x="223" y="19"/>
+     <point x="238" y="19"/>
+     <point x="238" y="35"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="175" y="163"/>
+     <point x="175" y="162"/>
+     <point x="176" y="162"/>
+     <point x="176" y="161"/>
+     <point x="182" y="161"/>
+     <point x="182" y="173"/>
+     <point x="167" y="173"/>
+     <point x="167" y="163"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RestaurantsAndEntertainment"/>
+   </properties>
+  </feature>
+ </cell>
+ <cell x="1" y="2" map="Worlded/conc_0,0_1_2.tmx">
+  <lot x="280" y="-16" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="306" y="-3" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="148" y="-4" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="165" y="-3" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="139" y="-4" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="138" y="24" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="157" y="56" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="187" y="73" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="220" y="87" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="254" y="103" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="285" y="105" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="288" y="-2" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="154" y="2" level="8" width="32" height="37" map="buildings/office_ad.tbx"/>
+  <lot x="155" y="33" level="8" width="23" height="32" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/March Ridge/Restaurants and Entertainment/lot_restaurant_12_generic.tbx"/>
+  <lot x="168" y="64" level="8" width="21" height="25" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/March Ridge/Restaurants and Entertainment/lot_bar_04_military.tbx"/>
+  <lot x="181" y="78" level="8" width="26" height="19" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Industrial/lot_construction_03_house.tbx"/>
+  <lot x="200" y="78" level="8" width="27" height="27" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Industrial/lot_farm_storage_04.tbx"/>
+  <lot x="227" y="102" level="8" width="27" height="27" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Industrial/lot_farm_storage_04b.tbx"/>
+  <lot x="232" y="95" level="8" width="20" height="18" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Community Services/lot_police_05_smalltown.tbx"/>
+  <lot x="248" y="111" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Other/lot_barn_02.tbx"/>
+  <lot x="249" y="103" level="8" width="11" height="11" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Other/lot_chickencoop_04.tbx"/>
+  <lot x="228" y="120" level="8" width="11" height="11" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Other/lot_chickencoop_02.tbx"/>
+  <lot x="242" y="121" level="8" width="11" height="11" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Other/lot_patio_04_plain.tbx"/>
+  <lot x="270" y="107" level="8" width="11" height="11" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Other/lot_park_13_playhouse.tbx"/>
+  <lot x="267" y="131" level="8" width="15" height="15" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Other/lot_portacabin_01.tbx"/>
+  <lot x="284" y="116" level="8" width="28" height="20" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Other/lot_pool_01.tbx"/>
+  <lot x="279" y="121" level="8" width="6" height="6" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Other/lot_portalet_02_S.tbx"/>
+  <lot x="274" y="115" level="8" width="13" height="13" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Other/lot_shed_04.tbx"/>
+  <lot x="157" y="-1" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Other/lot_shed_10.tbx"/>
+  <lot x="32" y="226" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="27" y="65" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="211" y="261" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <object type="SpawnPoint" x="322" y="38" level="8" width="1" height="1">
+   <template name="SpawnPoint"/>
+   <property name="Professions" value="burglar,burgerflipper,carpenter,chef,constructionworker,doctor,electrician,engineer,farmer,fireofficer,fisherman,fitnessInstructor,lumberjack,mechanics,metalworker,nurse,parkranger,policeofficer,rancher,repairman,securityguard,smither,tailor,unemployed,veteran,profession"/>
+  </object>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="157" y="12"/>
+     <point x="180" y="12"/>
+     <point x="180" y="13"/>
+     <point x="179" y="13"/>
+     <point x="179" y="19"/>
+     <point x="180" y="19"/>
+     <point x="180" y="25"/>
+     <point x="179" y="25"/>
+     <point x="179" y="31"/>
+     <point x="180" y="31"/>
+     <point x="180" y="32"/>
+     <point x="174" y="32"/>
+     <point x="174" y="34"/>
+     <point x="169" y="34"/>
+     <point x="169" y="32"/>
+     <point x="157" y="32"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="157" y="46"/>
+     <point x="157" y="38"/>
+     <point x="169" y="38"/>
+     <point x="169" y="46"/>
+     <point x="173" y="46"/>
+     <point x="173" y="63"/>
+     <point x="156" y="63"/>
+     <point x="156" y="46"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RestaurantsAndEntertainment"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="172" y="85"/>
+     <point x="172" y="68"/>
+     <point x="177" y="68"/>
+     <point x="177" y="66"/>
+     <point x="182" y="66"/>
+     <point x="182" y="85"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RestaurantsAndEntertainment"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="218" y="89"/>
+     <point x="218" y="99"/>
+     <point x="212" y="99"/>
+     <point x="212" y="89"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="245" y="113"/>
+     <point x="245" y="123"/>
+     <point x="239" y="123"/>
+     <point x="239" y="113"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="237" y="101"/>
+     <point x="237" y="96"/>
+     <point x="245" y="96"/>
+     <point x="245" y="101"/>
+     <point x="248" y="101"/>
+     <point x="248" y="109"/>
+     <point x="233" y="109"/>
+     <point x="233" y="101"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="CommunityServices"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="261" y="124"/>
+     <point x="252" y="124"/>
+     <point x="252" y="117"/>
+     <point x="261" y="117"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="256" y="110"/>
+     <point x="253" y="110"/>
+     <point x="253" y="107"/>
+     <point x="256" y="107"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="232" y="122"/>
+     <point x="237" y="122"/>
+     <point x="237" y="127"/>
+     <point x="232" y="127"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="277" y="109"/>
+     <point x="277" y="116"/>
+     <point x="273" y="116"/>
+     <point x="273" y="109"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="275" y="143"/>
+     <point x="271" y="143"/>
+     <point x="271" y="132"/>
+     <point x="275" y="132"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="282" y="124"/>
+     <point x="281" y="124"/>
+     <point x="281" y="123"/>
+     <point x="282" y="123"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="279" y="126"/>
+     <point x="275" y="126"/>
+     <point x="275" y="121"/>
+     <point x="279" y="121"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="169" y="9"/>
+     <point x="166" y="9"/>
+     <point x="166" y="6"/>
+     <point x="169" y="6"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+ </cell>
+ <cell x="2" y="2" map="Worlded/conc_0,0_2_2.tmx">
+  <lot x="11" y="118" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="40" y="120" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="32" y="136" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="59" y="155" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="62" y="132" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="38" y="158" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="60" y="107" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="79" y="166" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="89" y="147" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="103" y="182" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="109" y="160" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="154" y="28" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="145" y="8" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="188" y="-80" level="8" width="11" height="13" map="buildings/sand1.tbx"/>
+  <lot x="147" y="48" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="176" y="54" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="169" y="69" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="121" y="139" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="136" y="165" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="105" y="140" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="132" y="163" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="154" y="146" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="171" y="125" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="174" y="100" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="159" y="127" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="180" y="157" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="165" y="173" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="154" y="185" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="25" y="119" level="8" width="21" height="33" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Rosewood/Industrial/lot_farm_storage_06_metalbarn_small.tbx"/>
+  <lot x="29" y="150" level="8" width="11" height="11" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Rosewood/Other/lot_patio_07_plain.tbx"/>
+  <lot x="47" y="157" level="8" width="38" height="51" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Rosewood/Retail and Commercial/lot_grocery_08_laundry.tbx"/>
+  <lot x="67" y="118" level="8" width="23" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Rosewood/Retail and Commercial/lot_grocery_09_farmstore.tbx"/>
+  <lot x="50" y="133" level="8" width="17" height="15" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Rosewood/Retail and Commercial/lot_offices_04_bailbonds.tbx"/>
+  <lot x="68" y="140" level="8" width="38" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Rosewood/Community Services/lot_restarea_03_bathrooms.tbx"/>
+  <lot x="83" y="162" level="8" width="34" height="23" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Retail and Commercial/lot_bank_01.tbx"/>
+  <lot x="120" y="191" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Retail and Commercial/lot_gas_fossoil_01.tbx"/>
+  <lot x="97" y="192" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Retail and Commercial/lot_generalstore_01.tbx"/>
+  <lot x="108" y="154" level="8" width="47" height="33" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Retail and Commercial/lot_plaza_10_westpoint.tbx"/>
+  <lot x="165" y="136" level="8" width="17" height="17" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Retail and Commercial/lot_zippee_01.tbx"/>
+  <lot x="142" y="176" level="8" width="30" height="30" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Medical/lot_pharmacy_01.tbx"/>
+  <lot x="157" y="172" level="8" width="64" height="30" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Retail and Commercial/lot_plaza_14_mall.tbx"/>
+  <lot x="191" y="149" level="8" width="9" height="20" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Retail and Commercial/lot_liquorstore_01.tbx"/>
+  <lot x="168" y="163" level="8" width="13" height="8" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Industrial/lot_trainyard_12_storagesmall.tbx"/>
+  <lot x="185" y="139" level="8" width="3" height="3" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Industrial/lot_security_05_small.tbx"/>
+  <lot x="158" y="52" level="8" width="44" height="41" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Industrial/lot_warehousestorage_06.tbx"/>
+  <lot x="152" y="34" level="8" width="42" height="35" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Community Services/lot_church_05_westpointrural.tbx"/>
+  <lot x="184" y="114" level="8" width="38" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Community Services/lot_restarea_02_bathrooms.tbx"/>
+  <lot x="196" y="88" level="8" width="9" height="15" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Retail and Commercial/lot_gas_gas2go_03_pumps.tbx"/>
+  <lot x="215" y="288" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="40" y="150"/>
+     <point x="30" y="150"/>
+     <point x="30" y="130"/>
+     <point x="40" y="130"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="74" y="160"/>
+     <point x="74" y="184"/>
+     <point x="68" y="184"/>
+     <point x="68" y="189"/>
+     <point x="70" y="189"/>
+     <point x="70" y="199"/>
+     <point x="58" y="199"/>
+     <point x="58" y="191"/>
+     <point x="61" y="191"/>
+     <point x="61" y="187"/>
+     <point x="51" y="187"/>
+     <point x="51" y="160"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="71" y="126"/>
+     <point x="71" y="120"/>
+     <point x="86" y="120"/>
+     <point x="86" y="126"/>
+     <point x="88" y="126"/>
+     <point x="88" y="131"/>
+     <point x="69" y="131"/>
+     <point x="69" y="126"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="53" y="145"/>
+     <point x="53" y="135"/>
+     <point x="64" y="135"/>
+     <point x="64" y="145"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="93" y="142"/>
+     <point x="93" y="153"/>
+     <point x="71" y="153"/>
+     <point x="71" y="142"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="CommunityServices"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="97" y="183"/>
+     <point x="97" y="174"/>
+     <point x="87" y="174"/>
+     <point x="87" y="163"/>
+     <point x="107" y="163"/>
+     <point x="107" y="183"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="126" y="202"/>
+     <point x="126" y="209"/>
+     <point x="121" y="209"/>
+     <point x="121" y="194"/>
+     <point x="132" y="194"/>
+     <point x="132" y="202"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="99" y="204"/>
+     <point x="99" y="192"/>
+     <point x="115" y="192"/>
+     <point x="115" y="204"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="150" y="159"/>
+     <point x="151" y="159"/>
+     <point x="151" y="177"/>
+     <point x="150" y="177"/>
+     <point x="150" y="178"/>
+     <point x="145" y="178"/>
+     <point x="145" y="177"/>
+     <point x="144" y="177"/>
+     <point x="144" y="171"/>
+     <point x="130" y="171"/>
+     <point x="130" y="170"/>
+     <point x="125" y="170"/>
+     <point x="125" y="172"/>
+     <point x="112" y="172"/>
+     <point x="112" y="158"/>
+     <point x="116" y="158"/>
+     <point x="116" y="159"/>
+     <point x="120" y="159"/>
+     <point x="120" y="158"/>
+     <point x="150" y="158"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="170" y="149"/>
+     <point x="170" y="142"/>
+     <point x="167" y="142"/>
+     <point x="167" y="137"/>
+     <point x="170" y="137"/>
+     <point x="170" y="136"/>
+     <point x="179" y="136"/>
+     <point x="179" y="149"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="160" y="184"/>
+     <point x="160" y="203"/>
+     <point x="146" y="203"/>
+     <point x="146" y="184"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Medical"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="165" y="191"/>
+     <point x="165" y="178"/>
+     <point x="217" y="178"/>
+     <point x="217" y="191"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="197" y="161"/>
+     <point x="197" y="167"/>
+     <point x="191" y="167"/>
+     <point x="191" y="149"/>
+     <point x="199" y="149"/>
+     <point x="199" y="161"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="179" y="170"/>
+     <point x="168" y="170"/>
+     <point x="168" y="163"/>
+     <point x="179" y="163"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="187" y="141"/>
+     <point x="185" y="141"/>
+     <point x="185" y="139"/>
+     <point x="187" y="139"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="192" y="55"/>
+     <point x="192" y="77"/>
+     <point x="189" y="77"/>
+     <point x="189" y="91"/>
+     <point x="178" y="91"/>
+     <point x="178" y="88"/>
+     <point x="163" y="88"/>
+     <point x="163" y="77"/>
+     <point x="172" y="77"/>
+     <point x="172" y="55"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="171" y="51"/>
+     <point x="161" y="51"/>
+     <point x="161" y="36"/>
+     <point x="171" y="36"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="CommunityServices"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="186" y="36"/>
+     <point x="186" y="46"/>
+     <point x="175" y="46"/>
+     <point x="175" y="36"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="CommunityServices"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="209" y="121"/>
+     <point x="209" y="132"/>
+     <point x="187" y="132"/>
+     <point x="187" y="121"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="CommunityServices"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="201" y="100"/>
+     <point x="198" y="100"/>
+     <point x="198" y="90"/>
+     <point x="201" y="90"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+ </cell>
+ <cell x="3" y="2" map="Worlded/conc_0,0_3_2.tmx">
+  <lot x="289" y="104" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="290" y="0" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="7" y="192" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="51" y="11" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="16" y="217" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Rosewood/Residential/lot_house_medium_39.tbx"/>
+  <lot x="19" y="201" level="8" width="23" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Rosewood/Retail and Commercial/lot_grocery_09_farmstore.tbx"/>
+  <lot x="42" y="29" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="65" y="32" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="49" y="52" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="30" y="44" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="27" y="20" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="36" y="53" level="8" width="64" height="30" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Retail and Commercial/lot_plaza_13_mall.tbx"/>
+  <lot x="33" y="36" level="8" width="64" height="30" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Retail and Commercial/lot_plaza_14_mall.tbx"/>
+  <lot x="67" y="22" level="8" width="17" height="17" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Retail and Commercial/lot_cornerstore_03.tbx"/>
+  <lot x="47" y="19" level="8" width="27" height="27" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Valley Station/Industrial/lot_trainyard_14_storage.tbx"/>
+  <lot x="195" y="76" level="8" width="11" height="13" map="buildings/stone1.tbx"/>
+  <lot x="121" y="243" level="8" width="11" height="13" map="buildings/stone1.tbx"/>
+  <lot x="185" y="188" level="8" width="11" height="13" map="buildings/soil3.tbx"/>
+  <lot x="172" y="85" level="8" width="11" height="13" map="buildings/soil2.tbx"/>
+  <lot x="180" y="133" level="8" width="11" height="13" map="buildings/sand1.tbx"/>
+  <lot x="55" y="126" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="290" y="213" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="298" y="113"/>
+     <point x="289" y="113"/>
+     <point x="289" y="104"/>
+     <point x="298" y="104"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="299" y="9"/>
+     <point x="290" y="9"/>
+     <point x="290" y="0"/>
+     <point x="299" y="0"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="31" y="225"/>
+     <point x="29" y="225"/>
+     <point x="29" y="233"/>
+     <point x="22" y="233"/>
+     <point x="22" y="219"/>
+     <point x="29" y="219"/>
+     <point x="29" y="220"/>
+     <point x="31" y="220"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="23" y="209"/>
+     <point x="23" y="203"/>
+     <point x="38" y="203"/>
+     <point x="38" y="209"/>
+     <point x="40" y="209"/>
+     <point x="40" y="214"/>
+     <point x="21" y="214"/>
+     <point x="21" y="209"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="44" y="72"/>
+     <point x="44" y="59"/>
+     <point x="96" y="59"/>
+     <point x="96" y="72"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="41" y="55"/>
+     <point x="41" y="42"/>
+     <point x="93" y="42"/>
+     <point x="93" y="55"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="72" y="36"/>
+     <point x="72" y="26"/>
+     <point x="79" y="26"/>
+     <point x="79" y="27"/>
+     <point x="82" y="27"/>
+     <point x="82" y="32"/>
+     <point x="79" y="32"/>
+     <point x="79" y="36"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="67" y="37"/>
+     <point x="52" y="37"/>
+     <point x="52" y="31"/>
+     <point x="67" y="31"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="299" y="222"/>
+     <point x="290" y="222"/>
+     <point x="290" y="213"/>
+     <point x="299" y="213"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+ </cell>
+ <cell x="0" y="3" map="Worlded/conc_0,0_0_3.tmx">
+  <lot x="0" y="176" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="0" y="290" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="145" y="159" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="140" y="1" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="154" y="11" level="8" width="26" height="18" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Dixie/Medical/lot_hospital_01_smalltown.tbx"/>
+  <lot x="154" y="30" level="8" width="19" height="15" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Other/Residential/lot_house_medium_90.tbx"/>
+  <lot x="163" y="24" level="8" width="7" height="7" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Other/lot_garage_canopy_04.tbx"/>
+  <lot x="152" y="165" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Industrial/lot_mechanic_03.tbx"/>
+  <lot x="170" y="173" level="8" width="14" height="18" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Riverwood/Residential/lot_military_house_01_S_01y.tbx"/>
+  <lot x="179" y="122" level="8" width="11" height="13" map="buildings/stone1.tbx"/>
+  <lot x="140" y="66" level="8" width="11" height="13" map="buildings/soil1.tbx"/>
+  <lot x="104" y="43" level="8" width="11" height="13" map="buildings/sand1.tbx"/>
+  <lot x="165" y="43" level="8" width="11" height="13" map="buildings/sand1.tbx"/>
+  <lot x="122" y="91" level="8" width="11" height="13" map="buildings/soil3.tbx"/>
+  <lot x="143" y="206" level="8" width="11" height="13" map="buildings/stone1.tbx"/>
+  <lot x="0" y="94" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="112" y="118"/>
+     <point x="245" y="118"/>
+     <point x="245" y="210"/>
+     <point x="112" y="210"/>
+    </coordinates>
+   </geometry>
+   <properties/>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="9" y="144"/>
+     <point x="0" y="144"/>
+     <point x="0" y="135"/>
+     <point x="9" y="135"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="9" y="299"/>
+     <point x="0" y="299"/>
+     <point x="0" y="290"/>
+     <point x="9" y="290"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="171" y="19"/>
+     <point x="170" y="19"/>
+     <point x="170" y="24"/>
+     <point x="160" y="24"/>
+     <point x="160" y="20"/>
+     <point x="156" y="20"/>
+     <point x="156" y="14"/>
+     <point x="170" y="14"/>
+     <point x="170" y="15"/>
+     <point x="171" y="15"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Medical"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="161" y="31"/>
+     <point x="167" y="31"/>
+     <point x="167" y="35"/>
+     <point x="168" y="35"/>
+     <point x="168" y="39"/>
+     <point x="161" y="39"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="168" y="29"/>
+     <point x="164" y="29"/>
+     <point x="164" y="25"/>
+     <point x="168" y="25"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="156" y="168"/>
+     <point x="167" y="168"/>
+     <point x="167" y="180"/>
+     <point x="156" y="180"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Industrial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="181" y="187"/>
+     <point x="176" y="187"/>
+     <point x="176" y="186"/>
+     <point x="172" y="186"/>
+     <point x="172" y="175"/>
+     <point x="181" y="175"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+ </cell>
+ <cell x="1" y="3" map="Worlded/conc_0,0_1_3.tmx"/>
+ <cell x="2" y="3" map="Worlded/conc_0,0_2_3.tmx"/>
+ <cell x="3" y="3" map="Worlded/conc_0,0_3_3.tmx">
+  <lot x="290" y="290" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="290" y="136" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="291" y="0" level="0" width="10" height="10" map="buildings/spawnbox_basement.tbx"/>
+  <lot x="20" y="202" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="27" y="2" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <lot x="23" y="206" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/Muldraugh/Medical/lot_medical_tutorial_01.tbx"/>
+  <lot x="33" y="216" level="8" width="30" height="30" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Medical/lot_pharmacy_01.tbx"/>
+  <lot x="38" y="31" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Retail and Commercial/lot_gunstore_01.tbx"/>
+  <lot x="33" y="13" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Retail and Commercial/lot_gunstore_01.tbx"/>
+  <lot x="46" y="18" level="8" width="21" height="21" map="../Archive.Project-Zomboid-Modding-main/Mapping/Vanilla Buildings Pool/Buildings Catalogue Curated/Buildings Catalogue Curated/West Point/Retail and Commercial/lot_gas_03_generic.tbx"/>
+  <lot x="141" y="228" level="8" width="11" height="13" map="buildings/soil2.tbx"/>
+  <lot x="137" y="53" level="8" width="11" height="13" map="buildings/soil3.tbx"/>
+  <lot x="180" y="79" level="8" width="11" height="13" map="buildings/stone1.tbx"/>
+  <lot x="123" y="263" level="8" width="11" height="13" map="buildings/stone1.tbx"/>
+  <lot x="166" y="194" level="8" width="11" height="13" map="buildings/sand1.tbx"/>
+  <lot x="90" y="117" level="8" width="51" height="51" map="buildings/sand.tbx"/>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="299" y="299"/>
+     <point x="290" y="299"/>
+     <point x="290" y="290"/>
+     <point x="299" y="290"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="299" y="145"/>
+     <point x="290" y="145"/>
+     <point x="290" y="136"/>
+     <point x="299" y="136"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="300" y="9"/>
+     <point x="291" y="9"/>
+     <point x="291" y="0"/>
+     <point x="300" y="0"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="yes"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="32" y="220"/>
+     <point x="32" y="218"/>
+     <point x="27" y="218"/>
+     <point x="27" y="210"/>
+     <point x="37" y="210"/>
+     <point x="37" y="220"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Medical"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="51" y="224"/>
+     <point x="51" y="243"/>
+     <point x="37" y="243"/>
+     <point x="37" y="224"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="Medical"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="48" y="32"/>
+     <point x="48" y="33"/>
+     <point x="50" y="33"/>
+     <point x="50" y="42"/>
+     <point x="41" y="42"/>
+     <point x="41" y="38"/>
+     <point x="39" y="38"/>
+     <point x="39" y="33"/>
+     <point x="41" y="33"/>
+     <point x="41" y="32"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="43" y="14"/>
+     <point x="43" y="15"/>
+     <point x="45" y="15"/>
+     <point x="45" y="24"/>
+     <point x="36" y="24"/>
+     <point x="36" y="20"/>
+     <point x="34" y="20"/>
+     <point x="34" y="15"/>
+     <point x="36" y="15"/>
+     <point x="36" y="14"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+  <feature>
+   <geometry type="Polygon">
+    <coordinates>
+     <point x="63" y="22"/>
+     <point x="63" y="28"/>
+     <point x="52" y="28"/>
+     <point x="52" y="22"/>
+    </coordinates>
+   </geometry>
+   <properties>
+    <property name="building" value="RetailAndCommercial"/>
+   </properties>
+  </feature>
+ </cell>
+</world>

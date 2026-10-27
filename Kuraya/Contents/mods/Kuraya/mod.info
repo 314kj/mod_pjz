@@ -1,0 +1,14 @@
+name=Kuraya
+id=Kuraya
+description=HaftFull shop for Project Zomboid Build 42 [MP] - admin catalog, Fresh Market stalls, three currencies.
+description=
+description=Copyright (c) 2026 AKA - Authored by LOOKCHINNOL. All Rights Reserved.
+poster=poster.png
+icon=icon.png
+author=AKA
+url=https://steamcommunity.com/sharedfiles/filedetails/?id=3779906331
+versionMin=42.0.0
+pzversion=42
+modversion=0.7.1
+require=Akacount
+copyright=Copyright (c) 2026 AKA - Authored by LOOKCHINNOL. All Rights Reserved.

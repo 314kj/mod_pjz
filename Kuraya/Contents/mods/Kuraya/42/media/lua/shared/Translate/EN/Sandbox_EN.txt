@@ -1,0 +1,80 @@
+Sandbox_EN = {
+    Sandbox_Kuraya        = "Kuraya - Shop",
+    Sandbox_KurayaLoan    = "Kuraya - Loans",
+    Sandbox_KurayaAuction = "Kuraya - Auction",
+
+    Sandbox_Kuraya_SeedCatalog = "Put 12 example items in the shop",
+    Sandbox_Kuraya_SeedCatalog_tooltip = "Only works on a shop that has never been stocked. It will not add items on top of a shop you already filled in. Leave this off and stock the shop yourself from the Admin tab.",
+
+    Sandbox_Kuraya_CarGiveKey = "Hand over the car keys with the vehicle",
+    Sandbox_Kuraya_CarGiveKey_tooltip = "The buyer gets a key that matches the car they just unpacked, and a spare is left in the ignition. Turn this off only on a server where keys are meant to be found, not given.",
+
+    Sandbox_Kuraya_CarExtraItem = "Extra item handed over with every car",
+    Sandbox_Kuraya_CarExtraItem_tooltip = "Full item type with its module, like Base.CarKey. Leave it empty for none. Use it for a claim token or ownership coin from another mod. The car still arrives even if this item cannot be made, and the server console says why.",
+
+    Sandbox_Kuraya_CarExtraCount = "How many of that extra item",
+    Sandbox_Kuraya_CarExtraCount_tooltip = "Ignored when the extra item is empty.",
+
+    Sandbox_Kuraya_HFSendFeePercent = "Fee to send HF points to another player (percent)",
+    Sandbox_Kuraya_HFSendFeePercent_tooltip = "The sender pays this on top, so the friend receives exactly the number that was typed in. 5 means 5%. Set 0 for no fee.",
+
+    Sandbox_Kuraya_HFSendDailyLimit = "HF points one player may send per day",
+    Sandbox_Kuraya_HFSendDailyLimit_tooltip = "0 means no limit.",
+
+    Sandbox_Kuraya_StampsPerCard = "Stamps needed to fill a loyalty card",
+    Sandbox_Kuraya_StampsPerCard_tooltip = "Every 3 purchases earn 1 stamp. At 10 stamps a card is full, so a full card is 30 purchases.",
+
+    Sandbox_Kuraya_StampReward = "HF points given for a full loyalty card",
+    Sandbox_Kuraya_StampReward_tooltip = "The card resets to empty after the points are paid out.",
+
+    Sandbox_Kuraya_LoanInterestPercent = "Interest on a loan (percent)",
+    Sandbox_Kuraya_LoanInterestPercent_tooltip = "Added once, when the money is taken out. It does not build up over time. 6 means borrow 5,000 and pay back 5,300.",
+
+    Sandbox_Kuraya_LoanLateFeePercent = "Extra fee for each late day (percent)",
+    Sandbox_Kuraya_LoanLateFeePercent_tooltip = "Charged again every day a payment is late, and it keeps adding up.",
+
+    Sandbox_Kuraya_LoanMissedBeforeFreeze = "Missed payments before the account freezes",
+    Sandbox_Kuraya_LoanMissedBeforeFreeze_tooltip = "A frozen account unfreezes by itself once the player pays what they owe. No admin needed.",
+
+    Sandbox_Kuraya_LoanMaxCredit = "Most one player may borrow, any rank (baht)",
+    Sandbox_Kuraya_LoanMaxCredit_tooltip = "CP ranks normally set the limit, from 10,000 at BRONZE up to 120,000 at BLACK. This caps all of them. Whichever is smaller wins. Set 0 to turn the cap off and let ranks decide on their own.",
+
+    Sandbox_Kuraya_LoanNeedSafehouse = "Only safehouse members can borrow",
+    Sandbox_Kuraya_LoanNeedSafehouse_tooltip = "Turn this off if nobody on your server can borrow. Kuraya refuses everyone when it cannot read the safehouse list, which is the safe way round but does block lending. The server console prints what it found at boot.",
+
+    Sandbox_Kuraya_LoanSafehouseDays = "Days in a safehouse before a player can borrow",
+    Sandbox_Kuraya_LoanSafehouseDays_tooltip = "Real days, not survivor days. Dying and starting a new character does not reset it.",
+
+    Sandbox_Kuraya_LoanSafehouseMaxDebt = "Total debt allowed for one safehouse (baht)",
+    Sandbox_Kuraya_LoanSafehouseMaxDebt_tooltip = "Everyone in the house added together. It stops a group borrowing one at a time until they have a pile of money nobody means to pay back.",
+
+    Sandbox_Kuraya_ShopLockDebt = "Shop closes for a player this far in the red (baht)",
+    Sandbox_Kuraya_ShopLockDebt_tooltip = "Buying, bidding and transfers all stop. Paying the loan off does NOT reopen it - only an admin can, from the Players tab. Every admin online is told the moment it happens.",
+
+    Sandbox_Kuraya_AuctionEnabled = "Turn the auction board on",
+    Sandbox_Kuraya_AuctionEnabled_tooltip = "Off in 0.6.5. The shop shows the board as coming soon and the server refuses every auction command, so nothing can be listed or bid on.",
+
+    Sandbox_Kuraya_AuctionPlayerSell = "Players can put up their own lots",
+    Sandbox_Kuraya_AuctionPlayerSell_tooltip = "Turn this off to leave the board to admins only.",
+
+    Sandbox_Kuraya_AuctionFeePercent = "Fee the seller pays on a sold lot (percent)",
+    Sandbox_Kuraya_AuctionFeePercent_tooltip = "Taken out of what the seller receives, and only when a lot actually sells.",
+
+    Sandbox_Kuraya_AuctionFreeSlots = "Free lots each player can run at once",
+    Sandbox_Kuraya_AuctionFreeSlots_tooltip = "Extra slots are bought in game and are kept forever, up to 10 per player.",
+
+    Sandbox_Kuraya_AuctionSlotPrice = "Price of one extra lot slot (baht)",
+    Sandbox_Kuraya_AuctionSlotPrice_tooltip = "Paid once. The slot is permanent - a player who stops playing for a month still has it when they come back.",
+
+    Sandbox_Kuraya_PetNameFromSlip = "Name the animal after the slip it came from",
+    Sandbox_Kuraya_PetNameFromSlip_tooltip = "The buyer can rename it afterwards. Turn this off if you want every animal to arrive unnamed.",
+
+    Sandbox_Kuraya_PetExtraItem = "Extra item handed over with every animal",
+    Sandbox_Kuraya_PetExtraItem_tooltip = "Full item type with its module, like Base.Rope. Leave it empty for none. Use it for a lead, a name tag, or a claim token from another mod. The animal still arrives even if this item cannot be made, and the server console says why.",
+
+    Sandbox_Kuraya_PetExtraCount = "How many of that extra item",
+    Sandbox_Kuraya_PetExtraCount_tooltip = "Ignored when the extra item is empty.",
+
+    Sandbox_Kuraya_SkillWatchFrom = "List players from this skill level up",
+    Sandbox_Kuraya_SkillWatchFrom_tooltip = "The Admin page shows who has reached this level or higher in a crafting or survival skill. 8 means 8, 9 and 10. Strength, Fitness, Sprinting and Sneaking are never listed.",
+}

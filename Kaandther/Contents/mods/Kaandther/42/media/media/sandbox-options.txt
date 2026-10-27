@@ -1,0 +1,41 @@
+VERSION = 1,
+
+option Kaandther.BlueCost
+{
+	type = integer,
+	min = 0,
+	max = 20,
+	default = 1,
+	page = Kaandther,
+	translation = Kaandther_BlueCost,
+}
+
+option Kaandther.BlueDrop
+{
+	type = integer,
+	min = 0,
+	max = 100,
+	default = 3,
+	page = Kaandther,
+	translation = Kaandther_BlueDrop,
+}
+
+option Kaandther.RedGuard
+{
+	type = integer,
+	min = 0,
+	max = 100,
+	default = 50,
+	page = Kaandther,
+	translation = Kaandther_RedGuard,
+}
+
+option Kaandther.GoldGuard
+{
+	type = integer,
+	min = 0,
+	max = 100,
+	default = 100,
+	page = Kaandther,
+	translation = Kaandther_GoldGuard,
+}

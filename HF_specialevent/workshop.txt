@@ -1,0 +1,22 @@
+version=1
+id=3787958184
+title=HF-specialevent
+description=HF Special Event - a floating island map for Project Zomboid Build 42.
+description=
+description=World is 1200 x 1200. Playable ground is at z = 8, spawn at 622, 638.
+description=One ring-shaped town island, 15 built islands, 9 empty build plots,
+description=36 small resource islands and 42 per-player boxes along the left and right edges.
+description=
+description=This update adds:
+description=- in-game world map data, so the map shows up when you press M
+description=- a readable island map sheet: Base.HF_EventMap (admin spawn only)
+description=  right-click it in your inventory and choose "Read: HF Island Map",
+description=  or as an admin right-click the ground and pick "HF Island Map (admin)"
+description=  ORANGE - islands, plots and player boxes / GREEN - resource islands
+description=
+description=Copyright (c) 2026 AKA - Authored by LOOKCHINNOL. All Rights Reserved.
+description=Same author as AkaShop, Akalogistics, AkaVehicleBlock,
+description=AKA - I Know What I Did, Traka and Kaandther.
+description=If a mod does not carry this notice, it is not from AKA.
+tags=Build 42;Items;Map
+visibility=public

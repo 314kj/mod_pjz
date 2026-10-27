@@ -1,0 +1,54 @@
+VERSION = 1,
+
+/* ============================================================
+   PROJECT DUNKA - sandbox options                KACHASIG
+   horde-box cooldown / spawn radius / safety cap / rank counts
+   ============================================================ */
+
+option DunKa.CooldownMinutes
+{
+    type = integer, default = 10, min = 0, max = 240,
+    page = DunKa, translation = DunKa_CooldownMinutes,
+}
+
+option DunKa.SpawnRadius
+{
+    type = integer, default = 8, min = 2, max = 25,
+    page = DunKa, translation = DunKa_SpawnRadius,
+}
+
+option DunKa.SafetyCap
+{
+    type = integer, default = 500, min = 50, max = 3000,
+    page = DunKa, translation = DunKa_SafetyCap,
+}
+
+option DunKa.SpawnTickInterval
+{
+    type = integer, default = 6, min = 1, max = 60,
+    page = DunKa, translation = DunKa_SpawnTickInterval,
+}
+
+option DunKa.CountC
+{
+    type = integer, default = 50, min = 1, max = 3000,
+    page = DunKa, translation = DunKa_CountC,
+}
+
+option DunKa.CountB
+{
+    type = integer, default = 100, min = 1, max = 3000,
+    page = DunKa, translation = DunKa_CountB,
+}
+
+option DunKa.CountA
+{
+    type = integer, default = 200, min = 1, max = 3000,
+    page = DunKa, translation = DunKa_CountA,
+}
+
+option DunKa.CountS
+{
+    type = integer, default = 400, min = 1, max = 3000,
+    page = DunKa, translation = DunKa_CountS,
+}

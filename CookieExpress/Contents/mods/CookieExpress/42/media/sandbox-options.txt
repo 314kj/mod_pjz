@@ -1,0 +1,43 @@
+VERSION = 1,
+
+option CookieExpress.VehicleSearchRadius
+{
+    type = integer, min = 1, max = 20, default = 3,
+    page = CookieExpress, translation = CookieExpress_VehicleSearchRadius,
+}
+
+option CookieExpress.VehicleBlockWater
+{
+    type = boolean, default = true,
+    page = CookieExpress, translation = CookieExpress_VehicleBlockWater,
+}
+
+option CookieExpress.VehicleBlockBuildings
+{
+    type = boolean, default = true,
+    page = CookieExpress, translation = CookieExpress_VehicleBlockBuildings,
+}
+
+option CookieExpress.VehicleBlockVehicles
+{
+    type = boolean, default = true,
+    page = CookieExpress, translation = CookieExpress_VehicleBlockVehicles,
+}
+
+option CookieExpress.VehicleBlockObstacles
+{
+    type = boolean, default = false,
+    page = CookieExpress, translation = CookieExpress_VehicleBlockObstacles,
+}
+
+option CookieExpress.VehicleClearWidth
+{
+    type = integer, min = 1, max = 9, default = 3,
+    page = CookieExpress, translation = CookieExpress_VehicleClearWidth,
+}
+
+option CookieExpress.VehicleClearLength
+{
+    type = integer, min = 1, max = 9, default = 3,
+    page = CookieExpress, translation = CookieExpress_VehicleClearLength,
+}

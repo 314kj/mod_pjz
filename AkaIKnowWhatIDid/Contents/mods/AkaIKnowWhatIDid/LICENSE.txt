@@ -1,0 +1,27 @@
+AKA mod line - "AKA - I Know What I Did" (AkaIKnowWhatIDid)
+Copyright (c) 2026 Kaanthe. All rights reserved.
+
+This mod is published by Kaanthe as part of the AKA mod line for
+Project Zomboid (Build 42).
+
+PERMITTED
+- Downloading, subscribing to and playing this mod, in single player and on
+  any Project Zomboid server, including servers that charge for access.
+- Running it on your own server alongside any other mods.
+- Reporting bugs, and quoting parts of the code when you do so.
+
+NOT PERMITTED WITHOUT WRITTEN PERMISSION FROM THE AUTHOR
+- Reuploading this mod, in whole or in part, to the Steam Workshop or to any
+  other site, with or without changes.
+- Publishing a derivative mod, port, translation or "fixed version".
+- Removing or altering this notice, the author name, or the mod id.
+
+NO WARRANTY
+This mod is provided "as is", without warranty of any kind. The author is not
+liable for any damage, save corruption or data loss arising from its use. Back
+up your save before installing any mod.
+
+Project Zomboid is a trademark of The Indie Stone. This mod is not made by,
+endorsed by, or affiliated with The Indie Stone.
+
+Contact: through the Steam Workshop page of this mod.

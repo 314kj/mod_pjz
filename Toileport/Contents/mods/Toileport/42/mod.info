@@ -1,0 +1,8 @@
+name=Toileport [MP]
+id=Toileport
+description=Flush-pipe teleport network. Admin registers base-game toilets as stations; players use travel tickets (sold via a vending machine) to warp toilet-to-toilet.
+poster=poster.png
+icon=icon.png
+author=KACHASIG
+modversion=0.1.0
+pzversion=42

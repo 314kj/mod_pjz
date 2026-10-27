@@ -1,0 +1,11 @@
+module Base
+{
+	item HF_TBKMap
+	{
+		DisplayCategory = Cartography,
+		ItemType 		= base:normal,
+		DisplayName 	= Island Map,
+		Icon 			= Map,
+		Weight 			= 0.1,
+	}
+}

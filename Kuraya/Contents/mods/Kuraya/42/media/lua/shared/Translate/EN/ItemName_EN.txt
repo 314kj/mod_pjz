@@ -1,0 +1,4 @@
+ItemName_EN = {
+    ItemName_Kuraya.CarSlip = "Vehicle Slip",
+    ItemName_Kuraya.PetSlip = "Animal Slip",
+}

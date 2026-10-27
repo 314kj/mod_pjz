@@ -1,0 +1,7 @@
+ItemName_EN = {
+	ItemName_Base.AkaElixir_Vigor = "Elixir of Tiredness",
+	ItemName_Base.AkaElixir_Relief = "Elixir of Pain",
+	ItemName_Base.AkaElixir_Settle = "Elixir of Sickness",
+	ItemName_Base.AkaElixir_Calm = "Elixir of Stress",
+	ItemName_Base.AkaElixir_Panacea = "Elixir of All",
+}

@@ -1,0 +1,8 @@
+name=Cookie Quest - Events, Missions & EXP Buffs
+id=CookieQuest
+author=lookchinnoi (AKA)
+description=CookieCheetah event system: mission sheets, A>B>C checkpoints, roles & kits, timed EXP buffs, penalties, radio hints. In-game admin panel.
+poster=poster.png
+icon=icon.png
+versionMin=42.13.0
+modversion=1.2.0

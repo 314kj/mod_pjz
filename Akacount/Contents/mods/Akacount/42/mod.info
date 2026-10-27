@@ -1,0 +1,6 @@
+name=Akacount
+id=Akacount
+description=HaftFull banking for Project Zomboid Build 42 [MP] - accounts, deposit/withdraw at a counter, card transfers, full double-entry ledger.
+poster=poster.png
+versionMin=42.0.0
+pzversion=42

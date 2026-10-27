@@ -1,0 +1,5 @@
+IG_UI_EN = {
+    IGUI_Kuraya_Lock     = "Lock position",
+    IGUI_Kuraya_Unlock   = "Unlock",
+    IGUI_Kuraya_ResetPos = "Reset position",
+}

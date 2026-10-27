@@ -1,0 +1,19 @@
+DunKa — horde-summoning cabinet with ranked key cards, a summon terminal, admin usage log, and boss music. Build 42, multiplayer-ready.
+
+[h1]Copyright & License[/h1]
+Created under the [b]AKA[/b] brand. Copyright (c) 2026 AKA & HaftFull. All Rights Reserved.
+[b]You may:[/b] subscribe and play; use it on your own private server.
+[b]You may NOT[/b] (without prior written permission): modify/edit, re-upload/redistribute, create forks/ports/derivatives, or claim authorship.
+
+[h1]Note on the "HaftFull" tag[/h1]
+HaftFull is the private server this mod was made for. The name is included only so the authors can recognise and keep track of their own work for easier maintenance — it is not a claim of anything else.
+
+[h1]Note on the word "Official"[/h1]
+On the poster, "official asset" means an official asset for our own private HaftFull server only. It is [b]NOT[/b] affiliated with or endorsed by The Indie Stone, and is not presented as an official Project Zomboid product. The wording exists only to discourage re-uploads or copies made without the authors' permission.
+
+[h1]Discord[/h1]
+[url=https://discord.gg/REPLACE_ME]HaftFull Discord[/url]
+
+[hr][/hr]
+Workshop ID: 3754761363
+Mod ID: DunKa

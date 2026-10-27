@@ -1,0 +1,17 @@
+version=1
+id=
+title=HF Island Map
+description=A readable island map sheet for the HF Special Event map.
+description=
+description=The item is Base.HF_EventMap - admin spawn only (Admin Panel > Items List).
+description=Right-click the item in your inventory and choose "Read: HF Island Map".
+description=
+description=ORANGE - islands, plots and player boxes
+description=GREEN  - resource islands
+description=
+description=Copyright (c) 2026 AKA - Authored by LOOKCHINNOL. All Rights Reserved.
+description=Same author as AkaShop, Akalogistics, AkaVehicleBlock,
+description=AKA - I Know What I Did, Traka and Kaandther.
+description=If a mod does not carry this notice, it is not from AKA.
+tags=Build 42;Items;Map
+visibility=public

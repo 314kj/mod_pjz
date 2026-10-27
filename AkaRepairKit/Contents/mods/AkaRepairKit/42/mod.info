@@ -1,0 +1,9 @@
+name=AKA - All-Weapon Repair Kit
+id=AkaRepairKit
+description=Repair cards that restore weapon condition. Guns and melee weapons both work, including weapons added by other mods.
+poster=poster.png
+icon=icon.png
+pzversion=42
+versionMin=42.0
+modversion=1.2.1
+author=AKA

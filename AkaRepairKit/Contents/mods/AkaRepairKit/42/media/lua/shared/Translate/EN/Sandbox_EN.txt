@@ -1,0 +1,24 @@
+Sandbox_EN = {
+	Sandbox_AkaRepairKit = "AKA - All-Weapon Repair Kit",
+
+	Sandbox_AkaRepairKit_Tier1Percent = "Card I - condition restored (%)",
+	Sandbox_AkaRepairKit_Tier1Percent_tooltip = "Percent of the weapon's max condition restored by Weapon Repair Card I.",
+
+	Sandbox_AkaRepairKit_Tier2Percent = "Card II - condition restored (%)",
+	Sandbox_AkaRepairKit_Tier2Percent_tooltip = "Percent of the weapon's max condition restored by Weapon Repair Card II.",
+
+	Sandbox_AkaRepairKit_Tier3Percent = "Card III - condition restored (%)",
+	Sandbox_AkaRepairKit_Tier3Percent_tooltip = "Percent of the weapon's max condition restored by Weapon Repair Card III.",
+
+	Sandbox_AkaRepairKit_Tier4Percent = "Card IV - condition restored (%)",
+	Sandbox_AkaRepairKit_Tier4Percent_tooltip = "Percent of the weapon's max condition restored by Weapon Repair Card IV.",
+
+	Sandbox_AkaRepairKit_Tier5Percent = "Card V - condition restored (%)",
+	Sandbox_AkaRepairKit_Tier5Percent_tooltip = "Percent of the weapon's max condition restored by Weapon Repair Card V. 100 = full repair.",
+
+	Sandbox_AkaRepairKit_AllowFirearms = "Cards work on firearms",
+	Sandbox_AkaRepairKit_AllowFirearms_tooltip = "ON by default: cards repair guns as well as melee weapons. Turn OFF for melee only - ranged weapons are then hidden from the card menu.",
+
+	Sandbox_AkaRepairKit_ReduceWear = "Cards reduce repair wear",
+	Sandbox_AkaRepairKit_ReduceWear_tooltip = "On = a card also lowers the weapon's repair counter (Card V resets it), so normal repairs keep working. Never raises it.",
+}

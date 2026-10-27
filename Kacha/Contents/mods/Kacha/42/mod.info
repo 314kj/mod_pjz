@@ -1,0 +1,14 @@
+name=Kacha B42 [MP]
+id=Kacha
+description=AKA BUS Kacha - admin-placeable gacha machine (5 skins), coin/cash tokens, tiered drops. MP-ready. Made for Haftfull.
+author=AKA for Haftfull
+copyright=(c) 2026 AKA & Haftfull. All Rights Reserved.
+license=Personal use only. No modify/reupload without permission. See LICENSE.txt
+poster=poster.png
+tiledef=set_aka 334
+tiledef=set_aka_plus 337
+tiledef=kacha_p2 340
+pack=set_aka_pack
+pack=set_aka_plus_pack
+pack=kacha_p2_pack
+icon=icon.png

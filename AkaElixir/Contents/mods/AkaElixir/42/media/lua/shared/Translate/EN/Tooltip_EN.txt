@@ -1,0 +1,7 @@
+Tooltip_EN = {
+	Tooltip_AkaElixir_Vigor = "Restores endurance to full and washes out fatigue and muscle stiffness. <LINE> Right-click to drink. One use.",
+	Tooltip_AkaElixir_Relief = "Kills pain and stiffness in every part of the body. <LINE> Does not close the wound causing it. <LINE> Right-click to drink. One use.",
+	Tooltip_AkaElixir_Settle = "Settles nausea, food sickness and poisoning. <LINE> Right-click to drink. One use.",
+	Tooltip_AkaElixir_Calm = "Clears unhappiness, stress, panic, fear and boredom. <LINE> Right-click to drink. One use.",
+	Tooltip_AkaElixir_Panacea = "Clears every debuff: everything the other four elixirs handle, plus hunger, thirst, wetness, dirt and blood, then shields you from all damage for a short time. <LINE> The shield ends. Zombie infection is not cured. <LINE> Right-click to drink. One use.",
+}

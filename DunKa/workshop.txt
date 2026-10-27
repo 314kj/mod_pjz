@@ -1,0 +1,6 @@
+version=1
+id=3754761363
+title=Dunka B42 [MP]
+description=Horde-summoning cabinet with ranked key cards, a summon terminal, admin log, and boss music. B42 MP-ready. (c) 2026 AKA & HaftFull - no re-upload/edit without permission.
+tags=Build 42
+visibility=public

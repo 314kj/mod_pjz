@@ -1,0 +1,296 @@
+VERSION = 1,
+
+/*  ASCII ONLY IN THIS FILE.
+    The dedicated-server settings editor parses every mod's sandbox-options.txt
+    to build its pages. Thai comments used to live here; they are gone on purpose.
+    Keep the Thai notes in the .lua files, not in a file the server GUI reads.
+
+    Every option below must have a matching line in
+        42/media/lua/shared/Translate/EN/Sandbox_EN.txt
+    harness/lint.py rule 7 fails the build if one is missing.
+
+    ---------------------------------------------------------------------------
+    0.6.5 - this page was rebuilt. 28 options on one page became 17 on three.
+
+    An option only survives if all three of these are true:
+      1. An admin CANNOT already change it from the shop's Admin tab in game.
+      2. A server owner can actually answer it without reading the Lua.
+      3. Getting it wrong changes how the server plays, not just how it looks.
+
+    Anything cut still works - it just uses the fixed value in KR_Const.lua.
+    Nothing was removed from the mod, only from this page.
+
+    Cut, and why:
+      RestockDays          - the item form sets restock per item already
+      SortWeightHF / CP    - list-sorting weights, nobody can answer them
+      HFSendMin            - a 10 point floor is not an economy lever
+      StampPER_STAMP       - two fields multiplied to answer one question
+      AuctionMAX_OPEN      - dead since 0.5, the slot system replaced it
+      AuctionRAISE_BP      - bid step, fine at 5%
+      AuctionANTISNIPE     - 2 minutes, a rule of the system not a taste
+      AuctionSlotMAX       - 10 is a spam guard, not a per-server number
+      AuctionPayDEPOSIT_BP - half up front is how the two-step payment works
+      AuctionPayWINDOW     - 24 real hours to pay the rest
+      CreditMIN_LOAN       - a 500 baht floor is not an economy lever
+
+    Money is entered in BAHT and rates in PERCENT on this page. The Lua works
+    in satang and basis points and multiplies back in one place (KR.svOpt in
+    KR_Const.lua). Nobody should have to type "500 basis points".
+
+    NOTE FOR AN EXISTING SERVER: the option names changed, so open the settings
+    page once after updating and check the values. Anything not touched falls
+    back to the defaults below, which are the numbers HaftFull already runs.
+    ---------------------------------------------------------------------------  */
+
+
+/*  ===========================================================================
+    PAGE 1 - Kuraya : the shop itself
+    =========================================================================== */
+
+/*  12 example items. Only does anything on a server that has never been
+    stocked - it never grows on top of items that are already there.
+    A real server stocks its own from the Admin tab.  */
+option Kuraya.SeedCatalog
+{
+    type = boolean, default = false,
+    page = Kuraya, translation = Kuraya_SeedCatalog,
+}
+
+/*  Player-to-player HF point transfers.
+    The fee is paid by the sender ON TOP of the amount, so the friend receives
+    exactly the number that was typed in.
+    Daily limit 0 means no limit.  */
+option Kuraya.HFSendFeePercent
+{
+    type = double, min = 0.0, max = 50.0, default = 5.0,
+    page = Kuraya, translation = Kuraya_HFSendFeePercent,
+}
+
+option Kuraya.HFSendDailyLimit
+{
+    type = integer, min = 0, max = 1000000, default = 0,
+    page = Kuraya, translation = Kuraya_HFSendDailyLimit,
+}
+
+/*  Loyalty card. Stamps are counted in PURCHASES, not in money spent.
+    That is deliberate: counting money means rich players farm the reward and
+    new players never see one. Three purchases earn one stamp.  */
+option Kuraya.StampsPerCard
+{
+    type = integer, min = 1, max = 30, default = 10,
+    page = Kuraya, translation = Kuraya_StampsPerCard,
+}
+
+option Kuraya.StampReward
+{
+    type = integer, min = 0, max = 100000, default = 200,
+    page = Kuraya, translation = Kuraya_StampReward,
+}
+
+
+/*  ===========================================================================
+    PAGE 2 - Kuraya Loans : borrowing, and what happens when it goes wrong
+    =========================================================================== */
+
+/*  Interest is charged ONCE when the money is taken out. It does not compound.
+    Flat on purpose: a player has to be able to do it in their head, as in
+    "borrow five thousand, pay back five thousand three hundred".  */
+option Kuraya.LoanInterestPercent
+{
+    type = double, min = 0.0, max = 100.0, default = 6.0,
+    page = KurayaLoan, translation = Kuraya_LoanInterestPercent,
+}
+
+/*  Charged again for every day a payment is late, and it keeps adding up.  */
+option Kuraya.LoanLateFeePercent
+{
+    type = double, min = 0.0, max = 100.0, default = 2.0,
+    page = KurayaLoan, translation = Kuraya_LoanLateFeePercent,
+}
+
+/*  Miss this many payments and the whole account freezes. Paying the loan off
+    lifts that by itself - no admin needed. Compare with ShopLockDebt below,
+    which does need an admin.  */
+option Kuraya.LoanMissedBeforeFreeze
+{
+    type = integer, min = 1, max = 20, default = 3,
+    page = KurayaLoan, translation = Kuraya_LoanMissedBeforeFreeze,
+}
+
+/*  Who is allowed to borrow at all.
+
+    With this ON a player must be in a safehouse and must have been in it for
+    LoanSafehouseDays days of REAL time - not survivor days. Dying and rolling
+    a new character does not reset it, because what is being measured is
+    whether this person is sticking around, not how old the character is.
+
+    Turn it OFF if the safehouse bridge misbehaves on your build. Kuraya reads
+    the SafeHouse API defensively and refuses everyone when it cannot read it,
+    which is the safe way round for a lending system but does mean nobody can
+    borrow. The server console prints what it found at boot.  */
+option Kuraya.LoanNeedSafehouse
+{
+    type = boolean, default = true,
+    page = KurayaLoan, translation = Kuraya_LoanNeedSafehouse,
+}
+
+option Kuraya.LoanSafehouseDays
+{
+    type = integer, min = 0, max = 60, default = 3,
+    page = KurayaLoan, translation = Kuraya_LoanSafehouseDays,
+}
+
+/*  The most any one player may borrow, no matter how high their CP rank is.
+
+    Ranks decide who gets MORE than whom (BRONZE 10,000 -> BLACK 120,000).
+    This decides the most the server is ever willing to lend to one person.
+    The two work together: the smaller of the two always wins, because a
+    ceiling you can raise by ranking up is not a ceiling.
+
+    0 turns it off - ranks alone decide, exactly as before this option existed.  */
+option Kuraya.LoanMaxCredit
+{
+    type = integer, min = 0, max = 100000000, default = 0,
+    page = KurayaLoan, translation = Kuraya_LoanMaxCredit,
+}
+
+/*  Everyone in one safehouse, added together, may not owe more than this.
+    It stops a group setting up a house together and borrowing one at a time
+    until they have a pile of money nobody intends to pay back.  */
+option Kuraya.LoanSafehouseMaxDebt
+{
+    type = integer, min = 0, max = 100000000, default = 10000,
+    page = KurayaLoan, translation = Kuraya_LoanSafehouseMaxDebt,
+}
+
+/*  Once a player's bank balance is this far BELOW zero the whole shop closes
+    to them - buying, bidding and transfers all stop. Paying the loan off does
+    NOT lift it. Only an admin can, from the Players tab, and every admin
+    online is told the moment it happens.  */
+option Kuraya.ShopLockDebt
+{
+    type = integer, min = 0, max = 100000000, default = 5000,
+    page = KurayaLoan, translation = Kuraya_ShopLockDebt,
+}
+
+
+/*  ===========================================================================
+    PAGE 3 - Kuraya Auction : the classifieds board
+
+    The board is OFF in 0.6.5 and the shop shows "coming soon". These settings
+    are here so it can be switched on later without a mod update.
+
+    When it is on, nothing is taken out of anyone's bag. Players list what they
+    are selling, the system runs the bidding and holds the cash, and the two of
+    them meet up in game to hand the goods over. That is deliberate: items in
+    B42 carry condition, ammo, sharpness and containers hold other items, and a
+    system that confiscates an item and "re-creates" it later loses all of that.
+    A half-empty rifle would come back full and a packed bag would come back
+    empty.
+    =========================================================================== */
+
+option Kuraya.AuctionEnabled
+{
+    type = boolean, default = false,
+    page = KurayaAuction, translation = Kuraya_AuctionEnabled,
+}
+
+/*  OFF leaves the board to admins only.  */
+option Kuraya.AuctionPlayerSell
+{
+    type = boolean, default = true,
+    page = KurayaAuction, translation = Kuraya_AuctionPlayerSell,
+}
+
+/*  Taken out of what the seller receives when a lot actually sells.  */
+option Kuraya.AuctionFeePercent
+{
+    type = double, min = 0.0, max = 50.0, default = 3.0,
+    page = KurayaAuction, translation = Kuraya_AuctionFeePercent,
+}
+
+/*  Everyone gets this many lots running at once for nothing. Extra slots are
+    bought in game and are PERMANENT - a player who stops playing for a month
+    still has them when they come back. Rented slots were considered and
+    rejected: losing something you already paid for is the worst feeling a
+    shop system can hand out. Ten slots is the ceiling either way.  */
+option Kuraya.AuctionFreeSlots
+{
+    type = integer, min = 1, max = 10, default = 1,
+    page = KurayaAuction, translation = Kuraya_AuctionFreeSlots,
+}
+
+option Kuraya.AuctionSlotPrice
+{
+    type = integer, min = 0, max = 10000000, default = 2500,
+    page = KurayaAuction, translation = Kuraya_AuctionSlotPrice,
+}
+
+/*  0.6.13 - vehicles.
+
+    The shop hands a vehicle over as a slip; unpacking it spawns the car in
+    front of the buyer. These three answer "what does the buyer actually get".
+
+    Condition is not an option on purpose. A car bought with money should not
+    arrive as a wreck - that is a bug, not a taste, and it is fixed in code.  */
+option Kuraya.CarGiveKey
+{
+    type = boolean, default = true,
+    page = Kuraya, translation = Kuraya_CarGiveKey,
+}
+
+option Kuraya.CarExtraItem
+{
+    type = string, default = ,
+    page = Kuraya, translation = Kuraya_CarExtraItem,
+}
+
+option Kuraya.CarExtraCount
+{
+    type = integer, min = 1, max = 20, default = 1,
+    page = Kuraya, translation = Kuraya_CarExtraCount,
+}
+
+/*  Pets  (0.6.16)
+
+    The shop hands an animal over as a slip; unpacking it puts the animal on
+    the tile in front of the buyer, indoors or out.
+
+    There is no "condition" here either, and for the same reason as cars: an
+    animal bought with money should not arrive starving. That is fixed in code.  */
+option Kuraya.PetNameFromSlip
+{
+    type = boolean, default = true,
+    page = Kuraya, translation = Kuraya_PetNameFromSlip,
+}
+
+option Kuraya.PetExtraItem
+{
+    type = string, default = ,
+    page = Kuraya, translation = Kuraya_PetExtraItem,
+}
+
+option Kuraya.PetExtraCount
+{
+    type = integer, min = 1, max = 20, default = 1,
+    page = Kuraya, translation = Kuraya_PetExtraCount,
+}
+
+/*  Skills  (0.7.0)
+
+    The shop's Admin page can list which players have reached a high level in a
+    crafting or survival skill. This is the level it starts counting from.
+
+    The server owner asked for 8 and up. It is a setting rather than a fixed
+    number because "8" is a taste, not a rule - a number written into the code
+    is a number that needs a new build to change.
+
+    Strength, Fitness, Sprinting and Sneaking are never listed. Those are the
+    game's Passive and Agility groups; the page only reads Crafting and
+    Survivalist, and it reads that grouping from the game at run time, so skills
+    added by other mods appear on their own.  */
+option Kuraya.SkillWatchFrom
+{
+    type = integer, min = 1, max = 10, default = 8,
+    page = Kuraya, translation = Kuraya_SkillWatchFrom,
+}

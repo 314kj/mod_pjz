@@ -1,0 +1,8 @@
+module Base
+{
+    sound Kacha_Spin
+    {
+        category = UI,
+        clip { file = media/sound/Kacha_Spin.ogg, distanceMin = 4, distanceMax = 18, is3D = false, reverbFactor = 0.1, volume = 0.9, loop = false, }
+    }
+}

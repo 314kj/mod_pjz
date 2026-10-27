@@ -1,0 +1,174 @@
+VERSION = 1,
+
+option AkaShop.Currency
+{
+    type = enum,
+    numValues = 3,
+    default = 1,
+    page = AkaShop,
+    translation = AkaShop_Currency,
+}
+
+option AkaShop.TaxPercent
+{
+    type = integer,
+    default = 0,
+    min = 0,
+    max = 90,
+    page = AkaShop,
+    translation = AkaShop_TaxPercent,
+}
+
+option AkaShop.MaxShopsPerPlayer
+{
+    type = integer,
+    default = 2,
+    min = 1,
+    max = 50,
+    page = AkaShop,
+    translation = AkaShop_MaxShopsPerPlayer,
+}
+
+option AkaShop.MaxListings
+{
+    type = integer,
+    default = 40,
+    min = 5,
+    max = 60,
+    page = AkaShop,
+    translation = AkaShop_MaxListings,
+}
+
+option AkaShop.ProtectMoveables
+{
+    type = boolean,
+    default = true,
+    page = AkaShop,
+    translation = AkaShop_ProtectMoveables,
+}
+
+option AkaShop.AdminCanEditAny
+{
+    type = boolean,
+    default = true,
+    page = AkaShop,
+    translation = AkaShop_AdminCanEditAny,
+}
+
+option AkaShop.AdminCanRegisterAnyObject
+{
+    type = boolean,
+    default = false,
+    page = AkaShop,
+    translation = AkaShop_AdminCanRegisterAnyObject,
+}
+
+option AkaShop.OwnerCanBuyOwnShop
+{
+    type = boolean,
+    default = false,
+    page = AkaShop,
+    translation = AkaShop_OwnerCanBuyOwnShop,
+}
+
+option AkaShop.StartCapacityKg
+{
+    type = integer, min = 5, max = 100, default = 20,
+    page = AkaShop, translation = AkaShop_StartCapacityKg,
+}
+
+option AkaShop.CapacityStepKg
+{
+    type = integer, min = 1, max = 50, default = 10,
+    page = AkaShop, translation = AkaShop_CapacityStepKg,
+}
+
+option AkaShop.MaxCapacityKg
+{
+    type = integer, min = 5, max = 1000, default = 100,
+    page = AkaShop, translation = AkaShop_MaxCapacityKg,
+}
+
+option AkaShop.CapacityPrice
+{
+    type = integer, min = 0, max = 999999, default = 2000,
+    page = AkaShop, translation = AkaShop_CapacityPrice,
+}
+
+option AkaShop.SalesDays
+{
+    type = integer, min = 1, max = 365, default = 60,
+    page = AkaShop, translation = AkaShop_SalesDays,
+}
+
+option AkaShop.SalesRecent
+{
+    type = integer, min = 0, max = 200, default = 30,
+    page = AkaShop, translation = AkaShop_SalesRecent,
+}
+
+option AkaShop.OnlyOwnTiles
+{
+    type = boolean, default = true,
+    page = AkaShop, translation = AkaShop_OnlyOwnTiles,
+}
+
+option AkaShop.RestrictOnlineHours
+{
+    type = boolean, default = false,
+    page = AkaShop, translation = AkaShop_RestrictOnlineHours,
+}
+
+option AkaShop.OnlineFromHour
+{
+    type = integer, min = 0, max = 23, default = 0,
+    page = AkaShop, translation = AkaShop_OnlineFromHour,
+}
+
+option AkaShop.OnlineToHour
+{
+    type = integer, min = 0, max = 23, default = 5,
+    page = AkaShop, translation = AkaShop_OnlineToHour,
+}
+
+option AkaShop.HoursUseRealClock
+{
+    type = boolean, default = true,
+    page = AkaShop, translation = AkaShop_HoursUseRealClock,
+}
+
+option AkaShop.RealClockUTCOffset
+{
+    type = integer, min = -12, max = 14, default = 7,
+    page = AkaShop, translation = AkaShop_RealClockUTCOffset,
+}
+
+option AkaShop.UseDistance
+{
+    type = integer, min = 1, max = 10, default = 3,
+    page = AkaShop, translation = AkaShop_UseDistance,
+}
+
+option AkaShop.OrderHours
+{
+    type = integer, min = 1, max = 168, default = 12,
+    page = AkaShop, translation = AkaShop_OrderHours,
+}
+
+option AkaShop.SellBudget
+{
+    type = integer, min = 1, max = 100000, default = 800,
+    page = AkaShop, translation = AkaShop_SellBudget,
+}
+
+option AkaShop.SellRate
+{
+    type = integer, min = 1, max = 1000, default = 10,
+    page = AkaShop, translation = AkaShop_SellRate,
+}
+
+option AkaShop.WithdrawMax
+{
+    type = integer, min = 100, max = 10000, default = 1000,
+    page = AkaShop, translation = AkaShop_WithdrawMax,
+}

@@ -1,0 +1,7 @@
+ItemName_EN = {
+	ItemName_Base.AkaRepairCard_1 = "Repair Card 5%",
+	ItemName_Base.AkaRepairCard_2 = "Repair Card 10%",
+	ItemName_Base.AkaRepairCard_3 = "Repair Card 20%",
+	ItemName_Base.AkaRepairCard_4 = "Repair Card 50%",
+	ItemName_Base.AkaRepairCard_5 = "Repair Card 100%",
+}

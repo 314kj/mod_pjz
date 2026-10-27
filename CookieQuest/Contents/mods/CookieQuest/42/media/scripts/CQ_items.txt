@@ -1,0 +1,16 @@
+module CookieQuest
+{
+    imports
+    {
+        Base
+    }
+
+    item MissionSheet
+    {
+        DisplayCategory = Literature,
+        ItemType = base:normal,
+        DisplayName = Mission Sheet,
+        Icon = CQ_MissionSheet,
+        Weight = 0.05,
+    }
+}

@@ -1,0 +1,27 @@
+Sandbox_TH = {
+    Sandbox_AkaIKWID = "AKA - I Know What I Did",
+
+    Sandbox_AkaIKWID_RestorePercent = "ได้ XP คืนกี่ %",
+    Sandbox_AkaIKWID_RestorePercent_tooltip = "ตายแล้วตัวใหม่อ่านสมุด จะได้คืนเท่านี้จากที่จดไว้ / 50 = ครึ่งเดียว, 100 = คืนหมด, 0 = ไม่ได้อะไรเลย",
+
+    Sandbox_AkaIKWID_WriteSeconds = "นั่งอ่าน / เขียน กี่วินาที",
+    Sandbox_AkaIKWID_WriteSeconds_tooltip = "กดสติกเกอร์แล้วต้องนั่งนิ่งกี่วินาที เดินหนีคือยกเลิก / 0 = เสร็จทันที ไม่ต้องรอ",
+
+    Sandbox_AkaIKWID_OncePerCharacter = "หนึ่งตัวละคร อ่านคืนได้ครั้งเดียว",
+    Sandbox_AkaIKWID_OncePerCharacter_tooltip = "เปิด: ตัวละครใหม่แต่ละตัวได้คืนครั้งเดียว แล้วหมดสิทธิ์ / ปิด: อ่านคืนซ้ำได้ไม่จำกัด",
+
+    Sandbox_AkaIKWID_IncludePassive = "จด ความฟิต กับ พละกำลัง ด้วย",
+    Sandbox_AkaIKWID_IncludePassive_tooltip = "ปิด: ความฟิตกับพละกำลัง จะไม่ถูกจด ไม่โชว์ในสมุด และไม่คืนให้ ไม่ว่าตอนนี้หรือในอนาคต ต่อให้เพิ่มขึ้นแค่ไหนก็ไม่นับ / เปิด: นับเหมือนสกิลทั่วไป",
+
+    Sandbox_AkaIKWID_RestoredCountsAsEarned = "XP ที่ได้คืนมา เอาไปจดซ้ำได้",
+    Sandbox_AkaIKWID_RestoredCountsAsEarned_tooltip = "ปิด: XP ที่สมุดคืนให้ จดกลับลงสมุดไม่ได้ ตัวเลขจึงไม่พองขึ้นเรื่อย ๆ / เปิด: จดซ้ำได้ XP ก้อนเดิมจะถูกส่งต่อทุกชาติและโตขึ้นไม่มีที่สิ้นสุด",
+
+    Sandbox_AkaIKWID_BaselineExisting = "ตัวละครที่มีอยู่ก่อนแล้ว เริ่มนับจากศูนย์",
+    Sandbox_AkaIKWID_BaselineExisting_tooltip = "เปิด: สกิลที่คนมีอยู่แล้วตอนลงม็อด ไม่นับว่าหามาเอง นับเฉพาะที่ทำได้ตั้งแต่วันนี้ไป / ปิด: นับทุกอย่างที่มีอยู่ รวมของจาก Trait และอาชีพด้วย / ตัดสินตอนที่ตัวละครนั้นล็อกอินครั้งแรกเท่านั้น หลังจากนั้นแก้ไม่ได้แล้ว",
+
+    Sandbox_AkaIKWID_ReminderDays = "เตือนเมื่อค้างไว้กี่วัน",
+    Sandbox_AkaIKWID_ReminderDays_tooltip = "ถ้ามีสกิลที่ทำได้แต่สมุดยังไม่รู้ และไม่ได้จดมานานเท่านี้วัน จะเตือนวันละครั้ง / 0 = ไม่ต้องเตือน",
+
+    Sandbox_AkaIKWID_AutoRecordDays = "ให้สมุดจดเองทุกกี่วัน",
+    Sandbox_AkaIKWID_AutoRecordDays_tooltip = "0 = จดเมื่อกดสติกเกอร์เท่านั้น / ใส่ตัวเลขอื่น: สมุดจะจดให้เองตามรอบนั้นแบบเงียบ ๆ กันลืมจนเสียของทั้งชีวิต",
+}

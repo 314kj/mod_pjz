@@ -1,0 +1,14 @@
+/* AKA . KACHA - reel decoration icons (mushroom cats). [Kacha B42 MP]
+   Item-backed so getNormalTexture() loads them (loose PNGs don't load).
+   Excluded from the admin item picker. */
+module Base
+{
+    item KachaFX_0 { DisplayCategory = Junk, ItemType = base:normal, Weight = 0.01, DisplayName = Kacha FX, Icon = KachaMush_0, }
+    item KachaFX_1 { DisplayCategory = Junk, ItemType = base:normal, Weight = 0.01, DisplayName = Kacha FX, Icon = KachaMush_1, }
+    item KachaFX_2 { DisplayCategory = Junk, ItemType = base:normal, Weight = 0.01, DisplayName = Kacha FX, Icon = KachaMush_2, }
+    item KachaFX_3 { DisplayCategory = Junk, ItemType = base:normal, Weight = 0.01, DisplayName = Kacha FX, Icon = KachaMush_3, }
+    item KachaFX_4 { DisplayCategory = Junk, ItemType = base:normal, Weight = 0.01, DisplayName = Kacha FX, Icon = KachaMush_4, }
+    item KachaFX_5 { DisplayCategory = Junk, ItemType = base:normal, Weight = 0.01, DisplayName = Kacha FX, Icon = KachaMush_5, }
+    item KachaFX_6 { DisplayCategory = Junk, ItemType = base:normal, Weight = 0.01, DisplayName = Kacha FX, Icon = KachaMush_6, }
+    item KachaFX_7 { DisplayCategory = Junk, ItemType = base:normal, Weight = 0.01, DisplayName = Kacha FX, Icon = KachaMush_7, }
+}

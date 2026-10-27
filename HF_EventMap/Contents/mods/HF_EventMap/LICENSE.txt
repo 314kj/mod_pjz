@@ -1,0 +1,21 @@
+HF Island Map (HF_EventMap)
+Copyright (c) 2026 AKA - Authored by LOOKCHINNOL. All Rights Reserved.
+
+Same author as AkaShop, Akalogistics, AkaVehicleBlock,
+AKA - I Know What I Did, Traka and Kaandther.
+If a mod does not carry this notice, it is not from AKA.
+
+TERMS
+-----
+1. You may install and run this mod on your own game client or server.
+2. You may not re-upload, repack or redistribute this mod, in whole or in
+   part, on Steam Workshop or anywhere else, without written permission.
+3. You may not remove or alter this notice or the author credit.
+
+MAP DATA
+--------
+The island shapes drawn on the map sheet were generated from the compiled
+map data of the "HF_specialevent" map mod (Workshop id 3787958184).
+No file from that mod is copied into or shipped with this mod - only a
+rendered picture of the island outlines produced from it.
+This mod does not modify, replace or contain the map mod itself.

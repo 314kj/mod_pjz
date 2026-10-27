@@ -1,0 +1,12 @@
+name=CanCamp [MP]
+id=CanCamp
+description=Pocket-dimension camping: tent kits, claim, warp, admin panel. Made for Haftfull.
+author=AKA for Haftfull
+copyright=(c) 2026 AKA & Haftfull. All Rights Reserved.
+license=Personal use only. No modify/reupload without permission. See LICENSE.txt
+versionMin=42.0.0
+modversion=0.4.2
+tiledef=camp_hf 336
+pack=camp_hf_pack
+poster=poster.png
+icon=icon.png

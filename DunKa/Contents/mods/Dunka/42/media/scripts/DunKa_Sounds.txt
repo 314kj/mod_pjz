@@ -1,0 +1,8 @@
+module Base
+{
+    sound DunKa_BossFight
+    {
+        category = UI,
+        clip { file = media/sound/BossFight.ogg, distanceMin = 8, distanceMax = 50, is3D = true, reverbFactor = 0.1, volume = 1.0, loop = false, }
+    }
+}

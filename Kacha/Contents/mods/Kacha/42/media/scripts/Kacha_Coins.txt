@@ -1,0 +1,13 @@
+/* ============================================================
+   AKA . KACHA  -  5 coloured coins           [Kacha B42 MP]
+   Each machine can be bound to ONE coin colour (or Cash).
+   B42 syntax: ItemType = base:normal
+   ============================================================ */
+module Base
+{
+    item KachaCoinRed    { DisplayCategory = Money, ItemType = base:normal, Weight = 0.01, DisplayName = Kacha Coin (Red),    Icon = KachaCoinRed, }
+    item KachaCoinCyan   { DisplayCategory = Money, ItemType = base:normal, Weight = 0.01, DisplayName = Kacha Coin (Cyan),   Icon = KachaCoinCyan, }
+    item KachaCoinPurple { DisplayCategory = Money, ItemType = base:normal, Weight = 0.01, DisplayName = Kacha Coin (Purple), Icon = KachaCoinPurple, }
+    item KachaCoinGold   { DisplayCategory = Money, ItemType = base:normal, Weight = 0.01, DisplayName = Kacha Coin (Gold),   Icon = KachaCoinGold, }
+    item KachaCoinLime   { DisplayCategory = Money, ItemType = base:normal, Weight = 0.01, DisplayName = Kacha Coin (Lime),   Icon = KachaCoinLime, }
+}

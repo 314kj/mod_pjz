@@ -1,0 +1,63 @@
+module Base
+{
+    /*
+     * Two recipes instead of one recipe with a [A;B] input list, on purpose:
+     * a wrong list separator kills the whole script file, two plain recipes cannot.
+     *
+     * NO OnTest / OnCreate hooks here. B42 calls OnTest once PER INPUT ITEM,
+     * every frame, from the crafting window's prerender
+     * (BaseCraftingLogic.isInputSatisfied -> CraftRecipe.OnTestItem). A player
+     * standing with the craft menu open produced a 6 MB console log. Never put
+     * a Lua hook on a recipe again.
+     *
+     * EVERY FIELD BELOW IS ONE THAT HAS ACTUALLY LOADED IN THIS PLAYER'S GAME.
+     *
+     * v2.7.1 changed three of them on a guess - Tags -> tags, a vanilla
+     * category, and timedAction = Craft - to chase a crash in the hand-craft
+     * window. None of the three was ever verified against a working B42 recipe,
+     * and a script field the parser does not know is exactly the kind of thing
+     * that stops a DEDICATED SERVER from starting (a B41-syntax script is what
+     * killed the Miku bags mod on 42.20).
+     *
+     * So this file is back to the form that shipped from v1 to v2.7.0 and that
+     * crafted real diaries on this server. If the hand-craft window still
+     * throws, fix that with evidence, not with more unverified fields.
+     */
+    craftRecipe AkaMakeDiaryFromDiary1
+    {
+        time            = 300,
+        category        = AkaDiary,
+        Tags            = InHandCraft,
+        needToBeLearn   = false,
+        AllowBatchCraft = false,
+        inputs
+        {
+            item 1 [Base.Diary1],
+            item 3 [Base.Phonebook],
+            item 2 [Base.Scotchtape],
+        }
+        outputs
+        {
+            item 1 Base.AkaDiary,
+        }
+    }
+
+    craftRecipe AkaMakeDiaryFromDiary2
+    {
+        time            = 300,
+        category        = AkaDiary,
+        Tags            = InHandCraft,
+        needToBeLearn   = false,
+        AllowBatchCraft = false,
+        inputs
+        {
+            item 1 [Base.Diary2],
+            item 3 [Base.Phonebook],
+            item 2 [Base.Scotchtape],
+        }
+        outputs
+        {
+            item 1 Base.AkaDiary,
+        }
+    }
+}

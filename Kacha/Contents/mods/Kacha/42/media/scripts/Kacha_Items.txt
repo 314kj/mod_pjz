@@ -1,0 +1,22 @@
+/* ============================================================
+   AKA . KACHA  -  items                          [Kacha B42 MP]
+   KachaCoin : token item used to spin the Kacha machine
+   B42 syntax: ItemType = base:normal  (NOT Type = Normal)
+
+   NOTE: the previous build set WorldStaticModel = KachaCoin with a
+   custom model whose mesh (WorldItems/Pancakes) failed to load, so
+   DROPPING the coin (which has to instantiate the world model) failed
+   silently. WorldStaticModel is removed entirely -> the coin uses the
+   engine default world appearance and drops / throws normally.
+   ============================================================ */
+module Base
+{
+    item KachaCoin
+    {
+        DisplayCategory     = Money,
+        ItemType            = base:normal,
+        Weight              = 0.01,
+        DisplayName         = Kacha Coin,
+        Icon                = KachaCoin,
+    }
+}

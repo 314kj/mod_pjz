@@ -1,0 +1,6 @@
+
+option DunKa.BossSound
+{
+    type = boolean, default = true,
+    page = DunKa, translation = DunKa_BossSound,
+}

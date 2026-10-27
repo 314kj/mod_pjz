@@ -1,0 +1,17 @@
+{
+    "Sandbox_CookieExpress": "Cookie Express",
+    "Sandbox_CookieExpress_VehicleSearchRadius": "Vehicle slip: search radius (tiles)",
+    "Sandbox_CookieExpress_VehicleSearchRadius_tooltip": "The slip tries 2, 3 and 1 tiles in front of the player first (like Kuraya), then looks around up to this distance. Default 3.",
+    "Sandbox_CookieExpress_VehicleBlockWater": "Vehicle slip: not on water",
+    "Sandbox_CookieExpress_VehicleBlockWater_tooltip": "The square the car is placed on must not be water.",
+    "Sandbox_CookieExpress_VehicleBlockBuildings": "Vehicle slip: not inside buildings",
+    "Sandbox_CookieExpress_VehicleBlockBuildings_tooltip": "The square the car is placed on must be outdoors (like Kuraya); the player can stand anywhere. Turn off to allow garages.",
+    "Sandbox_CookieExpress_VehicleBlockVehicles": "Vehicle slip: not on other vehicles",
+    "Sandbox_CookieExpress_VehicleBlockVehicles_tooltip": "The square the car is placed on must not already have a car. Cars spawned on top of each other get thrown around and damaged. Keep this on.",
+    "Sandbox_CookieExpress_VehicleBlockObstacles": "Vehicle slip: needs an area free of objects",
+    "Sandbox_CookieExpress_VehicleBlockObstacles_tooltip": "Off: grass, bushes, trees, fences and furniture are ignored. On: the area below around the car must be free of them. Walls / solid squares are never used anyway.",
+    "Sandbox_CookieExpress_VehicleClearWidth": "Vehicle slip: object-free area width (tiles)",
+    "Sandbox_CookieExpress_VehicleClearWidth_tooltip": "Only used when the option above is on. Use odd numbers. A car is about 3 wide.",
+    "Sandbox_CookieExpress_VehicleClearLength": "Vehicle slip: object-free area length (tiles)",
+    "Sandbox_CookieExpress_VehicleClearLength_tooltip": "Only used when the option above is on. Use odd numbers. A car is about 7 long."
+}

@@ -1,0 +1,52 @@
+module Base
+{
+	item AkaElixir_Vigor
+	{
+		DisplayName		= Elixir of Tiredness,
+		DisplayCategory	= FirstAid,
+		ItemType		= base:normal,
+		Icon			= AkaElixir_Vigor,
+		Weight			= 0.3,
+		Tooltip			= Tooltip_AkaElixir_Vigor,
+	}
+
+	item AkaElixir_Relief
+	{
+		DisplayName		= Elixir of Pain,
+		DisplayCategory	= FirstAid,
+		ItemType		= base:normal,
+		Icon			= AkaElixir_Relief,
+		Weight			= 0.3,
+		Tooltip			= Tooltip_AkaElixir_Relief,
+	}
+
+	item AkaElixir_Settle
+	{
+		DisplayName		= Elixir of Sickness,
+		DisplayCategory	= FirstAid,
+		ItemType		= base:normal,
+		Icon			= AkaElixir_Settle,
+		Weight			= 0.3,
+		Tooltip			= Tooltip_AkaElixir_Settle,
+	}
+
+	item AkaElixir_Calm
+	{
+		DisplayName		= Elixir of Stress,
+		DisplayCategory	= FirstAid,
+		ItemType		= base:normal,
+		Icon			= AkaElixir_Calm,
+		Weight			= 0.3,
+		Tooltip			= Tooltip_AkaElixir_Calm,
+	}
+
+	item AkaElixir_Panacea
+	{
+		DisplayName		= Elixir of All,
+		DisplayCategory	= FirstAid,
+		ItemType		= base:normal,
+		Icon			= AkaElixir_Panacea,
+		Weight			= 0.4,
+		Tooltip			= Tooltip_AkaElixir_Panacea,
+	}
+}

@@ -1,0 +1,76 @@
+Sandbox_EN = {
+
+    Sandbox_HFTax = "HF Tax",
+    --
+    -- cycles
+    --
+    Sandbox_HFTax_HouseCycleDays = "House bill cycle (real days)",
+    Sandbox_HFTax_HouseCycleDays_tooltip = "How often a safehouse is billed, in REAL days - not in-game days. 7 means a new house bill every 7 real days.",
+
+    Sandbox_HFTax_PersonalCycleDays = "Personal bill cycle (real days)",
+    Sandbox_HFTax_PersonalCycleDays_tooltip = "How often each player is billed the flat personal tax, in REAL days.",
+
+    Sandbox_HFTax_PersonalTaxRate = "Personal tax per cycle",
+    Sandbox_HFTax_PersonalTaxRate_tooltip = "Flat amount every player owes each personal cycle, whether or not they own a safehouse. Set to 0 to switch personal tax off.",
+    --
+    -- deadlines and late fee
+    --
+    Sandbox_HFTax_DueDays = "Days to pay before overdue",
+    Sandbox_HFTax_DueDays_tooltip = "Real days between a bill being issued and it going overdue. The late fee only starts after this.",
+
+    Sandbox_HFTax_CutoffDays = "Overdue days before water/power cut",
+    Sandbox_HFTax_CutoffDays_tooltip = "Real days a bill can stay overdue before the safehouse loses water and power. Counted from the due date, not the issue date.",
+
+    Sandbox_HFTax_DailyPenaltyPercent = "Late fee per day (%)",
+    Sandbox_HFTax_DailyPenaltyPercent_tooltip = "Percent of the bill added for each real day it is late. 2 means a 460 bill grows by about 9 per day. Set to 0 for no late fee.",
+
+    Sandbox_HFTax_PendingLeaveDays = "Grace days for a departed owner",
+    Sandbox_HFTax_PendingLeaveDays_tooltip = "Real days a safehouse keeps being billed after its owner stops playing, before the mod stops chasing it.",
+
+    Sandbox_HFTax_BannerCooldownHours = "Overdue popup cooldown (hours)",
+    Sandbox_HFTax_BannerCooldownHours_tooltip = "Real hours before the overdue notice can appear to the same player again. Raise this if players find it nagging.",
+    Sandbox_HFTax_TimezoneOffsetHours = "Timezone offset from UTC (hours)",
+    Sandbox_HFTax_TimezoneOffsetHours_tooltip = "Only changes the date printed on a bill. The server clock is UTC; set 7 for Thailand, -5 for US Eastern. Billing itself is unaffected.",
+    --
+    -- payment methods
+    --
+    Sandbox_HFTax_AllowCash = "Allow paying with cash",
+    Sandbox_HFTax_AllowCash_tooltip = "Sets the STARTING value only. Admins can change it in-game afterwards, and that in-game choice wins on an existing save.",
+
+    Sandbox_HFTax_AllowBank = "Allow paying from the bank",
+    Sandbox_HFTax_AllowBank_tooltip = "Sets the STARTING value only. Needs a banking mod (Akacount) present. Admins can change it in-game afterwards.",
+    --
+    -- zone: Standard
+    --
+    Sandbox_HFTax_StdRatePerTile = "Standard zone: price per tile",
+    Sandbox_HFTax_StdRatePerTile_tooltip = "Charged per floor tile of the safehouse each cycle. A 12x9 house is 108 tiles, so 1.0 here is 108 per cycle.",
+
+    Sandbox_HFTax_StdFreeMembers = "Standard zone: free members",
+    Sandbox_HFTax_StdFreeMembers_tooltip = "How many safehouse members are included before the per-member charge starts.",
+
+    Sandbox_HFTax_StdRatePerExtraMember = "Standard zone: price per extra member",
+    Sandbox_HFTax_StdRatePerExtraMember_tooltip = "Charged for each member above the free allowance, each cycle.",
+    --
+    -- zone: VIP
+    --
+    Sandbox_HFTax_VipRatePerTile = "VIP zone: price per tile",
+    Sandbox_HFTax_VipRatePerTile_tooltip = "Same as the Standard rate, for safehouses an admin has put in the VIP zone.",
+
+    Sandbox_HFTax_VipFreeMembers = "VIP zone: free members",
+    Sandbox_HFTax_VipFreeMembers_tooltip = "Member allowance for VIP zone safehouses.",
+
+    Sandbox_HFTax_VipRatePerExtraMember = "VIP zone: price per extra member",
+    Sandbox_HFTax_VipRatePerExtraMember_tooltip = "Per-member charge above the allowance for VIP zone safehouses.",
+    --
+    -- zone: Commercial
+    --
+    Sandbox_HFTax_ComRatePerTile = "Commercial zone: price per tile",
+    Sandbox_HFTax_ComRatePerTile_tooltip = "Same as the Standard rate, for safehouses an admin has put in the Commercial zone.",
+
+    Sandbox_HFTax_ComFreeMembers = "Commercial zone: free members",
+    Sandbox_HFTax_ComFreeMembers_tooltip = "Member allowance for Commercial zone safehouses.",
+
+    Sandbox_HFTax_ComRatePerExtraMember = "Commercial zone: price per extra member",
+    Sandbox_HFTax_ComRatePerExtraMember_tooltip = "Per-member charge above the allowance for Commercial zone safehouses.",
+
+}

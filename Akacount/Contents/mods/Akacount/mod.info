@@ -1,0 +1,13 @@
+name=Akacount
+id=Akacount
+description=HaftFull banking for Project Zomboid Build 42 [MP] - accounts, deposit/withdraw at a counter, card transfers, full double-entry ledger.
+description=
+description=Copyright (c) 2026 AKA - Authored by LOOKCHINNOL. All Rights Reserved.
+poster=poster.png
+icon=icon.png
+author=AKA
+url=https://steamcommunity.com/sharedfiles/filedetails/?id=3779906527
+versionMin=42.0.0
+pzversion=42
+modversion=0.3.4
+copyright=Copyright (c) 2026 AKA - Authored by LOOKCHINNOL. All Rights Reserved.

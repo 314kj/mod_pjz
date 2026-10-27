@@ -1,0 +1,51 @@
+/*
+================================================================
+  PROJECT DUNKA  [MP]  --  Horde Box ENTITY        KACHASIG
+  B42 entity/component buildable -> Build menu, category DunKa.
+  SINGLE face only: declaring the same sprite on multiple faces
+  registers a duplicate tile and aborts world load
+  (WorldDictionaryException). One face = one tile = safe.
+================================================================
+*/
+
+module Base
+{
+    xuiSkin default
+    {
+        entity ES_DunKa_HordeBox
+        {
+            LuaWindowClass = ISEntityWindow,
+            DisplayName    = DunKa_HordeBox,
+            Icon           = horde_aka_0,   /* loaded tile sprite */
+        }
+    }
+
+    entity DunKa_HordeBox
+    {
+        component UiConfig
+        {
+            xuiSkin     = default,
+            entityStyle = ES_DunKa_HordeBox,
+            uiEnabled   = false,
+        }
+
+        component SpriteConfig
+        {
+            skillBaseHealth = 300,
+            dontNeedFrame   = true,
+
+            face S { layer { row = horde_aka_0, } }
+        }
+
+        component CraftRecipe
+        {
+            timedAction = BuildWallMetal,
+            time        = 200,
+            category    = DunKa,
+            inputs
+            {
+                item 1 [Base.DunKa_BoxKit],
+            }
+        }
+    }
+}

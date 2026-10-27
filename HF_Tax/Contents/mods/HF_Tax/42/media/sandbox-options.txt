@@ -1,0 +1,143 @@
+VERSION = 1,
+
+/*
+    HF Tax - sandbox settings
+    Original work: Copyright (c) 2026 matasa. All Rights Reserved.
+    UI revision and sandbox options: AKA (LOOKCHINNOL), with the author's permission.
+
+    Every option here is read by HFTax_Config.lua and used by the server when it
+    generates and ages bills. Nothing in this file is decoration: if a value can
+    be set, it changes what players are charged.
+*/
+
+/* ---------------------------------------------------------------- cycles -- */
+
+option HFTax.HouseCycleDays
+{
+    type = double, min = 0.05, max = 30.0, default = 1.0,
+    page = HFTax, translation = HFTax_HouseCycleDays,
+}
+
+option HFTax.PersonalCycleDays
+{
+    type = double, min = 0.05, max = 30.0, default = 1.0,
+    page = HFTax, translation = HFTax_PersonalCycleDays,
+}
+
+option HFTax.PersonalTaxRate
+{
+    type = integer, min = 0, max = 100000, default = 100,
+    page = HFTax, translation = HFTax_PersonalTaxRate,
+}
+
+/* ------------------------------------------------- deadlines and penalty -- */
+
+option HFTax.DueDays
+{
+    type = double, min = 0.05, max = 30.0, default = 1.0,
+    page = HFTax, translation = HFTax_DueDays,
+}
+
+option HFTax.CutoffDays
+{
+    type = double, min = 0.05, max = 30.0, default = 2.0,
+    page = HFTax, translation = HFTax_CutoffDays,
+}
+
+option HFTax.DailyPenaltyPercent
+{
+    type = double, min = 0.0, max = 100.0, default = 2.0,
+    page = HFTax, translation = HFTax_DailyPenaltyPercent,
+}
+
+option HFTax.PendingLeaveDays
+{
+    type = double, min = 0.0, max = 60.0, default = 3.0,
+    page = HFTax, translation = HFTax_PendingLeaveDays,
+}
+
+option HFTax.BannerCooldownHours
+{
+    type = double, min = 0.0, max = 48.0, default = 2.0,
+    page = HFTax, translation = HFTax_BannerCooldownHours,
+}
+
+option HFTax.TimezoneOffsetHours
+{
+    type = double, min = -12.0, max = 14.0, default = 0.0,
+    page = HFTax, translation = HFTax_TimezoneOffsetHours,
+}
+
+/* --------------------------------------------------------- payment gates -- */
+
+option HFTax.AllowCash
+{
+    type = boolean, default = true,
+    page = HFTax, translation = HFTax_AllowCash,
+}
+
+option HFTax.AllowBank
+{
+    type = boolean, default = true,
+    page = HFTax, translation = HFTax_AllowBank,
+}
+
+/* ------------------------------------------------- zone: Standard ---------*/
+
+option HFTax.StdRatePerTile
+{
+    type = double, min = 0.0, max = 500.0, default = 1.0,
+    page = HFTax, translation = HFTax_StdRatePerTile,
+}
+
+option HFTax.StdFreeMembers
+{
+    type = integer, min = 0, max = 64, default = 4,
+    page = HFTax, translation = HFTax_StdFreeMembers,
+}
+
+option HFTax.StdRatePerExtraMember
+{
+    type = integer, min = 0, max = 100000, default = 50,
+    page = HFTax, translation = HFTax_StdRatePerExtraMember,
+}
+
+/* ------------------------------------------------------ zone: VIP ---------*/
+
+option HFTax.VipRatePerTile
+{
+    type = double, min = 0.0, max = 500.0, default = 2.0,
+    page = HFTax, translation = HFTax_VipRatePerTile,
+}
+
+option HFTax.VipFreeMembers
+{
+    type = integer, min = 0, max = 64, default = 8,
+    page = HFTax, translation = HFTax_VipFreeMembers,
+}
+
+option HFTax.VipRatePerExtraMember
+{
+    type = integer, min = 0, max = 100000, default = 25,
+    page = HFTax, translation = HFTax_VipRatePerExtraMember,
+}
+
+/* ----------------------------------------------- zone: Commercial ---------*/
+
+option HFTax.ComRatePerTile
+{
+    type = double, min = 0.0, max = 500.0, default = 3.0,
+    page = HFTax, translation = HFTax_ComRatePerTile,
+}
+
+option HFTax.ComFreeMembers
+{
+    type = integer, min = 0, max = 64, default = 2,
+    page = HFTax, translation = HFTax_ComFreeMembers,
+}
+
+option HFTax.ComRatePerExtraMember
+{
+    type = integer, min = 0, max = 100000, default = 100,
+    page = HFTax, translation = HFTax_ComRatePerExtraMember,
+}

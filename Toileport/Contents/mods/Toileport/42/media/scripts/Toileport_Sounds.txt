@@ -1,0 +1,13 @@
+module Base
+{
+    sound Toileport_Flush
+    {
+        category = World,
+        is3D = false,
+        clip
+        {
+            file = media/sound/Toileport_Flush.ogg,
+            volume = 1.0,
+        }
+    }
+}

@@ -1,0 +1,10 @@
+Toileport [MP] - Project Zomboid B42 mod
+Copyright (c) 2026 KACHASIG. All Rights Reserved.
+
+This mod and its source code, assets, and design are the original work of
+KACHASIG. You MAY use it on your own server and modify it for personal use.
+You MAY NOT re-upload, repackage, redistribute, or publish this mod or any
+derivative of it (in whole or in part) under another name or account without
+the author's written permission.
+
+Authorship fingerprint: VG9pbGVwb3J0OktBQ0hBU0lHOjIwMjY6YWxsLXJpZ2h0cy1yZXNlcnZlZA==

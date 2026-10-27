@@ -1,0 +1,6 @@
+ItemName_EN = {
+    ItemName_Base.AkacountCard        = "Akacount Card",
+    ItemName_Base.AkacountCardSlate   = "Akacount Card",
+    ItemName_Base.AkacountCardForest  = "Akacount Card",
+    ItemName_Base.AkacountCardEmber   = "Akacount Card",
+}

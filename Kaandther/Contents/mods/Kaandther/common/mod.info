@@ -1,0 +1,7 @@
+name=Kaandther
+id=Kaandther
+description=RO-style item enhancement plus-upgrade for B42 Multiplayer.
+poster=poster.png
+versionMin=42.0.0
+pack=aka_table_plus_pack
+tiledef=aka_table_plus 700

@@ -1,0 +1,32 @@
+module Base
+{
+    item kaandther_red_ball
+    {
+        ItemType = base:normal,
+        DisplayCategory = Material,
+        Weight = 0.05,
+        Icon = kaandther_red_ball,
+        DisplayName = Red Mushroom,
+        Tooltip = kaandther_red_ball_tt,
+    }
+
+    item kaandther_gold_ball
+    {
+        ItemType = base:normal,
+        DisplayCategory = Material,
+        Weight = 0.05,
+        Icon = kaandther_gold_ball,
+        DisplayName = Gold Mushroom,
+        Tooltip = kaandther_gold_ball_tt,
+    }
+
+    item kaandther_blue_mushroom
+    {
+        ItemType = base:normal,
+        DisplayCategory = Material,
+        Weight = 0.03,
+        Icon = kaandther_blue_mushroom,
+        DisplayName = Blue Mushroom,
+        Tooltip = kaandther_blue_mushroom_tt,
+    }
+}

@@ -1,0 +1,43 @@
+VERSION = 1,
+
+option AkaRepairKit.Tier1Percent
+{
+	type = integer, default = 5, min = 1, max = 100,
+	page = AkaRepairKit, translation = AkaRepairKit_Tier1Percent,
+}
+
+option AkaRepairKit.Tier2Percent
+{
+	type = integer, default = 10, min = 1, max = 100,
+	page = AkaRepairKit, translation = AkaRepairKit_Tier2Percent,
+}
+
+option AkaRepairKit.Tier3Percent
+{
+	type = integer, default = 20, min = 1, max = 100,
+	page = AkaRepairKit, translation = AkaRepairKit_Tier3Percent,
+}
+
+option AkaRepairKit.Tier4Percent
+{
+	type = integer, default = 50, min = 1, max = 100,
+	page = AkaRepairKit, translation = AkaRepairKit_Tier4Percent,
+}
+
+option AkaRepairKit.Tier5Percent
+{
+	type = integer, default = 100, min = 1, max = 100,
+	page = AkaRepairKit, translation = AkaRepairKit_Tier5Percent,
+}
+
+option AkaRepairKit.AllowFirearms
+{
+	type = boolean, default = true,
+	page = AkaRepairKit, translation = AkaRepairKit_AllowFirearms,
+}
+
+option AkaRepairKit.ReduceWear
+{
+	type = boolean, default = true,
+	page = AkaRepairKit, translation = AkaRepairKit_ReduceWear,
+}

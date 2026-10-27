@@ -1,0 +1,8 @@
+Sandbox_EN = {
+    Sandbox_Kaandther = "Kaandther Enhancement",
+    Sandbox_Kaandther_BlueCost = "Blue Mushrooms used per enhance attempt",
+    Sandbox_Kaandther_BlueDrop = "Blue Mushroom zombie drop chance (%)",
+    Sandbox_Kaandther_RedGuard = "Red Mushroom: chance to block a tier drop (%)",
+    Sandbox_Kaandther_GoldGuard = "Gold Mushroom: chance to block a tier drop (%)",
+    Sandbox_Kaandther_ForgeTime = "Manual enhance time per attempt (seconds)",
+}

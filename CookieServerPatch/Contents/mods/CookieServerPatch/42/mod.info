@@ -1,0 +1,5 @@
+name=Cookie - Server Patches
+id=CookieServerPatch
+description=Small fixes for the CookieCheetah server. Building Clipboard [B42]: fixes the staff check so the mod's own 'Who can use' sandbox option works. PhunMart: never sells items from Rabbit, nangongyiyi or Bundle Up.
+loadModAfter=\BuildingClipboardB42,\phunmart2
+versionMin=42.0.0

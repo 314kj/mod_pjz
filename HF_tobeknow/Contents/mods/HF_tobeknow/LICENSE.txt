@@ -1,0 +1,27 @@
+HF_tobeknow
+Copyright (c) 2026 AKA - Authored by LOOKCHINNOL. All Rights Reserved.
+
+Same author as AkaShop, Akalogistics, AkaVehicleBlock,
+AKA - I Know What I Did, Traka and Kaandther.
+If a mod does not carry this notice, it is not from AKA.
+
+TERMS
+-----
+1. You may install and run this mod on your own game client or server.
+2. You may not re-upload, repack or redistribute this mod, in whole or in
+   part, on Steam Workshop or anywhere else, without written permission.
+3. You may not remove or alter this notice or the author credit.
+
+CONTENTS
+--------
+common/media/maps/hf_tobeknow/
+    world_*.lotpack / *.lotheader / chunkdata_*.bin   compiled map cells
+    map.info / spawnpoints.lua / objects.lua          map metadata
+    worldmap.xml / worldmap.xml.bin                   in-game world map (M key)
+common/media/scripts/HF_TBKMap.txt                    item Base.HF_TBKMap
+common/media/lua/client/HF_TBKMap.lua                 map sheet reader window
+common/media/lua/shared/Translate/EN/                 English strings
+common/media/textures/HF_TBKMap/hf_islandmap.png      the map picture
+
+All island outlines were generated from this map's own compiled cell data.
+No third-party mod content is included.

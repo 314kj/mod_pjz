@@ -1,0 +1,69 @@
+VERSION = 1,
+
+option Akacount.XferFeeCardPct
+{
+    type = integer, min = 0, max = 5000, default = 200,
+    page = Akacount, translation = Akacount_XferFeeCardPct,
+}
+
+option Akacount.XferFeeMin
+{
+    type = integer, min = 0, max = 1000000, default = 500,
+    page = Akacount, translation = Akacount_XferFeeMin,
+}
+
+option Akacount.XferFeeMax
+{
+    type = integer, min = 0, max = 100000000, default = 20000,
+    page = Akacount, translation = Akacount_XferFeeMax,
+}
+
+option Akacount.XferDailyCap
+{
+    type = integer, min = 0, max = 1000000000, default = 500000,
+    page = Akacount, translation = Akacount_XferDailyCap,
+}
+
+option Akacount.XferCooldownSec
+{
+    type = integer, min = 0, max = 3600, default = 60,
+    page = Akacount, translation = Akacount_XferCooldownSec,
+}
+
+option Akacount.CounterRange
+{
+    type = integer, min = 1, max = 20, default = 3,
+    page = Akacount, translation = Akacount_CounterRange,
+}
+
+option Akacount.OverdraftFloor
+{
+    type = integer, min = -100000000, max = 0, default = -200000,
+    page = Akacount, translation = Akacount_OverdraftFloor,
+}
+
+option Akacount.MaxAccrueDays
+{
+    type = integer, min = 1, max = 365, default = 14,
+    page = Akacount, translation = Akacount_MaxAccrueDays,
+}
+
+option Akacount.SavingsRateBp
+{
+    type = integer, min = 0, max = 10000, default = 250,
+    page = Akacount, translation = Akacount_SavingsRateBp,
+}
+
+/*  PhoneNeedsBattery was declared here up to 0.3.1 and removed in 0.3.2.
+    It had no Sandbox_EN entry and no Lua ever read it. A dead option with a
+    missing translation is what blanked the dedicated-server settings window.
+    Every option below must have BOTH:
+      lua/shared/Translate/EN/Sandbox_EN.txt -> Sandbox_Akacount_<translation>
+      lua/shared/Akacount/AC_Const.lua       -> AC.DEFAULTS[<short name>]
+    tests/test_pack.lua fails the build if either is missing.               */
+
+option Akacount.LedgerCap
+{
+    type = integer, min = 500, max = 50000, default = 5000,
+    page = Akacount, translation = Akacount_LedgerCap,
+}

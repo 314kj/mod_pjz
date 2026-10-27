@@ -1,0 +1,4 @@
+ContextMenu_EN = {
+	ContextMenu_HF_TBKMap_Read = "Read: Island Map",
+	ContextMenu_HF_TBKMap_Admin = "Island Map (admin)",
+}

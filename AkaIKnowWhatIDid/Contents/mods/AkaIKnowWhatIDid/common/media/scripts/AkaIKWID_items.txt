@@ -1,0 +1,17 @@
+module Base
+{
+    /*
+     * AKA - I Know What I Did
+     * The diary itself. NO loot distribution entry anywhere in this mod:
+     * the only way to get one is to craft it.
+     */
+    item AkaDiary
+    {
+        DisplayCategory = Literature,
+        ItemType        = base:normal,
+        DisplayName     = Diary (New),
+        Icon            = AkaDiary,
+        Weight          = 0.6,
+        Tooltip         = Tooltip_AkaDiary,
+    }
+}

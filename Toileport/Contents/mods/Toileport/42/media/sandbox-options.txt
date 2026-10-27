@@ -1,0 +1,7 @@
+VERSION = 1,
+
+option Toileport.LoadingSeconds
+{
+    type = integer, default = 3, min = 0, max = 30,
+    page = Toileport, translation = Toileport_LoadingSeconds,
+}

@@ -1,0 +1,20 @@
+version=1
+id=3779906331
+title=Kuraya
+description=HaftFull shop for Project Zomboid Build 42 [MP] - admin catalog, Fresh Market stalls, three currencies.
+description=
+description=[h2]Copyright & License[/h2]
+description=Original work by [b]AKA[/b] (authored by LOOKCHINNOL). Copyright (c) 2026 AKA - Authored by LOOKCHINNOL. All Rights Reserved.
+description=[b]You may:[/b] subscribe and play; use on your own server; modify for personal use.
+description=[b]You may NOT:[/b] re-upload, repackage, redistribute, or publish this mod or any derivative under another name or account without written permission.
+description=
+description=[h3]About AKA[/h3]
+description=Same author as AkaShop, Akalogistics, AkaVehicleBlock, AKA - I Know What I Did, Traka and Kaandther. If a mod does not carry this notice, it is not from AKA.
+description=
+description=[h3]Note on the "HaftFull" tag[/h3]
+description=HaftFull is the private server this mod was made for. The name is included only so the author can track their own work.
+description=
+description=[h3]Workshop ID[/h3]
+description=Kuraya = 3779906331
+tags=Build 42;Interface;Misc;Multiplayer
+visibility=public

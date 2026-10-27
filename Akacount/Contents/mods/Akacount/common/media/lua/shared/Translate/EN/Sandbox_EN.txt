@@ -1,0 +1,17 @@
+Sandbox_EN = {
+    Sandbox_Akacount = "Akacount",
+
+    Sandbox_Akacount_XferFeeCardPct     = "Card transfer fee (basis points, 200 = 2.00%)",
+    Sandbox_Akacount_XferFeeCardPct_tooltip = "Transfers made at a bank counter are always free. This is the price of convenience.",
+    Sandbox_Akacount_XferFeeMin         = "Minimum transfer fee (subunits, 500 = 5.00)",
+    Sandbox_Akacount_XferFeeMax         = "Maximum transfer fee (subunits, 20000 = 200.00)",
+    Sandbox_Akacount_XferDailyCap       = "Daily transfer cap per player (subunits)",
+    Sandbox_Akacount_XferCooldownSec    = "Seconds between transfers",
+    Sandbox_Akacount_CounterRange       = "Bank counter range (tiles around a linked tile)",
+    Sandbox_Akacount_CounterRange_tooltip = "Square radius. 3 means anywhere within 3 tiles of a tile an admin linked as a bank. Withdrawing, changing your card design and collecting a card all need you inside this range.",
+    Sandbox_Akacount_OverdraftFloor     = "Overdraft floor (subunits, negative)",
+    Sandbox_Akacount_OverdraftFloor_tooltip = "Debt collection stops here. Spending is locked while negative, but earning is never locked.",
+    Sandbox_Akacount_MaxAccrueDays      = "Max days of interest granted in one catch-up",
+    Sandbox_Akacount_SavingsRateBp      = "Savings interest per real week (basis points)",
+    Sandbox_Akacount_LedgerCap          = "Ledger ring buffer size",
+}

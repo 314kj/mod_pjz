@@ -1,0 +1,27 @@
+Sandbox_EN = {
+    Sandbox_AkaIKWID = "AKA - I Know What I Did",
+
+    Sandbox_AkaIKWID_RestorePercent = "How much XP you get back (%)",
+    Sandbox_AkaIKWID_RestorePercent_tooltip = "You die, the next you reads the diary, and gets back this much of what is written. 50 = half. 100 = all of it. 0 = nothing.",
+
+    Sandbox_AkaIKWID_WriteSeconds = "Seconds spent reading / writing",
+    Sandbox_AkaIKWID_WriteSeconds_tooltip = "How long you sit still after pressing a sticker. Walk away and it cancels. 0 = instant, no waiting.",
+
+    Sandbox_AkaIKWID_OncePerCharacter = "One character can read it back only once",
+    Sandbox_AkaIKWID_OncePerCharacter_tooltip = "ON: each new character gets one payout, then never again. OFF: they can read it back as often as they like.",
+
+    Sandbox_AkaIKWID_IncludePassive = "Also record Fitness and Strength",
+    Sandbox_AkaIKWID_IncludePassive_tooltip = "OFF: Fitness and Strength are NOT written down, not shown in the book, and not given back - now or ever, no matter how high they get. ON: they count like any other skill.",
+
+    Sandbox_AkaIKWID_RestoredCountsAsEarned = "XP you got back can be written down again",
+    Sandbox_AkaIKWID_RestoredCountsAsEarned_tooltip = "OFF: XP the diary gave you cannot be written into it again, so the number never snowballs. ON: it can, so the same XP is passed down life after life and grows forever.",
+
+    Sandbox_AkaIKWID_BaselineExisting = "Characters that already exist start from zero",
+    Sandbox_AkaIKWID_BaselineExisting_tooltip = "ON: skills people already had when this mod was installed do NOT count as earned - only what they learn from today. OFF: everything they already have counts, traits and occupation included. This is decided the first time each character logs in and cannot be changed for them afterwards.",
+
+    Sandbox_AkaIKWID_ReminderDays = "Remind me after this many days",
+    Sandbox_AkaIKWID_ReminderDays_tooltip = "If you have learned something the diary does not know yet, and it has been this many days since you last wrote in it, you get one reminder a day. 0 = never remind me.",
+
+    Sandbox_AkaIKWID_AutoRecordDays = "Write itself every this many days",
+    Sandbox_AkaIKWID_AutoRecordDays_tooltip = "0 = the diary is only ever written when you press the sticker. Any other number: it writes itself that often, quietly, so forgetting cannot cost you a life's work.",
+}

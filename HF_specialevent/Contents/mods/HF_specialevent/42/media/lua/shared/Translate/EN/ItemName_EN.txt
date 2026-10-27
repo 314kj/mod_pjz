@@ -1,0 +1,3 @@
+ItemName_EN = {
+	ItemName_Base.HF_EventMap = "HF Island Map",
+}

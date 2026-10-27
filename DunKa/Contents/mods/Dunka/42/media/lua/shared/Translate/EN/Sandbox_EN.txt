@@ -1,0 +1,21 @@
+Sandbox_EN = {
+    Sandbox_DunKa = "Project DunKa",
+
+    Sandbox_DunKa_CooldownMinutes = "Horde box cooldown (real minutes)",
+    Sandbox_DunKa_CooldownMinutes_tooltip = "Linked cooldown shared by ALL horde boxes on the server. After any box fires, none can fire again until this many real-world minutes pass. Keeps total spawned zombies under the safety cap. 0 = no cooldown.",
+
+    Sandbox_DunKa_SpawnRadius = "Spawn ring radius (tiles)",
+    Sandbox_DunKa_SpawnRadius_tooltip = "Zombies appear on a ring this many tiles around the horde box, then walk inward toward it.",
+
+    Sandbox_DunKa_SafetyCap = "Safety cap (max zombies per fire)",
+    Sandbox_DunKa_SafetyCap_tooltip = "Hard ceiling on how many zombies a single horde box activation may spawn, regardless of rank. Protects the base-game zombie limit.",
+
+    Sandbox_DunKa_SpawnTickInterval = "Spawn pacing (ticks per batch)",
+    Sandbox_DunKa_SpawnTickInterval_tooltip = "Higher = zombies trickle in more slowly across the ring (gentler on the server). Lower = faster, heavier spikes.",
+
+    Sandbox_DunKa_CountC = "Rank C - zombie count",
+    Sandbox_DunKa_CountB = "Rank B - zombie count",
+    Sandbox_DunKa_CountA = "Rank A - zombie count",
+    Sandbox_DunKa_CountS = "Rank S - zombie count",
+
+}

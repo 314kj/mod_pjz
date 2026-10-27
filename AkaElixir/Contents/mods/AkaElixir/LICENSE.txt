@@ -1,0 +1,27 @@
+AKA - Status Cure Elixirs
+Copyright (c) 2026 AKA - Authored by LOOKCHINNOL. All Rights Reserved.
+
+Same author as AkaShop, Akalogistics, AkaVehicleBlock,
+AKA - I Know What I Did, Traka and Kaandther.
+If a mod does not carry this notice, it is not from AKA.
+
+TERMS
+
+1. This mod is provided for use with Project Zomboid as published on the
+   Steam Workshop by AKA. You may install and play it, on your own game and
+   on any server you run.
+
+2. You may NOT re-upload this mod, in whole or in part, to the Steam Workshop
+   or anywhere else, under your own name or any other name.
+
+3. You may NOT repack this mod inside another mod or mod pack.
+
+4. You may NOT remove or alter the author, copyright or credit lines in any
+   file of this mod.
+
+5. Source code of other authors' mods is never included in this package and is
+   never modified by it.
+
+6. No warranty. Use at your own risk.
+
+For permission beyond these terms, contact the author.

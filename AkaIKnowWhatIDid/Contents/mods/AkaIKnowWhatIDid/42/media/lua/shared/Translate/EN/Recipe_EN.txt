@@ -1,0 +1,4 @@
+Recipe_EN = {
+    Recipe_AkaMakeDiaryFromDiary1 = "Bind a Life Diary",
+    Recipe_AkaMakeDiaryFromDiary2 = "Bind a Life Diary",
+}

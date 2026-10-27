@@ -1,0 +1,10 @@
+Tooltip_EN = {
+    Tooltip_DunKa_KeyC = "Insert into a DunKa Horde Box to summon a horde. <LINE> Rank C: 50 zombies, drops loot. Reward: 2 White Slips. <LINE> Consumed on use.",
+    Tooltip_DunKa_KeyB = "Insert into a DunKa Horde Box to summon a horde. <LINE> Rank B: 100 zombies. Reward: 2 White, 1 Yellow Slip. <LINE> Consumed on use.",
+    Tooltip_DunKa_KeyA = "Insert into a DunKa Horde Box to summon a horde. <LINE> Rank A: 200 zombies. Reward: 2 White, 1 Yellow, 1 Blue Slip. <LINE> Consumed on use.",
+    Tooltip_DunKa_KeyS = "Insert into a DunKa Horde Box to summon a horde. <LINE> Rank S: 400 zombies. Reward: 3 White, 3 Yellow, 3 Blue Slips. <LINE> Consumed on use.",
+
+    Tooltip_DunKa_SlipWhite = "A reward slip. <LINE> Spend at the orange-cat gacha cabinet.",
+    Tooltip_DunKa_SlipYellow = "A reward slip. <LINE> Spend at the black-cat gacha cabinet.",
+    Tooltip_DunKa_SlipBlue = "A reward slip. <LINE> Spend at the white-cat gacha cabinet.",
+}

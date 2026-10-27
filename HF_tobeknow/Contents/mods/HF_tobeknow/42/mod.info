@@ -1,0 +1,10 @@
+name=HF_tobeknow
+id=HF_tobeknow
+description=Map for Project Zomboid Build 42.
+author=AKA
+copyright=Copyright (c) 2026 AKA - Authored by LOOKCHINNOL. All Rights Reserved.
+pzversion=42
+versionMin=42.0
+modversion=1.0.0
+icon=icon.png
+poster=poster.png

@@ -1,0 +1,9 @@
+name=CookieWatch - Restart Notice
+id=CookieWatch
+description=Cookie Cheetah: mod-update restart popup with countdown. Works together with the CookieWatch server tool.
+poster=poster.png
+icon=icon.png
+pzversion=42
+versionMin=42.0
+modversion=1.0.0
+author=AKA

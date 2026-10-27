@@ -1,0 +1,9 @@
+name=AKA - Status Cure Elixirs
+id=AkaElixir
+description=Five drinkable elixirs that clear status effects - fatigue, pain, nausea, stress - plus a Panacea that clears everything and shields you for a short time.
+poster=poster.png
+icon=icon.png
+pzversion=42
+versionMin=42.0
+modversion=1.4.0
+author=AKA

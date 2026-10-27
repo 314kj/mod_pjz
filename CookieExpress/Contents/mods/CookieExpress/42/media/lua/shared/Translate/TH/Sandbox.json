@@ -1,0 +1,17 @@
+{
+    "Sandbox_CookieExpress": "Cookie Express",
+    "Sandbox_CookieExpress_VehicleSearchRadius": "ใบเรียกรถ: หาที่จอดรอบตัวกี่ช่อง",
+    "Sandbox_CookieExpress_VehicleSearchRadius_tooltip": "ลองวางรถ 2, 3, 1 ช่องข้างหน้าตัวผู้เล่นก่อน (แบบ Kuraya) ไม่ได้ค่อยไล่หารอบตัวไม่เกินระยะนี้ · ค่าเริ่ม 3",
+    "Sandbox_CookieExpress_VehicleBlockWater": "ใบเรียกรถ: ห้ามลงน้ำ",
+    "Sandbox_CookieExpress_VehicleBlockWater_tooltip": "ช่องที่วางรถต้องไม่ใช่น้ำ",
+    "Sandbox_CookieExpress_VehicleBlockBuildings": "ใบเรียกรถ: ห้ามในอาคาร",
+    "Sandbox_CookieExpress_VehicleBlockBuildings_tooltip": "ช่องที่วางรถต้องเป็นกลางแจ้ง (แบบ Kuraya) ผู้เล่นยืนตรงไหนก็ได้ · ปิดถ้าอยากให้เรียกรถในโรงรถได้",
+    "Sandbox_CookieExpress_VehicleBlockVehicles": "ใบเรียกรถ: ห้ามทับรถคันอื่น",
+    "Sandbox_CookieExpress_VehicleBlockVehicles_tooltip": "ช่องที่วางรถต้องไม่มีรถจอดอยู่ รถซ้อนกันจะเด้งและพังทั้งคู่ ควรเปิดไว้",
+    "Sandbox_CookieExpress_VehicleBlockObstacles": "ใบเรียกรถ: ต้องไม่มีของขวาง",
+    "Sandbox_CookieExpress_VehicleBlockObstacles_tooltip": "ปิด = ไม่สนหญ้า พุ่มไม้ ต้นไม้ รั้ว เฟอร์นิเจอร์ · เปิด = รอบจุดวางขนาดข้างล่างต้องโล่งจริง (ช่องกำแพง/ของแข็งตรงจุดวางไม่ใช้อยู่แล้ว)",
+    "Sandbox_CookieExpress_VehicleClearWidth": "ใบเรียกรถ: พื้นที่โล่ง กว้าง (ช่อง)",
+    "Sandbox_CookieExpress_VehicleClearWidth_tooltip": "ใช้ตอนเปิด \"ต้องไม่มีของขวาง\" เท่านั้น ใช้เลขคี่ รถกว้างราว 3 ช่อง",
+    "Sandbox_CookieExpress_VehicleClearLength": "ใบเรียกรถ: พื้นที่โล่ง ยาว (ช่อง)",
+    "Sandbox_CookieExpress_VehicleClearLength_tooltip": "ใช้ตอนเปิด \"ต้องไม่มีของขวาง\" เท่านั้น ใช้เลขคี่ รถยาวราว 7 ช่อง"
+}

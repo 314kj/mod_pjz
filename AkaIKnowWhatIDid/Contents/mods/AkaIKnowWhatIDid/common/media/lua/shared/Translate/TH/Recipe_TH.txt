@@ -1,0 +1,4 @@
+Recipe_TH = {
+    Recipe_AkaMakeDiaryFromDiary1 = "เย็บสมุดบันทึกชีวิต",
+    Recipe_AkaMakeDiaryFromDiary2 = "เย็บสมุดบันทึกชีวิต",
+}

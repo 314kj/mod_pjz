@@ -1,0 +1,27 @@
+/* Akacamp items  (c) 2026 AKA & Haftfull. See LICENSE.txt
+   Icons: HFKit* = pitched-tent art, HFTent* = folded-tent art, HFTentKey = key.
+   Per-size colour: small=tan, medium=blue, large=brown, extra=green. */
+module Akacamp
+{
+    item TentKitSmall  { DisplayName = Tent Kit (Small),  ItemType = base:normal, Weight = 1.5, Icon = HFKitSmall,  }
+    item TentKitMedium { DisplayName = Tent Kit (Medium), ItemType = base:normal, Weight = 2.0, Icon = HFKitMedium, }
+    item TentKitLarge  { DisplayName = Tent Kit (Large),  ItemType = base:normal, Weight = 2.5, Icon = HFKitLarge,  }
+    item TentKitExtra  { DisplayName = Tent Kit (Extra),  ItemType = base:normal, Weight = 3.0, Icon = HFKitExtra,  }
+
+    item TentKey    { DisplayName = Tent Key,     ItemType = base:normal, Weight = 0.1, Icon = HFTentKey, }
+    item TentCanvas { DisplayName = Tent Canvas,  ItemType = base:normal, Weight = 0.5, Icon = SheetPaper2, }
+    item TentZip    { DisplayName = Tent Zipper,  ItemType = base:normal, Weight = 0.1, Icon = Key2, }
+}
+
+/* Tent moveables. TEMP: WorldObjectSprite/StaticModel use the vanilla tent
+   (camping_04_32 + BlueTent) so they PLACE and right-click without crashing.
+   The custom camp_hf tiles crash because of multi-tile SpriteGridPos.
+   -> swap WorldObjectSprite back to a SINGLE-sprite camp_hf tile (no SpriteGridPos) later.
+   Keeps the custom folded Icon (HFTent*). (c) 2026 AKA & Haftfull. */
+module Base
+{
+    item HFTentSmall  { DisplayCategory = Furniture, ItemType = base:moveable, DisplayName = Tent (Small),  Weight = 1.5, Icon = HFTentSmall,  WorldObjectSprite = camp_hf_20, Tooltip = Tooltip_item_NeedsPackedTent, SoundMap = PlaceFurniture TentPutUp, SoundMap = PickUpFurniture TentTakeDown, }
+    item HFTentMedium { DisplayCategory = Furniture, ItemType = base:moveable, DisplayName = Tent (Medium), Weight = 2.0, Icon = HFTentMedium, WorldObjectSprite = camp_hf_52, Tooltip = Tooltip_item_NeedsPackedTent, SoundMap = PlaceFurniture TentPutUp, SoundMap = PickUpFurniture TentTakeDown, }
+    item HFTentLarge  { DisplayCategory = Furniture, ItemType = base:moveable, DisplayName = Tent (Large),  Weight = 2.5, Icon = HFTentLarge,  WorldObjectSprite = camp_hf_84, Tooltip = Tooltip_item_NeedsPackedTent, SoundMap = PlaceFurniture TentPutUp, SoundMap = PickUpFurniture TentTakeDown, }
+    item HFTentExtra  { DisplayCategory = Furniture, ItemType = base:moveable, DisplayName = Tent (Extra),  Weight = 3.0, Icon = HFTentExtra,  WorldObjectSprite = camp_hf_116, Tooltip = Tooltip_item_NeedsPackedTent, SoundMap = PlaceFurniture TentPutUp, SoundMap = PickUpFurniture TentTakeDown, }
+}

@@ -1,0 +1,3 @@
+Tooltip_EN = {
+	Tooltip_AkaRepairCard = "Right-click and pick a weapon to restore its condition. <LINE> Guns and melee weapons both work, including weapons added by other mods. <LINE> The card is consumed.",
+}

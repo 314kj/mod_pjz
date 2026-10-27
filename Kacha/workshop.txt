@@ -1,0 +1,20 @@
+version=1
+id=3754761558
+title=Kacha B42 [MP]
+description=Kacha - admin-placeable gacha machine (5 skins), KachaCoin/cash tokens, tiered drops with salt consolation, server-side RNG. MP-ready.
+description=
+description=[h2]Copyright & License[/h2]
+description=Created under the [b]AKA[/b] brand. Copyright (c) 2026 AKA & Haftfull. All Rights Reserved.
+description=[b]You may:[/b] subscribe and play; use on your own private server.
+description=[b]You may NOT[/b] (without prior written permission): modify/edit, re-upload/redistribute, create forks/ports/derivatives, or claim authorship.
+description=
+description=[h3]Note on the "HaftFull" tag[/h3]
+description=HaftFull is the private server this mod was made for. The name is included only so the authors can recognize and keep track of their own work for easier maintenance - it is not a claim of anything else.
+description=
+description=[h3]Note on the word "Official"[/h3]
+description=On the poster, "official asset" means an official asset for our own private HaftFull server only. It is NOT affiliated with or endorsed by The Indie Stone and is not presented as an official Project Zomboid product. The wording exists only to discourage re-uploads or copies made without the authors' permission.
+description=
+description=[h3]Discord[/h3]
+description=[url=https://discord.gg/WWFyqpVZ8N]HaftFull Discord[/url]
+tags=Build 42;Items;Misc;Multiplayer
+visibility=public

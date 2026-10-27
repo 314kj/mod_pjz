@@ -1,0 +1,43 @@
+=============================================================================
+HF Tax SYSTEM - PROJECT ZOMBOID MOD (BUILD 42+)
+Copyright (c) 2026 Matasa. All Rights Reserved.
+=============================================================================
+
+This modification ("Mod") is the intellectual property of Matasa. 
+By downloading, installing, or using this Mod, you agree to the following terms:
+
+1. PERMISSIONS (What you CAN do):
+   - You are permitted to subscribe to this Mod via the official Steam Workshop page.
+   - You may use this Mod on your private, public, or dedicated multiplayer servers.
+   - You may modify the code strictly for personal, non-distributed use.
+
+2. RESTRICTIONS (What you CANNOT do):
+   - You may NOT re-upload, repackage, redistribute, or publish this Mod (in whole or in part) to the Steam Workshop, Nexus Mods, or any other platform.
+   - You may NOT include this Mod in any "Server Modpack", "Compilation", or "AIO Pack". (Please use the Steam Workshop Collection feature instead).
+   - You may NOT use, extract, or reverse-engineer the custom assets, UI layouts, or "Matasa" watermarked code/API in your own derivative works without explicit, written consent from the author.
+
+3. ENFORCEMENT & DMCA:
+   Unauthorized redistribution is a direct violation of the Steam Subscriber Agreement and international copyright law. The author actively monitors the Workshop. Any infringing uploads will be subject to immediate DMCA takedown notices filed with Valve Corporation, which may result in community bans or account suspension.
+
+For permissions or inquiries, contact the author via the official HaftFull Discord.
+
+=============================================================================
+UI REVISION NOTICE
+=============================================================================
+
+The player-facing interface in this build (Billing Center, bill receipt and
+the shared UI theme) was redesigned and rewritten by AKA (LOOKCHINNOL) at the
+request of, and with the written permission of, the original author.
+
+  Original mod, server logic, admin tools : Matasa
+  Player-facing UI revision + UI artwork   : AKA (LOOKCHINNOL)
+
+This revision does not transfer ownership of the Mod. All terms above still
+apply in full, including the restriction on re-uploading or repackaging. The
+UI revision is licensed to the original author for use in this Mod and is
+covered by the same terms.
+
+Same author as AkaShop, Akalogistics, AkaVehicleBlock,
+AKA - I Know What I Did, Traka and Kaandther.
+If a mod does not carry this notice, it is not from AKA.
+

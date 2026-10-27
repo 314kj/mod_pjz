@@ -1,0 +1,99 @@
+/*
+================================================================
+   ____              _  __
+  |  _ \ _   _ _ __ | |/ /__ _
+  | | | | | | | '_ \| ' // _` |    PROJECT  DUNKA
+  | |_| | |_| | | | | . \ (_| |    horde-spawn key & slip items
+  |____/ \__,_|_| |_|_|\_\__,_|    B42  [MP]   -- KACHASIG --
+================================================================
+  Icons live in  media/textures/Item_<Icon>.png
+  All items declared as  base:normal  (B42 42.13+ ItemType)
+================================================================
+*/
+
+module Base
+{
+    /* ------------------------------------------------------------
+       KEY CARDS  --  insert into the DunKa horde box to call a horde
+       Card is consumed on use; rank decides horde size + slip reward
+       ------------------------------------------------------------ */
+
+    item DunKa_KeyC
+    {
+        DisplayCategory = DunKa,
+        ItemType        = base:normal,
+        DisplayName     = DunKa Key Card [C],
+        Icon            = DunKa_KeyC,
+        Weight          = 0.05,
+        Tooltip         = Tooltip_DunKa_KeyC,
+    }
+
+    item DunKa_KeyB
+    {
+        DisplayCategory = DunKa,
+        ItemType        = base:normal,
+        DisplayName     = DunKa Key Card [B],
+        Icon            = DunKa_KeyB,
+        Weight          = 0.05,
+        Tooltip         = Tooltip_DunKa_KeyB,
+    }
+
+    item DunKa_KeyA
+    {
+        DisplayCategory = DunKa,
+        ItemType        = base:normal,
+        DisplayName     = DunKa Key Card [A],
+        Icon            = DunKa_KeyA,
+        Weight          = 0.05,
+        Tooltip         = Tooltip_DunKa_KeyA,
+    }
+
+    item DunKa_KeyS
+    {
+        DisplayCategory = DunKa,
+        ItemType        = base:normal,
+        DisplayName     = DunKa Key Card [S],
+        Icon            = DunKa_KeyS,
+        Weight          = 0.05,
+        Tooltip         = Tooltip_DunKa_KeyS,
+    }
+
+    /* ------------------------------------------------------------
+       SLIPS  --  reward tickets, exchanged at the gacha cabinets
+         White  -> orange-cat cabinet
+         Yellow -> black-cat  cabinet
+         Blue   -> white-cat  cabinet
+       ------------------------------------------------------------ */
+
+    item DunKa_SlipWhite
+    {
+        DisplayCategory = DunKa,
+        ItemType        = base:normal,
+        DisplayName     = White Slip,
+        Icon            = DunKa_SlipWhite,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_DunKa_SlipWhite,
+    }
+
+    item DunKa_SlipYellow
+    {
+        DisplayCategory = DunKa,
+        ItemType        = base:normal,
+        DisplayName     = Yellow Slip,
+        Icon            = DunKa_SlipYellow,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_DunKa_SlipYellow,
+    }
+
+    item DunKa_SlipBlue
+    {
+        DisplayCategory = DunKa,
+        ItemType        = base:normal,
+        DisplayName     = Blue Slip,
+        Icon            = DunKa_SlipBlue,
+        Weight          = 0.01,
+        Tooltip         = Tooltip_DunKa_SlipBlue,
+    }
+
+
+}

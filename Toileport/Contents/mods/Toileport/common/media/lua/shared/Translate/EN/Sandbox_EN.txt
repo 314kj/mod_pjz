@@ -1,0 +1,5 @@
+Sandbox_EN = {
+    Sandbox_Toileport = "Toileport",
+    Sandbox_Toileport_LoadingSeconds = "Warp loading screen (seconds)",
+    Sandbox_Toileport_LoadingSeconds_tooltip = "How long the full-screen loading image shows before the warp. 0 = instant, no screen.",
+}

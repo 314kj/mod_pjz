@@ -1,0 +1,11 @@
+name=Project DunKa [MP]
+id=DunKa
+description=Horde-summoning cabinet. Made for Haftfull, running on the HaftFull server.
+author=AKA for Haftfull
+copyright=(c) 2026 AKA & Haftfull. All Rights Reserved.
+license=Personal use only. No modify/reupload without permission. See LICENSE.txt
+modversion=0.1.6
+tiledef=horde_aka 335
+pack=horde_aka_pack
+poster=poster.png
+icon=icon.png

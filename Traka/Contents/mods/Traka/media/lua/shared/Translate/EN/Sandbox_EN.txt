@@ -1,0 +1,64 @@
+Sandbox_EN = {
+
+    Sandbox_AkaShop = "AkaShop - Player Shops",
+
+    Sandbox_AkaShop_Currency = "Currency item",
+    Sandbox_AkaShop_Currency_tooltip = "What players pay with. 'Custom' uses the fullType set in AkaShop.CUSTOM_CURRENCY inside media/lua/shared/AkaShop/AkaShop_Shared.lua.",
+    Sandbox_AkaShop_Currency_option1 = "Money (vanilla Base.Money)",
+    Sandbox_AkaShop_Currency_option2 = "AkaCoin (Base.AkaCoin)",
+    Sandbox_AkaShop_Currency_option3 = "Custom (set in Lua config)",
+
+    Sandbox_AkaShop_TaxPercent = "Sales tax (%)",
+    Sandbox_AkaShop_TaxPercent_tooltip = "Percentage of every sale that is burned instead of paid to the shop owner. 0 = the owner keeps everything.",
+
+    Sandbox_AkaShop_MaxShopsPerPlayer = "Max shops per player",
+    Sandbox_AkaShop_MaxShopsPerPlayer_tooltip = "How many cash registers one player may own at the same time. Admins are not limited.",
+
+    Sandbox_AkaShop_MaxListings = "Max item listings per shop",
+    Sandbox_AkaShop_MaxListings_tooltip = "How many different items a single shop can sell at once.",
+
+    Sandbox_AkaShop_ProtectMoveables = "Protect registered shops",
+    Sandbox_AkaShop_ProtectMoveables_tooltip = "When on, only the owner (and admins) can pick up, rotate, scrap or destroy a registered cash register.",
+
+    Sandbox_AkaShop_AdminCanEditAny = "Admins can manage any shop",
+    Sandbox_AkaShop_AdminCanEditAny_tooltip = "Admins can open the management window of any shop, not just their own.",
+
+    Sandbox_AkaShop_AdminCanRegisterAnyObject = "Admins can register any object",
+    Sandbox_AkaShop_AdminCanRegisterAnyObject_tooltip = "Escape hatch: lets an admin turn any solid world object into a shop, not only recognised cash registers.",
+
+    Sandbox_AkaShop_OwnerCanBuyOwnShop = "Owner can buy from own shop",
+    Sandbox_AkaShop_OwnerCanBuyOwnShop_tooltip = "Normally the owner takes stock back for free from the management window instead of buying it.",
+    Sandbox_AkaShop_StartCapacityKg = "Starting shelf space (kg)",
+    Sandbox_AkaShop_StartCapacityKg_tooltip = "How much weight a new shop can hold. This cap is also what keeps the saved stock table small, so raising it a lot costs memory.",
+    Sandbox_AkaShop_CapacityStepKg = "Shelf expansion size (kg)",
+    Sandbox_AkaShop_MaxCapacityKg = "Maximum shelf space (kg)",
+    Sandbox_AkaShop_CapacityPrice = "Price per expansion",
+    Sandbox_AkaShop_CapacityPrice_tooltip = "Taken from the shop till, not the owner's pocket.",
+    Sandbox_AkaShop_SalesDays = "Days of sales history kept",
+    Sandbox_AkaShop_SalesDays_tooltip = "Older days are folded into a single running total rather than deleted, so lifetime revenue stays correct.",
+    Sandbox_AkaShop_SalesRecent = "Recent sales shown",
+    Sandbox_AkaShop_OnlyOwnTiles = "Only TraKA machines can be shops",
+    Sandbox_AkaShop_OnlyOwnTiles_tooltip = "On: a shop can only be registered on a TraKA shop machine tile, or on a tile an admin has explicitly allowed. Off: the mod also guesses from sprite names and tile properties, so vanilla cash registers work too.",
+    Sandbox_AkaShop_RestrictOnlineHours = "Restrict self-service hours",
+    Sandbox_AkaShop_RestrictOnlineHours_tooltip = "On: customers can only buy on their own during the hours below. Outside those hours the shop shows its goods but refuses sales. Off: shops sell around the clock.",
+    Sandbox_AkaShop_OnlineFromHour = "Self-service opens at (hour)",
+    Sandbox_AkaShop_OnlineFromHour_tooltip = "In-game hour, 0-23. A window that runs past midnight is fine: from 22 to 4 means 22:00 until 04:00.",
+    Sandbox_AkaShop_OnlineToHour = "Self-service closes at (hour)",
+    Sandbox_AkaShop_OnlineToHour_tooltip = "Hour of the day, 0-23. Read on the real clock by default, so 2 means 2am where your players are. A window that runs past midnight is fine: 22 to 6 means 22:00 until 06:00.",
+    Sandbox_AkaShop_HoursUseRealClock = "Trading hours follow the real clock",
+    Sandbox_AkaShop_HoursUseRealClock_tooltip = "On (default): the hours above are real-world time, using the offset below. Off: they are in-game hours, which at the default day length means one hour is about 2.5 real minutes and the window repeats every real hour.",
+    Sandbox_AkaShop_RealClockUTCOffset = "Timezone (hours from UTC)",
+    Sandbox_AkaShop_RealClockUTCOffset_tooltip = "7 for Thailand. Set explicitly rather than trusting the server machine, since rented servers usually run on UTC.",
+
+    Sandbox_AkaShop_UseDistance = "Stand within (tiles)",
+    Sandbox_AkaShop_UseDistance_tooltip = "How close a player must be to use a shop or a buying depot. Three puts them at the counter. Admins are not limited by this.",
+
+    Sandbox_AkaShop_OrderHours = "Orders expire after (real hours)",
+    Sandbox_AkaShop_SellRate = "Bulk sale items per second",
+    Sandbox_AkaShop_SellRate_tooltip = "How fast a big sale is handed over. A sale small enough to finish in one go ignores this entirely and is instant, as always. A sale too big for that becomes a timed action with a progress bar - like reading - handing over this many items each second, and the player can cancel it by walking away. Raise it to finish sooner; lower it if you want emptying a hoard to feel like work.",
+    Sandbox_AkaShop_WithdrawMax = "Most cash taken from a till at once",
+    Sandbox_AkaShop_WithdrawMax_tooltip = "How much a shop owner can take out of the till as cash in one click. Every unit is a real item the server builds on the spot, so a bigger number means fewer clicks but a longer hitch on each one. A shop whose till holds more than this has to be emptied before it can be deleted, so no money is ever thrown away. With Akacount installed and shops paid in the bank's own notes, Send to bank moves any amount in one go without building a single item.",
+    Sandbox_AkaShop_SellBudget = "Bulk sale payout budget",
+    Sandbox_AkaShop_SellBudget_tooltip = "Every unit of currency paid out is a real item the server has to build, so a very large sale can freeze the game for a moment. A sale worth less than this is handed over in one go and behaves exactly as it always has. Only a sale worth more than this is split across frames, which is unavoidable at that size. Raise it to allow bigger single hand-overs; lower it if anyone still reports a stutter."
+    Sandbox_AkaShop_OrderHours_tooltip = "Outside self-service hours a customer can place an order instead of buying. The goods come off the shelf and wait this many real hours for the two of them to meet at the counter; after that they go back on sale. Orders are never charged the sales tax - that is rent on the automated till, and an order does not use it.",
+}

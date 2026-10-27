@@ -1,0 +1,6 @@
+Tooltip_EN = {
+    Kaandther_Station_Tooltip = "RO-style enhancement bench. Place it and it works right away -- stand next to it and Enhance Weapon.",
+    kaandther_red_ball_tt = "Red Mushroom -- hold while enhancing for a chance (server Sandbox, default 50%) to block a tier drop, up to +15. Consumed every attempt while held.",
+    kaandther_gold_ball_tt = "Gold Mushroom -- hold while enhancing for a chance (server Sandbox, default 100%) to block a tier drop on ANY tier, and to unlock the event tier. Consumed every attempt while held.",
+    kaandther_blue_mushroom_tt = "Blue Mushroom -- consumed on every enhancement attempt (amount set in server Sandbox). Drops from zombies.",
+}

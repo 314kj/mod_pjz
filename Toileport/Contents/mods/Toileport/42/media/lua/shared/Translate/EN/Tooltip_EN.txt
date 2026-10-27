@@ -1,0 +1,3 @@
+Tooltip_EN = {
+    Tooltip_Toileport_Ticket = "A flush-pipe travel ticket. Use it at a registered toilet station to warp to its bound destination.",
+}

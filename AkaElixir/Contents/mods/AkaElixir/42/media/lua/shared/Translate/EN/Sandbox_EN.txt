@@ -1,0 +1,18 @@
+Sandbox_EN = {
+	Sandbox_AkaElixir = "AKA - Status Cure Elixirs",
+
+	Sandbox_AkaElixir_InvulnMinutes = "Panacea - protection (in-game minutes)",
+	Sandbox_AkaElixir_InvulnMinutes_tooltip = "How long the red Panacea keeps you from taking damage. Counted in IN-GAME minutes, so real time depends on your Day Length setting. 1 is an emergency escape button; raise it for a longer window.",
+
+	Sandbox_AkaElixir_PanaceaHeals = "Panacea - close wounds while protected",
+	Sandbox_AkaElixir_PanaceaHeals_tooltip = "During the protection window, bleeding, deep wounds, fractures and burns are cleared as they appear. Zombie infection is never touched by this option.",
+
+	Sandbox_AkaElixir_PanaceaCuresInfection = "Panacea - cure zombie infection",
+	Sandbox_AkaElixir_PanaceaCuresInfection_tooltip = "OFF by default. Turning this ON makes the Panacea the strongest item on the server - it removes an active zombie infection. Think hard before enabling it.",
+
+	Sandbox_AkaElixir_PanaceaFeeds = "Panacea - clears hunger and thirst",
+	Sandbox_AkaElixir_PanaceaFeeds_tooltip = "ON by default: the red Panacea also removes hunger, thirst and drunkenness. Turn OFF to keep it a medical item only.",
+
+	Sandbox_AkaElixir_Verbose = "Log every drink to console.txt",
+	Sandbox_AkaElixir_Verbose_tooltip = "Off = one diagnostic line per elixir type per session. On = one line every time. The line lists which status values were applied and which were skipped.",
+}

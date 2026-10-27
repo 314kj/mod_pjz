@@ -1,0 +1,49 @@
+VERSION = 1,
+
+option AkaIKWID.RestorePercent
+{
+    type = integer, min = 0, max = 100, default = 50,
+    page = AkaIKWID, translation = AkaIKWID_RestorePercent,
+}
+
+option AkaIKWID.WriteSeconds
+{
+    type = integer, min = 0, max = 600, default = 60,
+    page = AkaIKWID, translation = AkaIKWID_WriteSeconds,
+}
+
+option AkaIKWID.OncePerCharacter
+{
+    type = boolean, default = true,
+    page = AkaIKWID, translation = AkaIKWID_OncePerCharacter,
+}
+
+option AkaIKWID.IncludePassive
+{
+    type = boolean, default = false,
+    page = AkaIKWID, translation = AkaIKWID_IncludePassive,
+}
+
+option AkaIKWID.RestoredCountsAsEarned
+{
+    type = boolean, default = false,
+    page = AkaIKWID, translation = AkaIKWID_RestoredCountsAsEarned,
+}
+
+option AkaIKWID.BaselineExisting
+{
+    type = boolean, default = true,
+    page = AkaIKWID, translation = AkaIKWID_BaselineExisting,
+}
+
+option AkaIKWID.ReminderDays
+{
+    type = integer, min = 0, max = 60, default = 3,
+    page = AkaIKWID, translation = AkaIKWID_ReminderDays,
+}
+
+option AkaIKWID.AutoRecordDays
+{
+    type = integer, min = 0, max = 60, default = 0,
+    page = AkaIKWID, translation = AkaIKWID_AutoRecordDays,
+}

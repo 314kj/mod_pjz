@@ -1,0 +1,9 @@
+version=1
+id=3821093829
+title=CookieWatch
+description=[h2]Copyright & License[/h2]
+description=Created under the [b]AKA[/b] brand.
+description=[b]You may:[/b] subscribe and play; use on your own private server.
+description=[b]You may NOT[/b] (without prior written permission): modify/edit, re-upload/redistribute, create forks/ports/derivatives, or claim authorship.
+tags=
+visibility=public

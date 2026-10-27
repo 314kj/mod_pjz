@@ -1,0 +1,3 @@
+ContextMenu_EN = {
+	ContextMenu_HF_EventMap_Read = "Read: HF Island Map",
+}

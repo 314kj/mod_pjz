@@ -1,0 +1,3 @@
+IGUI_EN = {
+    ItemCat_DunKa = "DunKa",
+}

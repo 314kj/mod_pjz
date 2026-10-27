@@ -1,0 +1,55 @@
+Kaandther Enhancement — Proprietary License
+Copyright (c) 2026 AKA & Haftfull. Created by lookchinnoi (handle: lookchinnoi).
+All rights reserved.
+
+================================================================
+ENGLISH
+================================================================
+This mod, including its source code, Lua scripts, item and tile
+definitions, sprites, textures, sounds, and all other assets
+(the "Work"), is the exclusive property of AKA & Haftfull.
+
+You MAY:
+  - Download and use the Work, unmodified, on your own game client
+    and on servers you operate.
+
+You MAY NOT, without prior written permission from the author:
+  - Re-upload, redistribute, or mirror the Work (in whole or in part)
+    to the Steam Workshop or any other platform.
+  - Modify, adapt, translate, decompile, or create derivative works.
+  - Remove, alter, or obscure any authorship, copyright, origin tag,
+    or embedded watermark contained in the Work.
+  - Use the Work, or any part of it, in a paid product or any
+    commercial context.
+
+The embedded origin tags and watermarks are part of the Work and are
+used to establish authorship. Tampering with them is a violation of
+this license.
+
+THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES,
+OR OTHER LIABILITY ARISING FROM THE USE OF THE WORK.
+
+For permissions or licensing inquiries, contact: lookchinnoi.
+
+================================================================
+ภาษาไทย (สรุป ไม่ใช่ข้อความทางกฎหมายฉบับเต็ม)
+================================================================
+ม็อดนี้ รวมถึงซอร์สโค้ด สคริปต์ Lua ไอเทม ไทล์ สไปรต์ เท็กซ์เจอร์ เสียง
+และทรัพย์สินทั้งหมด เป็นลิขสิทธิ์ของ AKA & Haftfull (สร้างโดย lookchinnoi)
+สงวนลิขสิทธิ์ทุกประการ
+
+อนุญาตให้:
+  - ดาวน์โหลดและใช้งานม็อด (แบบไม่ดัดแปลง) บนเครื่องและเซิร์ฟเวอร์ของคุณเอง
+
+ห้าม (เว้นแต่ได้รับอนุญาตเป็นลายลักษณ์อักษรจากผู้สร้าง):
+  - อัปโหลดซ้ำ / แจกจ่ายต่อ / ทำมิเรอร์ ทั้งหมดหรือบางส่วน ไปยัง Steam
+    Workshop หรือแพลตฟอร์มอื่น
+  - ดัดแปลง แก้ไข แปล ถอดรหัส หรือสร้างงานต่อยอด
+  - ลบ แก้ไข หรือปิดบัง ชื่อผู้สร้าง ลิขสิทธิ์ แท็กต้นทาง หรือลายน้ำที่ฝังไว้
+  - นำไปใช้ในผลิตภัณฑ์ที่มีการเก็บเงินหรือเชิงพาณิชย์
+
+แท็กต้นทางและลายน้ำที่ฝังไว้เป็นส่วนหนึ่งของงาน ใช้เพื่อยืนยันความเป็นเจ้าของ
+การแก้ไข/ลบถือเป็นการละเมิดลิขสิทธิ์
+
+ติดต่อขออนุญาต: lookchinnoi

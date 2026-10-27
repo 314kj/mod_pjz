@@ -1,0 +1,12 @@
+module Base
+{
+	item HF_EventMap
+	{
+		DisplayCategory = Cartography,
+		ItemType 		= base:normal,
+		DisplayName 	= HF Island Map,
+		Icon 			= Map,
+		Weight 			= 0.1,
+		WorldStaticModel = Map,
+	}
+}

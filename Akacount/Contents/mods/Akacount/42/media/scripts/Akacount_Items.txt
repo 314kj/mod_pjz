@@ -1,0 +1,137 @@
+module Base
+{
+    /* ==========================================================================
+       Akacount — ไอเทมของม็อด
+
+       ขนาดของที่วางบนพื้นคุมด้วย `scale` ในบล็อก model ตรงนี้เท่านั้น
+       ไม่ได้อยู่ใน Lua และไม่ต้องแตะไอเทมวนิลลาสักตัว
+
+         กล่องเครื่องจักรใหญ่ ๆ ใช้ประมาณ 2.2
+         บัตรอยู่ราว 0.4 - 0.6   เริ่มที่ 0.5 แล้วปรับทีละ 0.1
+
+       แก้ .txt แล้วต้อง "รีสตาร์ทเกม" ไม่ใช่แค่ rejoin
+       เพราะ B42 แคช item def กับ chunk data ไว้ในเซฟ
+       ========================================================================== */
+
+    /* --------------------------------------------------------------------------
+       โมเดลบัตร  หนึ่งบล็อกต่อหนึ่งลาย
+
+       ทั้งสี่ใช้ mesh เดียวกัน ต่างกันแค่ texture
+       Lua สลับลายด้วย item:setStaticModel("AkacountCardSlate") ตอนผู้เล่นเปลี่ยนลาย
+       ที่ต้องประกาศไว้ทั้งสี่บล็อกเพราะ B42 ผูก texture ไว้กับ model ไม่ใช่กับไอเทม
+       เปลี่ยน texture ของ model เดียวตอนรันไม่ได้  ต้องสลับทั้งโมเดล
+
+       ชื่อบล็อกตรงนี้ต้องตรงกับ field `model` ใน AC.CARD_SKINS_BUILTIN เป๊ะ ๆ
+       -------------------------------------------------------------------------- */
+    model AkacountCardModel
+    {
+        mesh    = WorldItems/Pancakes,     /* flat mesh ของวนิลลา ใช้เป็น billboard */
+        texture = AkacountCard_world,      /* media/textures/AkacountCard_world.png */
+        scale   = 0.45,
+    }
+
+    model AkacountCardOriginal
+    {
+        mesh    = WorldItems/Pancakes,
+        texture = AkacountCard_world_original,
+        scale   = 0.45,
+    }
+
+    model AkacountCardSlate
+    {
+        mesh    = WorldItems/Pancakes,
+        texture = AkacountCard_world_slate,
+        scale   = 0.45,
+    }
+
+    model AkacountCardForest
+    {
+        mesh    = WorldItems/Pancakes,
+        texture = AkacountCard_world_forest,
+        scale   = 0.45,
+    }
+
+    model AkacountCardEmber
+    {
+        mesh    = WorldItems/Pancakes,
+        texture = AkacountCard_world_ember,
+        scale   = 0.45,
+    }
+
+    /* ------------------------------------------------------------------------
+       บัตร — คลิกขวาเพื่อโอนเงิน
+
+       สิทธิ์ในลาย (ซื้อลายไหนไปแล้วบ้าง) เก็บที่ "บัญชีผู้เล่น"
+       ทำบัตรหายแล้วต้องไม่เสียลายที่ซื้อไป
+
+       แต่ "ลายที่กำลังใช้อยู่" ต้องเป็นชนิดไอเทมคนละอัน  ไม่ใช่ไอเทมเดียวทาสีทับ
+       เพราะ B42 อ่านไอคอนกระเป๋าจากฟิลด์ Icon ของ item script
+       ค่าที่เซ็ตด้วย setTexture() ตอนรันไม่ถูกเซฟ  รีล็อกอินทีเดียวลายกลับเป็นเดิม
+       (ผู้เล่นรายงานตรง ๆ ว่า "ลายการ์ดไม่เปลี่ยน")
+
+       สี่ใบข้างล่างต่างกันแค่ Icon กับ WorldStaticModel  ที่เหลือเหมือนกันหมด
+       ชื่อไอเทมต้องตรงกับฟิลด์ `item` ใน AC.CARD_SKINS_BUILTIN เป๊ะ ๆ
+       ------------------------------------------------------------------------ */
+    item AkacountCard
+    {
+        DisplayName      = Akacount Card,
+        DisplayCategory  = Akacount,
+        ItemType         = base:normal,
+        Icon             = AkacountCard_original,
+        WorldStaticModel = AkacountCardOriginal,
+        Weight           = 0.05,
+        Tooltip          = Tooltip_AkacountCard,
+    }
+
+    item AkacountCardSlate
+    {
+        DisplayName      = Akacount Card,
+        DisplayCategory  = Akacount,
+        ItemType         = base:normal,
+        Icon             = AkacountCard_slate,
+        WorldStaticModel = AkacountCardSlate,
+        Weight           = 0.05,
+        Tooltip          = Tooltip_AkacountCard,
+    }
+
+    item AkacountCardForest
+    {
+        DisplayName      = Akacount Card,
+        DisplayCategory  = Akacount,
+        ItemType         = base:normal,
+        Icon             = AkacountCard_forest,
+        WorldStaticModel = AkacountCardForest,
+        Weight           = 0.05,
+        Tooltip          = Tooltip_AkacountCard,
+    }
+
+    item AkacountCardEmber
+    {
+        DisplayName      = Akacount Card,
+        DisplayCategory  = Akacount,
+        ItemType         = base:normal,
+        Icon             = AkacountCard_ember,
+        WorldStaticModel = AkacountCardEmber,
+        Weight           = 0.05,
+        Tooltip          = Tooltip_AkacountCard,
+    }
+
+
+    /* ==========================================================================
+       เรื่องการเกิดของไอเทม  (ปิดการสปอว์น)
+
+       บัตรใบนี้ **ไม่เกิดในโลกเลย** ไม่ว่าจะตู้ไหน ซากศพไหน หรือรถคันไหน
+       เพราะใน B42 ของจะเกิดได้ก็ต่อเมื่อมีชื่ออยู่ใน distribution table เท่านั้น
+       ม็อดนี้ไม่มีไฟล์ distribution และไม่ได้แตะของวนิลลาสักตัว
+
+       เพราะฉะนั้นห้ามทำสามอย่างนี้ ไม่งั้นมันจะกลับมาเกิดเอง
+         1. อย่าสร้าง media/lua/server/Items/Distributions.lua หรือ
+            ProceduralDistributions.lua แล้วใส่ชื่อไอเทมนี้ลงไป
+         2. อย่าใส่ Tags ที่ระบบสุ่มของใช้อยู่ เช่น  Tags = Electronics
+            แท็กพวกนี้ทำให้ของถูกดูดเข้ากลุ่มสุ่มโดยอ้อม
+         3. อย่าตั้ง DisplayCategory เป็นหมวดของวนิลลา  ใช้หมวดของเราเอง (Akacount)
+            หมวดไม่ได้ทำให้เกิดโดยตรง แต่ทำให้ตอนไล่ตรวจแล้วมองข้ามง่าย
+
+       ทางเดียวที่จะได้บัตรคือ  แอดมินแจก หรือขอที่เคาน์เตอร์ธนาคาร
+       ========================================================================== */
+}

@@ -1,0 +1,32 @@
+/*
+ * Kuraya - media/scripts/kuraya_pet.txt
+ * Author: AKA (LOOKCHINNOL)  ·  Copyright (c) 2026 AKA. All Rights Reserved.
+ *
+ * One slip covers every animal. The animal type (and breed, when the listing
+ * names one) is written into the slip's ModData by the server when the shop
+ * hands it over, so this file never needs a new entry when the server installs
+ * another animal mod.
+ *
+ * B42 rules that this block obeys (PZ-B42-mod-file-FIELD-GUIDE):
+ *   - ItemType must carry the base: namespace. "Type = Normal" and
+ *     "ItemType = Normal" both make InstanceItem() return null, and B42 says
+ *     nothing at all when that happens.
+ *   - Icon points at textures/Item_<value>.png, matched case-sensitively
+ *     because Linux servers care even though Windows does not.
+ *   - No WorldStaticModel line on purpose. A dangling WorldStaticModel makes
+ *     the item vanish when dropped; leaving it out lets the engine fall back.
+ */
+module Kuraya
+{
+    imports { Base }
+
+    item PetSlip
+    {
+        ItemType        = base:normal,
+        DisplayName     = Animal Slip,
+        DisplayCategory = Junk,
+        Icon            = KR_PetSlip,
+        Weight          = 0.1,
+        Tooltip         = Tooltip_Kuraya_PetSlip,
+    }
+}

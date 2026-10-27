@@ -1,0 +1,31 @@
+VERSION = 1,
+
+option AkaElixir.InvulnMinutes
+{
+	type = integer, default = 1, min = 1, max = 240,
+	page = AkaElixir, translation = AkaElixir_InvulnMinutes,
+}
+
+option AkaElixir.PanaceaHeals
+{
+	type = boolean, default = true,
+	page = AkaElixir, translation = AkaElixir_PanaceaHeals,
+}
+
+option AkaElixir.PanaceaCuresInfection
+{
+	type = boolean, default = false,
+	page = AkaElixir, translation = AkaElixir_PanaceaCuresInfection,
+}
+
+option AkaElixir.Verbose
+{
+	type = boolean, default = false,
+	page = AkaElixir, translation = AkaElixir_Verbose,
+}
+
+option AkaElixir.PanaceaFeeds
+{
+	type = boolean, default = true,
+	page = AkaElixir, translation = AkaElixir_PanaceaFeeds,
+}

@@ -1,0 +1,16 @@
+module CookieExpress
+{
+    imports
+    {
+        Base
+    }
+
+    item VehicleSlip
+    {
+        DisplayName = Cookie Vehicle Slip,
+        DisplayCategory = Literature,
+        ItemType = base:normal,
+        Weight = 0.05,
+        Icon = CKX_VehicleSlip,
+    }
+}

@@ -1,0 +1,4 @@
+Tooltip_EN = {
+    Tooltip_Kuraya_CarSlip = "Paid in full at Kuraya. Right-click it while standing outdoors with room around you, and the vehicle it names is delivered beside you. The slip is spent when the vehicle arrives, and only then.",
+    Tooltip_Kuraya_PetSlip = "Paid in full at Kuraya. Right-click it with a clear tile in front of you, indoors or out, and the animal it names walks out. The slip is spent when the animal arrives, and only then.",
+}

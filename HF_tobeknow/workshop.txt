@@ -1,0 +1,10 @@
+version=1
+id=3791405287
+title=HF_tobeknow
+description=Copyright (c) 2026 AKA - Authored by LOOKCHINNOL. All Rights Reserved.
+description=
+description=Same author as AkaShop, Akalogistics, AkaVehicleBlock,
+description=AKA - I Know What I Did, Traka and Kaandther.
+description=If a mod does not carry this notice, it is not from AKA.
+tags=Build 42;Map
+visibility=private

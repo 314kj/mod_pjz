@@ -1,0 +1,12 @@
+name=Kaandther Enhancement
+id=Kaandther
+description=RO-style weapon enhancement for Project Zomboid Build 42 (Multiplayer).
+description=
+description=Dual-track upgrade system: POWER (accumulate damage) and GUARD (durability), per-weapon on/off. Admin-configurable tiers, category presets and custom sets, enhancement bench, mushroom charms (Red/Gold protect, Blue cost), and event tier.
+poster=poster.png
+icon=icon.png
+author=AKA (created by lookchinnoi)
+copyright=(c) 2026 AKA & Haftfull
+versionMin=42.0.0
+pack=aka_table_plus_pack
+tiledef=aka_table_plus 700
