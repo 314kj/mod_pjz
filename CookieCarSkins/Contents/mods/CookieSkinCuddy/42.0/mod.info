@@ -1,0 +1,5 @@
+name=Cookie Car Skins - Cuddy
+id=CookieSkinCuddy
+require=\damnlib
+description=This mod adds Cuddys custom vehicle skins.
+versionMin=42.0.0

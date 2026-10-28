@@ -1,0 +1,955 @@
+Events.OnGameBoot.Add(function()
+
+-- TrailerAdvert
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.WWRAdvertTrailer", "Vehicles/AdvertTrailer_Country.png");    
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.WWRAdvertTrailer", "Vehicles/AdvertTrailer_DuckArch.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.WWRAdvertTrailer", "Vehicles/AdvertTrailer_Estate.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.WWRAdvertTrailer", "Vehicles/AdvertTrailer_Free.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.WWRAdvertTrailer", "Vehicles/AdvertTrailer_Hydrate.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.WWRAdvertTrailer", "Vehicles/AdvertTrailer_KCSO.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.WWRAdvertTrailer", "Vehicles/AdvertTrailer_KCSO_dumbhb.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.WWRAdvertTrailer", "Vehicles/AdvertTrailer_NWMF.png");  
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.WWRAdvertTrailer", "Vehicles/AdvertTrailer_Quack.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.WWRAdvertTrailer", "Vehicles/AdvertTrailer_Touch.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.WWRAdvertTrailer", "Vehicles/AdvertTrailer_Welcome.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.WWRAdvertTrailer", "Vehicles/AdvertTrailer_NiceTrailer.png");
+
+-- isoContainer2
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.isoContainer2", "Vehicles/Containers_Byakuya.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.isoContainer2", "Vehicles/Containers_HelloKitty.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.isoContainer2", "Vehicles/Containers_Sona.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.isoContainer2", "Vehicles/Containers_KemoMiMi.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.isoContainer2", "Vehicles/Containers_Miku.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.isoContainer2", "Vehicles/Containers_YatogamiTohka.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.isoContainer2", "Vehicles/Containers_WWR.png"); 
+-- isoContainer4
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.isoContainer4", "Vehicles/Containers_Byakuya.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.isoContainer4", "Vehicles/Containers_HelloKitty.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.isoContainer4", "Vehicles/Containers_Sona.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.isoContainer4", "Vehicles/Containers_KemoMiMi.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.isoContainer4", "Vehicles/Containers_Miku.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.isoContainer4", "Vehicles/Containers_YatogamiTohka.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.isoContainer4", "Vehicles/Containers_WWR.png");
+
+-- TrailerKI5CargoLarge
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoLarge", "Vehicles/Trailers_KI5cargo_Shell_BloodMoon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoLarge", "Vehicles/Trailers_KI5cargo_Large_ZoroRoronoa.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoLarge", "Vehicles/Trailers_KI5cargo_Shell_black6.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoLarge", "Vehicles/Trailers_KI5cargo_Shell_blue1.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoLarge", "Vehicles/Trailers_KI5cargo_Shell_Green2.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoLarge", "Vehicles/Trailers_KI5cargo_Shell_oceanblue3.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoLarge", "Vehicles/Trailers_KI5cargo_Shell_pink7.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoLarge", "Vehicles/Trailers_KI5cargo_Shell_red4.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoLarge", "Vehicles/Trailers_KI5cargo_Shell_yellow5.png");
+-- TrailerKI5cargoMedium
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoMedium", "Vehicles/Trailers_KI5cargo_Shell_black6.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoMedium", "Vehicles/Trailers_KI5cargo_Shell_blue1.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoMedium", "Vehicles/Trailers_KI5cargo_Shell_Green2.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoMedium", "Vehicles/Trailers_KI5cargo_Shell_oceanblue3.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoMedium", "Vehicles/Trailers_KI5cargo_Shell_pink7.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoMedium", "Vehicles/Trailers_KI5cargo_Shell_red4.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoMedium", "Vehicles/Trailers_KI5cargo_Shell_yellow5.png");
+-- TrailerKI5cargoSmall
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoSmall", "Vehicles/Trailers_KI5cargo_Shell_black6.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoSmall", "Vehicles/Trailers_KI5cargo_Shell_blue1.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoSmall", "Vehicles/Trailers_KI5cargo_Shell_Green2.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoSmall", "Vehicles/Trailers_KI5cargo_Shell_oceanblue3.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoSmall", "Vehicles/Trailers_KI5cargo_Shell_pink7.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoSmall", "Vehicles/Trailers_KI5cargo_Shell_red4.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5cargoSmall", "Vehicles/Trailers_KI5cargo_Shell_yellow5.png");
+-- TrailerKI5livestock
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerKI5livestock", "Vehicles/Trailers_KI5livestock_Large_DawnRanchMadMax.png");
+
+-- TrailerM101A3cargo
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM101A3cargo", "Vehicles/Trailers_M101A3cargo_Shell_Deadpool.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM101A3cargo", "Vehicles/Trailers_M101A3cargo_Shell_Gundam.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM101A3cargo", "Vehicles/Trailers_M101A3cargo_Shell_Phantom.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM101A3cargo", "Vehicles/Trailers_M101A3cargo_Shell_Pikachu.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM101A3cargo", "Vehicles/Trailers_M101A3cargo_Shell_PoliceB.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM101A3cargo", "Vehicles/Trailers_M101A3cargo_Shell_Sleepy.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM101A3cargo", "Vehicles/Trailers_M101A3cargo_Shell_Squirtle.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM101A3cargo", "Vehicles/Trailers_M101A3cargo_Shell_cogblack.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM101A3cargo", "Vehicles/Trailers_M101A3cargo_Shell_cogwhite.png");
+
+-- TrailerM1082
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM1082", "Vehicles/Trailers_M1082_Shell_Deadpool.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM1082", "Vehicles/Trailers_M1082_Shell_Gundam.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM1082", "Vehicles/Trailers_M1082_Shell_Phantom.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM1082", "Vehicles/Trailers_M1082_Shell_Pikachu.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM1082", "Vehicles/Trailers_M1082_Shell_Sleepy.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM1082", "Vehicles/Trailers_M1082_Shell_Squirtle.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM1082", "Vehicles/Trailers_M1082_Shell_Wolverine.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM1082", "Vehicles/Trailers_M1082_Shell_Red.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM1082", "Vehicles/Trailers_M1082_Shell_USMCBlack42.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM1082", "Vehicles/Trailers_M1082tarp_Shell_Militek.png");
+-- TrailerM1082tarp
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM1082tarp", "Vehicles/Trailers_M1082tarp_Shell_Militek.png");
+
+-- TrailerM128van
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM128van", "Vehicles/Trailers_M128van_Shell_KYRanger.png"); 
+
+-- TrailerM747lowbed
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.TrailerM747lowbed", "Vehicles/Trailers_M747lowbed_Shell_Militek.png"); 
+
+-- 49powerWagon
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.49powerWagon", "Vehicles/Vehicles_49powerWagon_unicorns.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.49powerWagon", "Vehicles/Vehicles_49PowerWagon_monolith8.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.49powerWagon", "Vehicles/Vehicles_49powerWagon_Atomic.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.49powerWagon", "Vehicles/Vehicles_49powerWagon_Shell_coalND.png");
+
+-- 49powerWagonPA
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.49powerWagonPA", "Vehicles/Vehicles_49powerWagonPA_Shell_Flames.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.49powerWagonPA", "Vehicles/Vehicles_49powerWagonPA_Shell_Toxic.png");
+
+-- 59ambulance
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.59ambulance", "Vehicles/Vehicles_59ambulance_PoliceBusters.png");
+
+-- 63Type2VanHippie
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63Type2VanHippie", "Vehicles/Vehicles_63Type2VanHippie_Shell_PartyPeople.png");     
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63Type2VanHippie", "Vehicles/Vehicles_63Type2VanHippie_Shell_RainbowWeed.png"); 
+-- 63Type2VanApocalypse
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63Type2VanApocalypse", "Vehicles/Vehicles_63Type2VanApocalypse_Shell_FreeCandy.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63Type2VanApocalypse", "Vehicles/Vehicles_63Type2VanApocalypse_Shell_nekoarc.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63Type2VanApocalypse", "Vehicles/Vehicles_63Type2VanApocalypse_cutie.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63Type2VanApocalypse", "Vehicles/Vehicles_63Type2VanApocalypse_Shell_ArizonaRanger.png");
+-- 63Type2VanMilitary
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63Type2VanMilitary", "Vehicles/Vehicles_63Type2VanMilitary_Shell_ArizonaRanger.png");
+
+-- 63beetle
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetle", "Vehicles/Vehicles_63beetle_Shell_StripsFire.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetle", "Vehicles/Vehicles_63beetle_Shell_Black92.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetle", "Vehicles/Vehicles_63beetle_Shell_Blue38.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetle", "Vehicles/Vehicles_63beetle_Shell_White53.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetle", "Vehicles/Vehicles_63beetle_Shell_Gold93.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetle", "Vehicles/Vehicles_63beetle_Shell_RustDanger.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetle", "Vehicles/Vehicles_63beetle_Shell_FlameYellowKit.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetle", "Vehicles/Vehicles_63beetle_Shell_FlameBlackKit.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetle", "Vehicles/Vehicles_63beetle_Shell_FlameRedKit.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetle", "Vehicles/Vehicles_63beetle_Shell_FlameRedKitWindows.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetle", "Vehicles/Vehicles_63beetle_Shell_OrangePurpleblend.png");
+-- 63beetleHP
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_lootgoblin.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_GSON.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_Gulf34.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_Castrol85.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_Martini80.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_Marlboro49.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_Champion67.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_Squirtle.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_Charizard.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_Ditto.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_NBC.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_Pikachu.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_Rainbow.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_jigglypuff.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_BlueMoon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_Tokepi.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.63beetleHP", "Vehicles/Vehicles_63beetleHP_Shell_LongPink.png");
+
+-- 65bansheeSprint
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeSprint", "Vehicles/Vehicles_65banshee_Shell_ZetasS.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeSprint", "Vehicles/Vehicles_65banshee_Shell_Red41.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeSprint", "Vehicles/Vehicles_65banshee_Shell_Yellow44.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeSprint", "Vehicles/Vehicles_65banshee_Shell_RedRust24.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeSprint", "Vehicles/Vehicles_65banshee_Shell_Metallic22.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeSprint", "Vehicles/Vehicles_65banshee_Shell_Metallic21.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeSprint", "Vehicles/Vehicles_65banshee_Shell_CrimsonRed.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeSprint", "Vehicles/Vehicles_65banshee_Shell_Humanazied15.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeSprint", "Vehicles/Vehicles_65banshee_Shell_BlueCrimson.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeSprint", "Vehicles/Vehicles_65banshee_Shell_USAEagle.png");
+-- 65bansheeXP
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeXP", "Vehicles/Vehicles_65banshee_Shell_ZetasS.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeXP", "Vehicles/Vehicles_65banshee_Shell_Red41.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeXP", "Vehicles/Vehicles_65banshee_Shell_Yellow44.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeXP", "Vehicles/Vehicles_65banshee_Shell_RedRust24.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeXP", "Vehicles/Vehicles_65banshee_Shell_Metallic22.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeXP", "Vehicles/Vehicles_65banshee_Shell_Metallic21.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeXP", "Vehicles/Vehicles_65banshee_Shell_CrimsonRed.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeXP", "Vehicles/Vehicles_65banshee_Shell_Humanazied15.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeXP", "Vehicles/Vehicles_65banshee_Shell_BlueCrimson.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.65bansheeXP", "Vehicles/Vehicles_65banshee_Shell_USAEagle.png");
+
+-- 66pontiacLeMans
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMans", "Vehicles/Vehicles_66pontiacLeMans_Shell_LS554.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMans", "Vehicles/Vehicles_66pontiacLeMans_Shell_BlueWhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMans", "Vehicles/Vehicles_66pontiacLeMans_Shell_PurpleWhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMans", "Vehicles/Vehicles_66pontiacLeMans_Shell_Bosch78.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMans", "Vehicles/Vehicles_66pontiacLeMans_Shell_BoschPower.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMans", "Vehicles/Vehicles_66pontiacLeMans_Shell_BoschTurbo.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMans", "Vehicles/Vehicles_66pontiacLeMans_Shell_BloodyBlack.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMans", "Vehicles/Vehicles_66pontiacLeMans_Shell_GreenWhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMans", "Vehicles/Vehicles_66pontiacLeMans_Shell_GoldenWhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMans", "Vehicles/Vehicles_66pontiacLeMans_Shell_RedWhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMans", "Vehicles/Vehicles_66pontiacLeMans_Shell_Martini4.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMans", "Vehicles/Vehicles_66pontiacLeMans_Shell_America3.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMans", "Vehicles/Vehicles_66pontiacLeMans_Shell_USA1.png");
+-- 66pontiacLeMansConv
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMansConv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_FordGt2.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMansConv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_Alitalia6.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMansConv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_Gulf9.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMansConv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_Racing69.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMansConv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_BobMarkMS.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMansConv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_RedRacing27.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMansConv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_RacingRGB22.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMansConv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_LS554Conv.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMansConv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_LDU517.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMansConv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_LSMG888.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacLeMansConv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_RallyClubBW.png");
+-- 66pontiacGTO
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTO", "Vehicles/Vehicles_66pontiacLeMans_Shell_LS554.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTO", "Vehicles/Vehicles_66pontiacLeMans_Shell_BlueWhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTO", "Vehicles/Vehicles_66pontiacLeMans_Shell_PurpleWhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTO", "Vehicles/Vehicles_66pontiacLeMans_Shell_Bosch78.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTO", "Vehicles/Vehicles_66pontiacLeMans_Shell_BoschPower.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTO", "Vehicles/Vehicles_66pontiacLeMans_Shell_BoschTurbo.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTO", "Vehicles/Vehicles_66pontiacLeMans_Shell_BloodyBlack.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTO", "Vehicles/Vehicles_66pontiacLeMans_Shell_GreenWhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTO", "Vehicles/Vehicles_66pontiacLeMans_Shell_GoldenWhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTO", "Vehicles/Vehicles_66pontiacLeMans_Shell_RedWhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTO", "Vehicles/Vehicles_66pontiacLeMans_Shell_Martini4.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTO", "Vehicles/Vehicles_66pontiacLeMans_Shell_America3.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTO", "Vehicles/Vehicles_66pontiacLeMans_Shell_USA1.png");
+-- 66pontiacGTOconv
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTOconv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_FordGt2.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTOconv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_Alitalia6.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTOconv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_Gulf9.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTOconv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_Racing69.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTOconv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_BobMarkMS.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTOconv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_RedRacing27.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTOconv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_RacingRGB22.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTOconv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_LS554Conv.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTOconv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_LDU517.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTOconv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_LSMG888.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.66pontiacGTOconv", "Vehicles/Vehicles_66pontiacLeMansConv_Shell_RallyClubBW.png");
+
+-- 67 Commando
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67commando", "Vehicles/Vehicles_67commando_HelloKitty.png");
+-- 67 CommandoT50
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67commandoT50", "Vehicles/Vehicles_67commando_HelloKitty.png");
+-- 67 CommandoPolice
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67commandoPolice", "Vehicles/Vehicles_67commando_Shell_SCP.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67commandoPolice", "Vehicles/Vehicles_67commando_militek.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67commandoPolice", "Vehicles/Vehicles_67commando_militeTECHk2.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67commandoPolice", "Vehicles/Vehicles_67commando_militeTECHk.png");
+
+-- 67 GT 500
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500", "Vehicles/Vehicles_67gt500_Shell_Dominator.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500", "Vehicles/Vehicles_67gt500_Shell_Radioactive.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500", "Vehicles/Vehicles_67gt500_Shell_EcoBoost66.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500", "Vehicles/Vehicles_67gt500_Shell_Nascar1Blue.png");
+-- 67 GT 500 E
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500e", "Vehicles/Vehicles_67gt500e_Shell_Evangelion.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500e", "Vehicles/Vehicles_67gt500e_Shell_cadiastands.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500e", "Vehicles/Vehicles_67gt500e_Shell_defendersofterra.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500e", "Vehicles/Vehicles_67gt500e_Shell_worldeater.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500e", "Vehicles/Vehicles_67gt500e_Shell_EcoBoostWRFord.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500e", "Vehicles/Vehicles_67gt500e_Shell_USAFlag.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500e", "Vehicles/Vehicles_67gt500e_Shell_EcoBoostWBFord.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500e", "Vehicles/Vehicles_67gt500e_Shell_EcoBoost99.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500e", "Vehicles/Vehicles_67gt500e_Shell_EcoBoostWGFord.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500e", "Vehicles/Vehicles_67gt500e_Shell_DeathRace.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.67gt500e", "Vehicles/Vehicles_67gt500e_Shell_MonsterFord.png");
+
+-- 68firebird350
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_California64.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_Husky58.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_Monster77.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_California64.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_QL37.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_Asin48.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_HP82.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_MEM18.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_NAPA25.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_FedEx87.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_RBWB.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_Wallmart31.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_Cors40.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_EndOfDays33.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_FedEx90.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird350", "Vehicles/Vehicles_68firebird_Shell_NW89.png");
+
+-- 68firebird400
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_California64.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_Husky58.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_Monster77.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_California64.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_QL37.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_Asin48.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_HP82.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_MEM18.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_NAPA25.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_FedEx87.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_RBWB.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_Wallmart31.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_Cors40.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_EndOfDays33.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_FedEx90.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebird400", "Vehicles/Vehicles_68firebird_Shell_NW89.png");
+
+-- 68firebirdRamAir
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebirdRamAir", "Vehicles/Vehicles_68firebird_Shell_California64.png");
+
+-- 68firebirdRamAirCustom
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.68firebirdRamAirCustom", "Vehicles/Vehicles_68firebird_Shell_California64.png");
+
+-- 69miniUnionJack
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69miniUnionJack", "Vehicles/Vehicles_69miniUJ_Shell_RedRally.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69miniUnionJack", "Vehicles/Vehicles_69miniUJ_Shell_YellowP.png");
+-- 69miniIJ
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69miniIJ", "Vehicles/Vehicles_69miniIJ_Shell_TGP.png");
+
+-- 69 CAMARO SS
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69camaroSS", "Vehicles/Vehicles_69camaro_Shell_CherryBlossom_skin.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69camaroSS", "Vehicles/Vehicles_69camaro_Shell_MCDonald3.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69camaroSS", "Vehicles/Vehicles_69camaro_Shell_Sparco70.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69camaroSS", "Vehicles/Vehicles_69camaro_Shell_TokyoOniChan.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69camaroSS", "Vehicles/Vehicles_69camaro_Shell_BlackYStripes.png");
+-- 69 CAMARO RS
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69camaroRS", "Vehicles/Vehicles_69camaro_Shell_CherryBlossom_skin.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69camaroRS", "Vehicles/Vehicles_69camaro_Shell_black_punisher");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69camaroRS", "Vehicles/Vehicles_69camaro_Shell_BlackYStripes.png");
+
+-- 69charger440
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger440", "Vehicles/Vehicles_69charger500_Shell_Repsol30.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger440", "Vehicles/Vehicles_69charger500_Shell_89YB.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger440", "Vehicles/Vehicles_69charger500_Shell_CocaCola95.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger440", "Vehicles/Vehicles_69charger500_Shell_GT26.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger440", "Vehicles/Vehicles_69charger500_Shell_Pepsi85.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger440", "Vehicles/Vehicles_69charger500_Shell_BlackRedStripe.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger440", "Vehicles/Vehicles_69charger500_Shell_Castrol27.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger440", "Vehicles/Vehicles_69charger500_Shell_Sprite55.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger440", "Vehicles/Vehicles_69charger500_Shell_Marlboro66.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger440", "Vehicles/Vehicles_69charger500_Shell_ToyoTires.png");
+-- 69charger500
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger500", "Vehicles/Vehicles_69charger500_Shell_Repsol30.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger500", "Vehicles/Vehicles_69charger500_Shell_89YB.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger500", "Vehicles/Vehicles_69charger500_Shell_CocaCola95.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger500", "Vehicles/Vehicles_69charger500_Shell_GT26.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger500", "Vehicles/Vehicles_69charger500_Shell_Pepsi85.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger500", "Vehicles/Vehicles_69charger500_Shell_BlackRedStripe.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger500", "Vehicles/Vehicles_69charger500_Shell_Sprite55.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger500", "Vehicles/Vehicles_69charger500_Shell_Castrol27.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69charger500", "Vehicles/Vehicles_69charger500_Shell_Marlboro66.png");
+-- 69chargerDaytona
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69chargerDaytona_Shell_Ducados35.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69chargerDaytona_Shell_CustomRSkull.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69charger500_Shell_CocaCola95.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69charger500_Shell_89YB.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69charger500_Shell_GT26.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69charger500_Shell_Pepsi85.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69charger500_Shell_BlackRedStripe.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69charger500_Shell_Castrol27.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69charger500_Shell_Sprite55.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69charger500_Shell_Marlboro66.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69chargerDaytona_Shell_Peru52.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69chargerDaytona_Shell_Motul60.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69chargerDaytona_Shell_Nos34.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69chargerDaytona_Shell_Camel92.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerDaytona", "Vehicles/Vehicles_69chargerDaytona_Shell_Motul76.png");
+-- 69chargerRT
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerRT", "Vehicles/Vehicles_69charger500_Shell_Repsol30.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerRT", "Vehicles/Vehicles_69charger500_Shell_89YB.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerRT", "Vehicles/Vehicles_69charger500_Shell_CocaCola95.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerRT", "Vehicles/Vehicles_69charger500_Shell_GT26.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerRT", "Vehicles/Vehicles_69charger500_Shell_Pepsi85.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerRT", "Vehicles/Vehicles_69charger500_Shell_BlackRedStripe.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerRT", "Vehicles/Vehicles_69charger500_Shell_Castrol27.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerRT", "Vehicles/Vehicles_69charger500_Shell_Sprite55.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerRT", "Vehicles/Vehicles_69charger500_Shell_Marlboro66.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerRT", "Vehicles/Vehicles_69charger500_Shell_ToyoTires.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerRT", "Vehicles/Vehicles_69chargerRT_Shell_ConfederateFlag.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.69chargerRT", "Vehicles/Vehicles_69chargerRT_Shell_USABaldEagle.png");
+
+-- 70barracuda
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracuda", "Vehicles/Vehicles_70barracuda_Shell_BlackGFF.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracuda", "Vehicles/Vehicles_70barracuda_Shell_Kali.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracuda", "Vehicles/Vehicles_70barracuda_Fireston70.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracuda", "Vehicles/Vehicles_70barracuda_GeneralLee01.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracuda", "Vehicles/Vehicles_70barracuda_GurrenLagann.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracuda", "Vehicles/Vehicles_70barracuda_KentuckyUSA.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracuda", "Vehicles/Vehicles_70barracuda_KSA.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracuda", "Vehicles/Vehicles_70cuda_OverFlow.png");
+-- 70barracudaAAR
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracudaAAR", "Vehicles/Vehicles_70barracuda_Shell_BlackGFF.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracudaAAR", "Vehicles/Vehicles_70barracuda_Shell_Kali.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracudaAAR", "Vehicles/Vehicles_70barracuda_Fireston70.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracudaAAR", "Vehicles/Vehicles_70barracuda_GeneralLee01.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracudaAAR", "Vehicles/Vehicles_70barracuda_GurrenLagann.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracudaAAR", "Vehicles/Vehicles_70barracuda_KentuckyUSA.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracudaAAR", "Vehicles/Vehicles_70barracuda_KSA.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70barracudaAAR", "Vehicles/Vehicles_70cuda_OverFlow.png");
+-- 70cuda
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70cuda", "Vehicles/Vehicles_70barracuda_Shell_BlackGFF.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70cuda", "Vehicles/Vehicles_70barracuda_Shell_Kali.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70cuda", "Vehicles/Vehicles_70barracuda_Fireston70.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70cuda", "Vehicles/Vehicles_70barracuda_GeneralLee01.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70cuda", "Vehicles/Vehicles_70barracuda_GurrenLagann.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70cuda", "Vehicles/Vehicles_70barracuda_KentuckyUSA.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70cuda", "Vehicles/Vehicles_70barracuda_KSA.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70cuda", "Vehicles/Vehicles_70cuda_OverFlow.png");
+
+-- 70 DODGE BG
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodgeBG_Shell_Carrots.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodgeBG_Shell_black_weeb.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodgeBG_Shell_TrustRacing.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodgeBG_Shell_white09.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodgeBGOP_Shell_madmax.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodgeBGOP_Shell_HelloKitty.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodgeBGOPRT_Shell_BHOS.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodge_Shell_Kali.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodge_Shell_RedWhite19.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodge_Shell_Nos06.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodge_Shell_MonsterE.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodge_Shell_Spiffos.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodge_Shell_Kitty23.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodgeBG_Shell_BlackFlames.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeBG", "Vehicles/Vehicles_70dodge_Shell_Militek.png");
+-- 70 DODGE OP
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeOP", "Vehicles/Vehicles_70dodgeBGOP_Shell_HelloKitty.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeOP", "Vehicles/Vehicles_70dodgeBGOP_Shell_madmax.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeOP", "Vehicles/Vehicles_70dodgeOPRT_Shell_USA.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeOP", "Vehicles/Vehicles_70dodgeOPRT_snoodlecock.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeOP", "Vehicles/Vehicles_70dodgeOP_Shell_Corbra.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeOP", "Vehicles/Vehicles_70dodgeBGOPRT_Shell_BHOS.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeOP", "Vehicles/Vehicles_70dodge_Shell_Kali.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeOP", "Vehicles/Vehicles_70dodge_Shell_RedWhite19.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeOP", "Vehicles/Vehicles_70dodge_Shell_Nos06.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeOP", "Vehicles/Vehicles_70dodge_Shell_MonsterE.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeOP", "Vehicles/Vehicles_70dodge_Shell_Spiffos.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeOP", "Vehicles/Vehicles_70dodge_Shell_Kitty23.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeOP", "Vehicles/Vehicles_70dodge_Shell_Militek.png");
+-- 70 DODGE PD
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgePD", "Vehicles/Vehicles_70dodgePDRT_Shell_bw_Maccies.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgePD", "Vehicles/Vehicles_70dodgePD_Shell_Duck.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgePD", "Vehicles/Vehicles_70dodge_Shell_Kali.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgePD", "Vehicles/Vehicles_70dodgePD_Shell_PurpleWhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgePD", "Vehicles/Vehicles_70dodgePD_Shell_pinkWhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgePD", "Vehicles/Vehicles_70dodgeRANGER_Shell_brownWhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgePD", "Vehicles/Vehicles_70dodgePD_Shell_bw_Shot.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgePD", "Vehicles/Vehicles_70dodge_Shell_Militek.png");
+-- 70 DODGE RT
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeRT", "Vehicles/Vehicles_70dodgeRT_Shell_Sakura.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeRT", "Vehicles/Vehicles_70dodgeOPRT_Shell_USA.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeRT", "Vehicles/Vehicles_70dodgeOPRT_snoodlecock.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeRT", "Vehicles/Vehicles_70dodgeBGOPRT_Shell_BHOS.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeRT", "Vehicles/Vehicles_70dodgePDRT_Shell_bw_Maccies.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeRT", "Vehicles/Vehicles_70dodge_Shell_Kali.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeRT", "Vehicles/Vehicles_70dodgeRT_Shell_BYBanana.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeRT", "Vehicles/Vehicles_70dodge_Shell_RedWhite19.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeRT", "Vehicles/Vehicles_70dodge_Shell_Nos06.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeRT", "Vehicles/Vehicles_70dodge_Shell_MonsterE.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeRT", "Vehicles/Vehicles_70dodge_Shell_Spiffos.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeRT", "Vehicles/Vehicles_70dodge_Shell_Kitty23.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeRT", "Vehicles/Vehicles_70dodge_Shell_Militek.png");
+-- 70 DODGE TA
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeTA", "Vehicles/Vehicles_70dodgeTA_Shell_Nos11.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeTA", "Vehicles/Vehicles_70dodgeTA_Shell_Nos28.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeTA", "Vehicles/Vehicles_70dodgeTA_Shell_Nos13.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeTA", "Vehicles/Vehicles_70dodgeTA_Shell_USA04.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeTA", "Vehicles/Vehicles_70dodgeTA_Shell_Cracked5.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeTA", "Vehicles/Vehicles_70dodgeTA_Shell_Nos07.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeTA", "Vehicles/Vehicles_70dodgeTA_Shell_Spiffo2.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeTA", "Vehicles/Vehicles_70dodge_Shell_Kitty23.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70dodgeTA", "Vehicles/Vehicles_70dodge_Shell_Militek.png");
+
+-- 70roadRunner
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70roadRunner", "Vehicles/Vehicles_70roadRunner_Shell_Shell53.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70roadRunner", "Vehicles/Vehicles_70roadRunner_Shell_Esso54.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70roadRunner", "Vehicles/Vehicles_70roadRunner_Shell_Texaco50.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70roadRunner", "Vehicles/Vehicles_70roadRunner_Shell_Catrol49.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70roadRunner", "Vehicles/Vehicles_70roadRunner_Shell_Blue36.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70roadRunner", "Vehicles/Vehicles_70roadRunner_Shell_lemonTwist.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70roadRunner", "Vehicles/Vehicles_70roadRunner_Shell_Red49.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70roadRunner", "Vehicles/Vehicles_70roadRunner_Shell_Rust38.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70roadRunner", "Vehicles/Vehicles_70roadRunner_Shell_Red45.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.70roadRunner", "Vehicles/Vehicles_70roadRunner_Shell_STP51.png");
+
+-- 73FordFalconPS
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPS", "Vehicles/Vehicles_73fordFalconPS_MadMax.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPS", "Vehicles/Vehicles_73fordFalconPS_Shell_NWMFgreece.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPS", "Vehicles/Vehicles_73fordFalconPS_Shell_AGIP94.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPS", "Vehicles/Vehicles_73fordFalconPS_Shell_Sparco65.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPS", "Vehicles/Vehicles_73fordFalconPS_Shell_PENNZOIL.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPS", "Vehicles/Vehicles_73fordFalconPS_Shell_RedBull83.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPS", "Vehicles/Vehicles_73fordFalconPS_Shell_Sega80.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPS", "Vehicles/Vehicles_73fordFalconPS_Shell_Valvoline80.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPS", "Vehicles/Vehicles_73fordFalconPS_Shell_Nintendo67.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPS", "Vehicles/Vehicles_73fordFalconPS_Shell_Pirelli57.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPS", "Vehicles/Vehicles_73fordFalconPS_Shell_Micheling59.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPS", "Vehicles/Vehicles_73fordFalconPS_Shell_yellow53.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPS", "Vehicles/Vehicles_73fordFalconPS_Shell_MoonEyes84.png");
+-- 73FordFalconPSlhd
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPSlhd", "Vehicles/Vehicles_73fordFalconPS_MadMax.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPSlhd", "Vehicles/Vehicles_73fordFalconPS_Shell_NWMFgreece.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPSlhd", "Vehicles/Vehicles_73fordFalconPS_Shell_AGIP94.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPSlhd", "Vehicles/Vehicles_73fordFalconPS_Shell_Sparco65.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPSlhd", "Vehicles/Vehicles_73fordFalconPS_Shell_PENNZOIL.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPSlhd", "Vehicles/Vehicles_73fordFalconPS_Shell_RedBull83.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPSlhd", "Vehicles/Vehicles_73fordFalconPS_Shell_Sega80.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPSlhd", "Vehicles/Vehicles_73fordFalconPS_Shell_Valvoline80.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPSlhd", "Vehicles/Vehicles_73fordFalconPS_Shell_Nintendo67.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPSlhd", "Vehicles/Vehicles_73fordFalconPS_Shell_Pirelli57.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPSlhd", "Vehicles/Vehicles_73fordFalconPS_Shell_Micheling59.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPSlhd", "Vehicles/Vehicles_73fordFalconPS_Shell_yellow53.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.73fordFalconPSlhd", "Vehicles/Vehicles_73fordFalconPS_Shell_MoonEyes84.png");
+
+-- 76chevyK10
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.76chevyK10", "Vehicles/Vehicles_76chevyKseries_MadMax_blue.png");     
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.76chevyK10", "Vehicles/Vehicles_76chevyKseries_MadMax_GreenSurvivor.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.76chevyK10", "Vehicles/Vehicles_76chevyKseries_MadMax_kaki.png");
+
+-- 76chevyK20
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.76chevyK20", "Vehicles/Vehicles_76chevyKseries_MadMax_blue.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.76chevyK20", "Vehicles/Vehicles_76chevyKseries_MadMax_GreenSurvivor.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.76chevyK20", "Vehicles/Vehicles_76chevyKseries_MadMax_kaki.png");
+
+-- 76chevyK30CC
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.76chevyK30CC", "Vehicles/Vehicles_76chevyKseries_MadMax_blue.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.76chevyK30CC", "Vehicles/Vehicles_76chevyKseries_MadMax_GreenSurvivor.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.76chevyK30CC", "Vehicles/Vehicles_76chevyKseries_MadMax_kaki.png");
+
+-- 76chevyK30CCdually
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.76chevyK30CCdually", "Vehicles/Vehicles_76chevyKseries_MadMax_blue.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.76chevyK30CCdually", "Vehicles/Vehicles_76chevyKseries_MadMax_kaki.png");
+
+-- 78lamboCountachLP400
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.78lamboCountachLP400", "Vehicles/Vehicles_78lamboCountachS_Shell_BlueDemon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.78lamboCountachLP400", "Vehicles/Vehicles_78lamboCountachS_Shell_Draco.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.78lamboCountachLP400", "Vehicles/Vehicles_78lamboCountachS_Shell_Sakura.png");
+-- 78lamboCountachLP400S
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.78lamboCountachLP400S", "Vehicles/Vehicles_78lamboCountachS_Shell_BlueDemon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.78lamboCountachLP400S", "Vehicles/Vehicles_78lamboCountachS_Shell_Draco.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.78lamboCountachLP400S", "Vehicles/Vehicles_78lamboCountachS_Shell_Sakura.png");
+-- 78lamboCountachLP400Scb
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.78lamboCountachLP400Scb", "Vehicles/Vehicles_78lamboCountachS_Shell_BlueDemon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.78lamboCountachLP400Scb", "Vehicles/Vehicles_78lamboCountachS_Shell_Draco.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.78lamboCountachLP400Scb", "Vehicles/Vehicles_78lamboCountachS_Shell_Sakura.png");
+
+-- 81deloreanDMC12BTTF
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.81deloreanDMC12BTTF", "Vehicles/Vehicles_81deloreanDMC12_Militek_BTTF.png");
+
+-- 82firebird
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82firebird", "Vehicles/Vehicles_82firebird_Shell_TransAM.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82firebird", "Vehicles/Vehicles_82firebird_Shell_PurpleUSA.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82firebird", "Vehicles/Vehicles_82firebird_Shell_BuschClash.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82firebird", "Vehicles/Vehicles_82firebird_Shell_blackTalon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82firebird", "Vehicles/Vehicles_82firebird_Shell_BlueTalon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82firebird", "Vehicles/Vehicles_82firebird_Shell_GoldTalon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82firebird", "Vehicles/Vehicles_82firebird_Shell_WhiteGTalon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82firebird", "Vehicles/Vehicles_82firebird_Shell_GrayBlueTalon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82firebird", "Vehicles/Vehicles_82firebird_Shell_WhiteGTalon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82firebird", "Vehicles/Vehicles_82firebird_Shell_RedGray70.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82firebird", "Vehicles/Vehicles_82firebird_Shell_NascarDaytona500.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82firebird", "Vehicles/Vehicles_82firebird_Shell_BlackWTalon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82firebird", "Vehicles/Vehicles_82firebird_Shell_noirTalon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82firebird", "Vehicles/Vehicles_82firebird_Shell_polandTalon.png");
+
+-- 82oshkoshM911
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82oshkoshM911", "Vehicles/Vehicles_82oshkoshM911_Shell_KYRanger.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82oshkoshM911", "Vehicles/Vehicles_82oshkoshM911_Shell_Militelk.png");
+
+-- 82oshkoshM911B
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82oshkoshM911B", "Vehicles/Vehicles_82oshkoshM911_Shell_KYRanger.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82oshkoshM911B", "Vehicles/Vehicles_82oshkoshM911_Shell_Militelk.png");
+
+-- 82porsche911rwb
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911rwb", "Vehicles/Vehicles_82porsche911rwb_Shell_Pzero.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911rwb", "Vehicles/Vehicles_82porsche911rwb_Shell_GOLDEN.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911rwb", "Vehicles/Vehicles_82porsche911rwb_Shell_Purple14.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911rwb", "Vehicles/Vehicles_82porsche911rwb_Shell_CyanPool.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911rwb", "Vehicles/Vehicles_82porsche911rwb_Shell_PinkBambi.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911rwb", "Vehicles/Vehicles_82porsche911rwb_Shell_SeraBlack.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911rwb", "Vehicles/Vehicles_82porsche911rwb_Shell_PinkDino.png");
+-- 82porsche911sc
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911sc", "Vehicles/Vehicles_82porsche911sc_Shell_Castrol.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911sc", "Vehicles/Vehicles_82porsche911sc_Shell_Martini.png");
+-- 82porsche911targa
+-- 82porsche911turbo
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911turbo", "Vehicles/Vehicles_82porsche911turbo_Shell_GulfCyan.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911turbo", "Vehicles/Vehicles_82porsche911turbo_Shell_FlameBlack.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911turbo", "Vehicles/Vehicles_82porsche911turbo_Shell_Martini22.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911turbo", "Vehicles/Vehicles_82porsche911turbo_Shell_ShellWR.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911turbo", "Vehicles/Vehicles_82porsche911turbo_Shell_MotorSportBR.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911turbo", "Vehicles/Vehicles_82porsche911turbo_Shell_Touch67.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911turbo", "Vehicles/Vehicles_82porsche911turbo_Shell_WolfBlue.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911turbo", "Vehicles/Vehicles_82porsche911turbo_Shell_OrangeStinger.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911turbo", "Vehicles/Vehicles_82porsche911turbo_Shell_MetallicCrome.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911turbo", "Vehicles/Vehicles_82porsche911turbo_Shell_RedBull22.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.82porsche911turbo", "Vehicles/Vehicles_82porsche911turbo_Shell_Mari.png");
+
+-- 84mercLWB2
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.84mercLWB2", "Vehicles/Vehicles_84mercLWB2_Shell_NeonOrange.png");
+
+-- 84gageV300apc
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.84gageV300apc", "Vehicles/Vehicles_84gageV300apc_Shell_CoGblack.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.84gageV300apc", "Vehicles/Vehicles_84gageV300apc_Shell_CoGwhite.png");
+-- 84gageV300fsv
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.84gageV300fsv", "Vehicles/Vehicles_84gageV300fsv_Shell_CoGblack.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.84gageV300fsv", "Vehicles/Vehicles_84gageV300fsv_Shell_CoGwhite.png");
+
+-- 85chevyStepVan
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.85chevyStepVan", "Vehicles/Vehicles_85chevyStepVan_Shell_black_fallout_1.png");    
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.85chevyStepVan", "Vehicles/Vehicles_85chevyStepVan_Shell_black_fallout_2.png");    
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.85chevyStepVan", "Vehicles/Vehicles_85chevyStepVan_Shell_Kecoa.png");    
+
+-- 86chevyM1031
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.86chevyM1031", "Vehicles/Vehicles_86chevyM1031_Shell_GoblinBlue.png");    
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.86chevyM1031", "Vehicles/Vehicles_86chevyM1031_Shell_GoblinWhite.png");    
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.86chevyM1031", "Vehicles/Vehicles_86chevyM1031_Shell_GoblinWoodland.png");    
+
+-- 86fordE150slide
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.86fordE150slide", "Vehicles/Vehicles_86fordE150slide_Shell_ducksquad.png");    
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.86fordE150slide", "Vehicles/Vehicles_86fordE150slide_Shell_Spidervan.png");    
+
+-- 86OshkoshFRTR55
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.86oshkoshFRTR55", "Vehicles/Vehicles_86oshkoshFRTR55_Shell_Duck.png");    
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.86oshkoshFRTR55", "Vehicles/Vehicles_86oshkoshFRTR55_Shell_HelloKitty.png"); 
+-- 86OshkoshUSMC
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.86oshkoshUSMC", "Vehicles/Vehicles_86oshkoshUSMC_Kali.png");    
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.86oshkoshUSMC", "Vehicles/Vehicles_86oshkoshUSMC_ND.png");    
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.86oshkoshUSMC", "Vehicles/Vehicles_86oshkoshUSMC_Black42.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.86oshkoshUSMC", "Vehicles/Vehicles_86oshkoshUSMC_Shell_Militek.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.86oshkoshUSMC", "Vehicles/Vehicles_86oshkoshUSMC_Shell_Militek2.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.86oshkoshUSMC", "Vehicles/Vehicles_86oshkoshUSMC_Shell_Militek3.png");
+
+-- 87buickRegalTurboT
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboT", "Vehicles/Vehicles_87buickRegal_Shell_gnx_reggae.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboT", "Vehicles/Vehicles_87buickRegalTurboT_Shell_BloodmoonC.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboT", "Vehicles/Vehicles_87buickRegal_Shell_Raiders.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboT", "Vehicles/Vehicles_87buickRegal_Shell_FalloutClay.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboT", "Vehicles/Vehicles_87buickRegal_Shell_WhiteEagle.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboT", "Vehicles/Vehicles_87buickRegal_Shell_BlackEagle.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboT", "Vehicles/Vehicles_87buickRegal_Shell_BlueNCR.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboT", "Vehicles/Vehicles_87buickRegalTurboT_NoMercyRust.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboT", "Vehicles/Vehicles_87buickRegalTurboT_Shell_BanditsBlack.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboT", "Vehicles/Vehicles_87buickRegalTurboT_ZombieHunter.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboT", "Vehicles/Vehicles_87buickRegalTurboT_Shell_ArizonaRanger.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboT", "Vehicles/Vehicles_87buickRegalTurboT_Shell_USShark42.png"); 
+-- 87buickRegalTurboTfbi
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboTfbi", "Vehicles/Vehicles_87buickRegal_Shell_gnx_reggae.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboTfbi", "Vehicles/Vehicles_87buickRegalTurboT_Shell_BloodmoonC.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboTfbi", "Vehicles/Vehicles_87buickRegal_Shell_Raiders.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboTfbi", "Vehicles/Vehicles_87buickRegal_Shell_FalloutClay.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboTfbi", "Vehicles/Vehicles_87buickRegal_Shell_WhiteEagle.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboTfbi", "Vehicles/Vehicles_87buickRegal_Shell_BlackEagle.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboTfbi", "Vehicles/Vehicles_87buickRegal_Shell_BlueNCR.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboTfbi", "Vehicles/Vehicles_87buickRegalTurboT_NoMercyRust.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboTfbi", "Vehicles/Vehicles_87buickRegalTurboT_Shell_BanditsBlack.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboTfbi", "Vehicles/Vehicles_87buickRegalTurboT_ZombieHunter.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboTfbi", "Vehicles/Vehicles_87buickRegalTurboT_Shell_ArizonaRanger.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalTurboTfbi", "Vehicles/Vehicles_87buickRegalTurboT_Shell_USShark42.png"); 
+-- 87buickRegalGNX
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalGNX", "Vehicles/Vehicles_87buickRegal_Shell_gnx_reggae.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalGNX", "Vehicles/Vehicles_87buickRegalTurboT_Shell_BloodmoonC.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalGNX", "Vehicles/Vehicles_87buickRegal_Shell_Raiders.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalGNX", "Vehicles/Vehicles_87buickRegal_Shell_FalloutClay.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalGNX", "Vehicles/Vehicles_87buickRegal_Shell_WhiteEagle.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalGNX", "Vehicles/Vehicles_87buickRegal_Shell_BlackEagle.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalGNX", "Vehicles/Vehicles_87buickRegal_Shell_BlueNCR.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalGNX", "Vehicles/Vehicles_87buickRegalTurboT_NoMercyRust.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalGNX", "Vehicles/Vehicles_87buickRegalTurboT_Shell_BanditsBlack.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalGNX", "Vehicles/Vehicles_87buickRegalTurboT_ZombieHunter.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalGNX", "Vehicles/Vehicles_87buickRegalTurboT_Shell_ArizonaRanger.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87buickRegalGNX", "Vehicles/Vehicles_87buickRegalTurboT_Shell_USShark42.png"); 
+
+-- 87fordB700prison
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87fordB700prison", "Vehicles/Vehicles_87fordB700prison_BangBros.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87fordB700prison", "Vehicles/Vehicles_87fordB700prison_pucca.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87fordB700prison", "Vehicles/Vehicles_87fordB700prison_Shell_KSP.png"); 
+-- 87fordF700bank
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87fordF700bank", "Vehicles/Vehicles_87fordF700bank_Shell_Az.png"); 
+-- 87fordF700box
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87fordF700box", "Vehicles/Vehicles_87fordF700box_Shell_BloodMoonB.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87fordF700box", "Vehicles/Vehicles_87fordF700box_Shell_BuildingCorp.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87fordF700box", "Vehicles/Vehicles_87fordF700box_Shell_LOGI.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87fordF700box", "Vehicles/Vehicles_87fordF700box_Shell_SpiffoWhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87fordF700box", "Vehicles/Vehicles_87fordF700box_Shell_LuxBlack.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87fordF700box", "Vehicles/Vehicles_87fordF700box_Shell_LuxWhite.png");
+-- 87fordF700swat
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87fordF700swat", "Vehicles/Vehicles_87fordF700swat_Shell_blackSwatBetter.png");
+
+-- 87ToyotaMR2
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87toyotaMR2", "Vehicles/Vehicles_87toyotaMR2_Shell_PinkFlowers.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87toyotaMR2", "Vehicles/Vehicles_87toyotaMR2_Shell_RacingRedSun.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87toyotaMR2", "Vehicles/Vehicles_87toyotaMR2_Shell_Calsonic77.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87toyotaMR2", "Vehicles/Vehicles_87toyotaMR2_Shell_PurpleClouds.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87toyotaMR2", "Vehicles/Vehicles_87toyotaMR2_Shell_PurpleShaders.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87toyotaMR2", "Vehicles/Vehicles_87toyotaMR2_Shell_ApocalypseWar.png"); 
+-- 87ToyotaMR2c
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87toyotaMR2c", "Vehicles/Vehicles_87toyotaMR2_Shell_PurpleClouds.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87toyotaMR2c", "Vehicles/Vehicles_87toyotaMR2_Shell_beigeGreen.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87toyotaMR2c", "Vehicles/Vehicles_87toyotaMR2_Shell_black.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87toyotaMR2c", "Vehicles/Vehicles_87toyotaMR2_Shell_blackRed.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87toyotaMR2c", "Vehicles/Vehicles_87toyotaMR2_Shell_superRed.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.87toyotaMR2c", "Vehicles/Vehicles_87toyotaMR2_Shell_superWhite.png"); 
+
+-- 88toyotaHiluxSC
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.88toyotaHiluxSC", "Vehicles/Vehicles_88toyotaHilux_Shell_Gulf.png"); 
+-- 88toyotaHiluxXC
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.88toyotaHiluxXC", "Vehicles/Vehicles_88toyotaHilux_Shell_Gulf.png"); 
+-- 88toyotaHiluxXCS
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.88toyotaHiluxXCS", "Vehicles/Vehicles_88toyotaHilux_Shell_Gulf.png"); 
+
+-- 89dodgeCaravanNomad
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.89dodgeCaravanNomad", "Vehicles/Vehicles_89dodgeCaravanNomad_minkpaw.png");
+
+-- 89trooperRS
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.89trooperRS", "Vehicles/Vehicles_89trooper_Shell_Lucario.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.89trooperRS", "Vehicles/Vehicles_89trooperOP_Shell_uscamo.png");
+
+-- 89fordBronco
+-- 89fordBroncoPD
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.89fordBroncoPD", "Vehicles/Vehicles_89fordBroncoPD_Shell_MuldraughPD.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.89fordBroncoPD", "Vehicles/Vehicles_89fordBroncoPD_Shell_WestPointPD.png");
+-- 89fordBroncoRanger
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.89fordBroncoRanger", "Vehicles/Vehicles_89fordBroncoRanger_Shell_SheriffBulletin.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.89fordBroncoRanger", "Vehicles/Vehicles_89fordBroncoRanger_Shell_SheriffMeade.png");
+
+-- 90fordF350ambulance
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90fordF350ambulance", "Vehicles/Vehicles_90fordF350ambulance_Shell_ACoG.png");
+
+-- 90pierceArrow
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90pierceArrow", "Vehicles/Objects_90pierceArrow_enclave.png");
+
+-- 90bmwE30cabrio
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30m3cabrio", "Vehicles/Vehicles_90bmwE30cabrio_Shell_Osaka81.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30m3cabrio", "Vehicles/Vehicles_90bmwE30cabrio_Shell_Yokohama89.png"); 
+-- 90bmwE30m3
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30m3", "Vehicles/Vehicles_90bmwE30m3_Shell_7UpYoko.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30m3", "Vehicles/Vehicles_90bmwE30m3_Shell_CamelYoko.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30m3", "Vehicles/Vehicles_90bmwE30m3_Shell_Wanted.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30m3", "Vehicles/Vehicles_90bmwE30m3_Shell_MarlboroYoko.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30m3", "Vehicles/Vehicles_90bmwE30m3_Shell_VLineMotor.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30m3", "Vehicles/Vehicles_90bmwE30m3_Shell_Bastos1.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30m3", "Vehicles/Vehicles_90bmwE30m3_Shell_MotulYoko.png");
+-- 90bmwE30Sedan2
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30sedan2", "Vehicles/Vehicles_90bmwE30sedan2_Shell_MartiniRacing.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30sedan2", "Vehicles/Vehicles_90bmwE30sedan2_Shell_SkullPirate.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30sedan2", "Vehicles/Vehicles_90bmwE30sedan4_Shell_TicTac.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30sedan2", "Vehicles/Vehicles_90bmwE30sedan2_Shell_RepsolRacing.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30sedan2", "Vehicles/Vehicles_90bmwE30sedan2_Shell_RustRaiders.png");
+-- 90bmwE30Sedan4
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30sedan4", "Vehicles/Vehicles_90bmwE30sedan2_Shell_MartiniRacing.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30sedan4", "Vehicles/Vehicles_90bmwE30sedan2_Shell_SkullPirate.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30sedan4", "Vehicles/Vehicles_90bmwE30sedan4_Shell_TicTac.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30sedan4", "Vehicles/Vehicles_90bmwE30sedan2_Shell_RepsolRacing.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30sedan4", "Vehicles/Vehicles_90bmwE30sedan2_Shell_RustRaiders.png");
+-- 90bmwE30touring
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30touring", "Vehicles/Vehicles_90bmwE30touring_Shell_Stixie.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.90bmwE30touring", "Vehicles/Vehicles_90bmwE30touring_Shell_CastrolR.png"); 
+
+-- 91geoMetro
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91geoMetro", "Vehicles/Vehicles_91geoMetro_Shell_Spiffo.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91geoMetro", "Vehicles/Vehicles_91geoMetro_Shell_BlackPurpleStripes.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91geoMetro", "Vehicles/Vehicles_91geoMetro_Shell_BlackWhiteStripes.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91geoMetro", "Vehicles/Vehicles_91geoMetro_Shell_BlueStudent.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91geoMetro", "Vehicles/Vehicles_91geoMetro_Shell_HotPinkSkull.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91geoMetro", "Vehicles/Vehicles_91geoMetro_Shell_HotPinkWhiteStripes.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91geoMetro", "Vehicles/Vehicles_91geoMetro_Shell_OrangeGoblin.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91geoMetro", "Vehicles/Vehicles_91geoMetro_Shell_RedAbstractTop.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91geoMetro", "Vehicles/Vehicles_91geoMetro_Shell_RedBlackS.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91geoMetro", "Vehicles/Vehicles_91geoMetro_Shell_WhiteBlackGreenAbstract.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91geoMetro", "Vehicles/Vehicles_91geoMetro_Shell_WhiteMonkeyBizz.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91geoMetro", "Vehicles/Vehicles_91geoMetro_Shell_YellowBlackHand.png");
+
+-- 91nissan240sx
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91nissan240sx", "Vehicles/Vehicles_91nissan240sx_Cooper.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91nissan240sx", "Vehicles/Vehicles_91nissan240sx_Letty.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91nissan240sx", "Vehicles/Vehicles_91nissan240sx_Shell_BloodMoon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91nissan240sx", "Vehicles/Vehicles_91nissan240sx_Shell_Robotech01.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91nissan240sx", "Vehicles/Vehicles_91nissan240sx_Shell_BlackRenault.png");
+-- 91nissan240sx2
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91nissan240sx2", "Vehicles/Vehicles_91nissan240sx_Cooper.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91nissan240sx2", "Vehicles/Vehicles_91nissan240sx_Letty.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91nissan240sx2", "Vehicles/Vehicles_91nissan240sx_Shell_BloodMoon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91nissan240sx2", "Vehicles/Vehicles_91nissan240sx_Shell_Robotech01.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91nissan240sx2", "Vehicles/Vehicles_91nissan240sx_Shell_BlackRenault.png");
+
+-- 91fordLTDpd
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91fordLTDpd", "Vehicles/Vehicles_91fordLTDpd_Shell_SheriffBulletin.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91fordLTDpd", "Vehicles/Vehicles_91fordLTDpd_Shell_LCPDBlue.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91fordLTDpd", "Vehicles/Vehicles_91fordLTDpd_Shell_LouisvillePD.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91fordLTDpd", "Vehicles/Vehicles_91fordLTDpd_Shell_SheriffMeade.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91fordLTDpd", "Vehicles/Vehicles_91fordLTDpd_Shell_MuldraughPD.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.91fordLTDpd", "Vehicles/Vehicles_91fordLTDpd_Shell_WestPointPD.png");
+
+-- 92nissanGTR
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_Akai3Taisan.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_BeeHive.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_BlackLotus.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_DuckyCreek.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_GTRpurple.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_InuYasha.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_JBL.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_Kitty.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_MadMaxSkull.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_Nissan4Rally.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_Nissan12Calsonic.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_TokyoDriftBlue.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_TokyoDriftDragon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_Nissan23Castrol.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_deathSKULL.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_BlackGreen02.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_Dragon07.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_TheyHatin34.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_PaliCar.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_purpleVW.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_BloodAngelAI.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTR", "Vehicles/Vehicles_92nissanGTR_Shell_SanguiniusAI.png");
+-- 92nissanGTRlhd
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_Akai3Taisan.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_BeeHive.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_BlackLotus.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_DuckyCreek.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_GTRpurple.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_InuYasha.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_JBL.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_Kitty.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_MadMaxSkull.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_Nissan4Rally.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_Nissan12Calsonic.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_TokyoDriftBlue.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_TokyoDriftDragon.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_Nissan23Castrol.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_deathSKULL.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_BlackGreen02.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_Dragon07.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_TheyHatin34.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_PaliCar.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_purpleVW.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_BloodAngelAI.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92nissanGTRlhd", "Vehicles/Vehicles_92nissanGTR_Shell_SanguiniusAI.png");
+
+-- 92fordCVPI
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92fordCVPI", "Vehicles/Vehicles_92fordCVPI_Shell_SheriffBulletin.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92fordCVPI", "Vehicles/Vehicles_92fordCVPI_Shell_LouisvillePD.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92fordCVPI", "Vehicles/Vehicles_92fordCVPI_Shell_SheriffMeade.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92fordCVPI", "Vehicles/Vehicles_92fordCVPI_Shell_MuldraughPD.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92fordCVPI", "Vehicles/Vehicles_92fordCVPI_Shell_WestPointPD.png");
+-- 92fordCVPI2
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92fordCVPI2", "Vehicles/Vehicles_92fordCVPI_Shell_SheriffBulletin.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92fordCVPI2", "Vehicles/Vehicles_92fordCVPI_Shell_LouisvillePD.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92fordCVPI2", "Vehicles/Vehicles_92fordCVPI_Shell_SheriffMeade.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92fordCVPI2", "Vehicles/Vehicles_92fordCVPI_Shell_MuldraughPD.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92fordCVPI2", "Vehicles/Vehicles_92fordCVPI_Shell_WestPointPD.png");
+-- 92fordCVPI2so
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92fordCVPI2so", "Vehicles/Vehicles_92fordCVPI_Shell_SheriffBulletin.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92fordCVPI2so", "Vehicles/Vehicles_92fordCVPI_Shell_SheriffMeade.png");
+-- 92fordCVPI2sup
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92fordCVPI2sup", "Vehicles/Vehicles_92fordCVPI_Shell_SheriffBulletin.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92fordCVPI2sup", "Vehicles/Vehicles_92fordCVPI_Shell_SheriffMeade.png");
+
+-- 92 amgeneral M998
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_Barxman2.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_BHOS.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_Duck3.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_Golden.png"); 
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_madmax.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_necrons.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_Tesla.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_Police.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_Deadpool.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_Gundam.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_Phantom.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_Pikachu.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_PoliceB.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_Sleepy.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_Squirtle.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Chainsawman_Denji.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Chainsawman_POWER.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_CSGOyinhuaji.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_EVA01_SV.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hammeer_ASUKA.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hammeer_K9999.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hammeer_KYOU.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hammeer_MIUpink.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hammeer_wuyumonisha.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_HatobaAKO.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hummer_Cyberpunk01.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hummer_Cyberpunk02.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hummer_EVA00Rei.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hummer_EVA01Shinji.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hummer_EVA02Asuka.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hummer_EVA08Mari.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hummer_EZ.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hummer_ICRC.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hummer_IRS.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hummer_MIKU.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hummer_Police.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hummer_RE_RPD.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Hummer_tigerCS_wukong.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Monster.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_MushokuTenseiSkin1.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_RE_Umbrella.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_RE_Umbrella_blood1.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Spider_Gwen.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_SpiderMan.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Venom.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_Arknight.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_koko.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_lucy.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_SCP.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_Militek.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_TaliaKerrigan.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_CoGblack.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_CoGwhite.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_SundayDriverSand.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_VW.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_SheriffMeade.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.92amgeneralM998", "Vehicles/Vehicles_92amgeneralM998_Shell_CLPDSWAT.png");
+
+-- 93chevySuburban
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.93chevySuburban", "Vehicles/Vehicles_93chevySuburban_Shell_DoctorWitch.png");
+
+-- 93fordF350dually
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.93fordF350dually", "Vehicles/Vehicles_93fordF350dually_Shell_USA.png");
+-- 93fordF350pd
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.93fordF350pd", "Vehicles/Vehicles_93fordF350pd_Shell_KCS.png");
+
+-- 97bushmaster
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushmaster", "Vehicles/Vehicles_97bushmaster_Shell_NWMF.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushmaster", "Vehicles/Vehicles_97bushmaster_Shell_USAblack.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushmaster", "Vehicles/Vehicles_97bushmaster_Shell_Ave.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushmaster", "Vehicles/Vehicles_97bushmaster_Shell_BlackGold.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushmaster", "Vehicles/Vehicles_97bushmaster_Shell_Tron.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushmaster", "Vehicles/Vehicles_97bushmaster_Shell_WhiteStar.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushmaster", "Vehicles/Vehicles_97bushmaster_Shell_possum.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushmaster", "Vehicles/Vehicles_97bushmaster_Shell_ND.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushmaster", "Vehicles/Vehicles_97bushmaster_Militek.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushmaster", "Vehicles/Vehicles_97bushmaster_Shell_PearlyRed_Arch.png");
+-- 97bushAmbulance
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushAmbulance", "Vehicles/Vehicles_97bushmaster_Shell_possum.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushAmbulance", "Vehicles/Vehicles_97bushmaster_Shell_NWMF.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushAmbulance", "Vehicles/Vehicles_97bushmaster_Shell_USAblack.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushAmbulance", "Vehicles/Vehicles_97bushmaster_Shell_Ave.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushAmbulance", "Vehicles/Vehicles_97bushmaster_Shell_BlackGold.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushAmbulance", "Vehicles/Vehicles_97bushmaster_Shell_Tron.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushAmbulance", "Vehicles/Vehicles_97bushmaster_Shell_WhiteStar.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushAmbulance", "Vehicles/Vehicles_97bushmaster_Shell_ND.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushAmbulance", "Vehicles/Vehicles_97bushmaster_Militek.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.97bushAmbulance", "Vehicles/Vehicles_97bushmaster_Shell_PearlyRed_Arch.png");
+
+-- 98stagea260RS
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RS", "Vehicles/Vehicles_98stagea_Shell_MaxLiberty.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RS", "Vehicles/Vehicles_98stagea_Shell_Stix.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RS", "Vehicles/Vehicles_98stagea_Shell_BoostedTunedBlue.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RS", "Vehicles/Vehicles_98stagea_Shell_HeroYellow22.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RS", "Vehicles/Vehicles_98stagea_Shell_RedStripesP.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RS", "Vehicles/Vehicles_98stagea_Shell_WhiteStripesP.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RS", "Vehicles/Vehicles_98stagea_Shell_YellowStripesP.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RS", "Vehicles/Vehicles_98stagea_Shell_yoko32.png");
+-- 98stagea260RSlhd
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RSlhd", "Vehicles/Vehicles_98stagea_Shell_MaxLiberty.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RSlhd", "Vehicles/Vehicles_98stagea_Shell_Stix.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RSlhd", "Vehicles/Vehicles_98stagea_Shell_BoostedTunedBlue.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RSlhd", "Vehicles/Vehicles_98stagea_Shell_HeroYellow22.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RSlhd", "Vehicles/Vehicles_98stagea_Shell_RedStripesP.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RSlhd", "Vehicles/Vehicles_98stagea_Shell_WhiteStripesP.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RSlhd", "Vehicles/Vehicles_98stagea_Shell_YellowStripesP.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.98stagea260RSlhd", "Vehicles/Vehicles_98stagea_Shell_yoko32.png");
+
+-- 99fordCVPI
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.99fordCVPI", "Vehicles/Vehicles_99fordCVPI_Shell_CRService.png");
+    DAMN.ScriptTools:addSkinToVehicleScript("Base.99fordCVPI", "Vehicles/Vehicles_99fordCVPI_Shell_KCS.png");
+
+end);
