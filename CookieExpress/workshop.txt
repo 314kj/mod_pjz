@@ -3,4 +3,4 @@ id=3823331734
 title=Cookie Express
 description=aka license
 tags=Build 42;Interface;Multiplayer
-visibility=unlisted
+visibility=public

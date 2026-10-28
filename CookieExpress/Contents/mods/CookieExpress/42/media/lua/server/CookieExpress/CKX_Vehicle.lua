@@ -229,7 +229,14 @@ function S.useSlip(player, args)
     -- car side-on to the player: facing east/west -> car points north, facing north/south -> car points east
     local dir = IsoDirections.N
     if fx == 0 then dir = IsoDirections.E end
-    local okV, v = pcall(addVehicleDebug, vName, dir, nil, spot)
+    local skin = CookieDefaultSkin and CookieDefaultSkin.pick(vName) or nil
+    local okV, v = pcall(addVehicleDebug, vName, dir, skin, spot)
+    if not okV and skin ~= nil then
+        -- fallback: in case this build rejects the skin argument
+        CKX.log("spawn with skin " .. skin .. " failed, retry without: " .. tostring(v))
+        okV, v = pcall(addVehicleDebug, vName, dir, nil, spot)
+        if okV and v then CookieDefaultSkin.apply(v) end
+    end
     if not okV then
         CKX.log("vehicle spawn failed for " .. tostring(vName) .. ": " .. tostring(v))
         return reply(player, false, "failed")
