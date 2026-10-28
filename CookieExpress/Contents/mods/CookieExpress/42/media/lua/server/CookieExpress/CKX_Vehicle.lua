@@ -229,13 +229,13 @@ function S.useSlip(player, args)
     -- car side-on to the player: facing east/west -> car points north, facing north/south -> car points east
     local dir = IsoDirections.N
     if fx == 0 then dir = IsoDirections.E end
+    -- default skins only (CookieDefaultSkin = 000_CookieDefaultSkin.lua in shared); nil = engine picks
     local skin = CookieDefaultSkin and CookieDefaultSkin.pick(vName) or nil
     local okV, v = pcall(addVehicleDebug, vName, dir, skin, spot)
     if not okV and skin ~= nil then
         -- fallback: in case this build rejects the skin argument
         CKX.log("spawn with skin " .. skin .. " failed, retry without: " .. tostring(v))
         okV, v = pcall(addVehicleDebug, vName, dir, nil, spot)
-        if okV and v then CookieDefaultSkin.apply(v) end
     end
     if not okV then
         CKX.log("vehicle spawn failed for " .. tostring(vName) .. ": " .. tostring(v))
@@ -246,6 +246,8 @@ function S.useSlip(player, args)
         CKX.log("vehicle spawn returned nothing for " .. tostring(vName))
         return reply(player, false, "failed")
     end
+    -- safety net: force a default skin if the car still got a mod skin (no-op when already default)
+    if CookieDefaultSkin then pcall(CookieDefaultSkin.apply, v) end
     -- like Kuraya: a returned vehicle counts as spawned; note whether the engine already gave it a square
     local okSq, vsq = try(v, "getSquare")
     if not (okSq and vsq) then CKX.log("note: " .. tostring(vName) .. " has no square yet right after spawn") end
