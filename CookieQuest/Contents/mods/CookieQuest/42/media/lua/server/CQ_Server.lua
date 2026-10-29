@@ -280,8 +280,8 @@ local function passStep(inst, credit, byAdmin)
     if inst.status ~= "active" then return end
     local st = stepOf(inst)
     if not st then return end
-    if not credit or not next(credit) then credit = keysOf(onlineMembers(inst)) end
-    if not next(credit) and inst.owner then credit = { [inst.owner] = true } end
+    if not credit or not CQ.any(credit) then credit = keysOf(onlineMembers(inst)) end
+    if not CQ.any(credit) and inst.owner then credit = { [inst.owner] = true } end
     inst.contrib = inst.contrib or {}
     for k in pairs(credit) do
         inst.contrib[k] = (inst.contrib[k] or 0) + 1
@@ -318,7 +318,7 @@ completeMission = function(inst)
         who = keysOf(inst.members)
     else
         for k, c in pairs(inst.contrib or {}) do if c > 0 then who[k] = true end end
-        if not next(who) then who = keysOf(onlineMembers(inst)) end
+        if not CQ.any(who) then who = keysOf(onlineMembers(inst)) end
     end
     for k in pairs(who) do
         local u = user(k)
@@ -632,7 +632,7 @@ local function checkInst(inst, dt)
         end
         -- also passes when the admin shortened the time after everyone already left the zone
         if (inst.hold or 0) >= (st.sec or 60) then
-            passStep(inst, (inst.holdBy and next(inst.holdBy)) and inst.holdBy or nil)
+            passStep(inst, (inst.holdBy and CQ.any(inst.holdBy)) and inst.holdBy or nil)
         end
     elseif t == "deliver" then
         if not st.zone or not st.item or st.item == "" then return end
@@ -1493,7 +1493,7 @@ local function recheckStep(inst)
     local st = stepOf(inst)
     if not st then return end
     if (st.t == "kill" or st.t == "others") and (inst.cnt or 0) >= (st.n or 1) then
-        passStep(inst, (inst.cntBy and next(inst.cntBy)) and keysOf(inst.cntBy) or nil)
+        passStep(inst, (inst.cntBy and CQ.any(inst.cntBy)) and keysOf(inst.cntBy) or nil)
     end
 end
 

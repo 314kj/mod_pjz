@@ -4,12 +4,19 @@
 
 CQ = CQ or {}
 CQ.MOD = "CookieQuest"
-CQ.VERSION = "1.2.0"
-CQ.BUILD = "cq-261025-637935"
+CQ.VERSION = "1.2.3"
+CQ.BUILD = "cq-261029-817596"
 CQ.SHEET_TYPE = "CookieQuest.MissionSheet"
 
 -- ===================================================================== env
 -- Kahlua's % keeps the sign of the left side (-3 % 8 == -3); this one is always 0..b-1
+-- Kahlua (PZ) has no next(): true when table t has at least one key
+function CQ.any(t)
+    if type(t) ~= "table" then return false end
+    for _ in pairs(t) do return true end
+    return false
+end
+
 function CQ.mod(a, b)
     return a - math.floor(a / b) * b
 end
