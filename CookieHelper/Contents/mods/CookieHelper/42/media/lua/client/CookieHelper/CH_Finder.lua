@@ -273,7 +273,7 @@ function W:drawBody()
     local s, col
     if F.job and F.job.key == self.key then
         if playerNear(self.sh, 30) then
-            s, col = t("FinderScanning", floor(F.job.done * 100 / math.max(1, F.job.total))), UI.C.gold
+            s, col = t("FinderScanning", tostring(floor(F.job.done * 100 / math.max(1, F.job.total))) .. "%"), UI.C.gold
         else
             s, col = t("FinderGoHome"), UI.C.red
         end

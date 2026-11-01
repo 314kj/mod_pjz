@@ -87,6 +87,8 @@ end
 
 function W:createChildren()
     UI.Window.createChildren(self)
+    self.inZone = {}
+    self.known = {}
     local x = UI.PAD
     local y = UI.HEAD_H + UI.PAD
     local fullH = self.height - y - UI.PAD
@@ -199,11 +201,7 @@ function W:fillModels()
         self.models:addItem(lab, { name = name, label = lab, here = self.inZone[name] ~= nil, known = self.known[name] })
     end
     for name, _ in pairs(self.inZone) do add(name) end
-    local rest = {}
-    local all = getScriptManager():getAllVehicleScripts()
-    for i = 0, all:size() - 1 do rest[#rest + 1] = all:get(i):getFullName() end
-    table.sort(rest, function(a, b) return modelLabel(a) < modelLabel(b) end)
-    for _, name in ipairs(rest) do add(name) end
+    for _, name in ipairs(V.allModels()) do add(name) end
     self.models.selected = 0
     for i, it in ipairs(self.models.items) do
         if it.item.name == keepSel then self.models.selected = i end
@@ -327,6 +325,16 @@ function W:drawBody()
     local head = self.selPart and t("CraftFor", Scan.itemName(self.selPart)) or t("ModelRecipes")
     UI.text(self, UI.fit(head, self.rw - 160), rx, self.yRecipes, UI.C.gold)
     if not self:playerInZone() then UI.textR(self, t("Msg_StandInZone"), rx + self.rw, self.yRecipes, UI.C.red) end
+end
+
+local sortedModels = nil
+function V.allModels()
+    if sortedModels then return sortedModels end
+    sortedModels = {}
+    local all = getScriptManager():getAllVehicleScripts()
+    for i = 0, all:size() - 1 do sortedModels[#sortedModels + 1] = all:get(i):getFullName() end
+    table.sort(sortedModels, function(a, b) return modelLabel(a) < modelLabel(b) end)
+    return sortedModels
 end
 
 function V.markDirty()

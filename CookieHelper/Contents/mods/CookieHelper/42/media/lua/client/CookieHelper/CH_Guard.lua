@@ -3,8 +3,10 @@
 -- trespass check lets them in). This guard stops everything that takes, breaks or removes
 -- things inside that house. Role decides the extra things allowed:
 --   doctor  = medical only (always allowed for everyone anyway)
---   builder = build / place / rotate furniture / paint / plaster / barricade / craft
---   keeper  = animals, plants, generators, cleaning
+--   builder = build / place / rotate furniture / paint / plaster / barricade
+--   keeper  = animals, plants, generators, cleaning, water from the house
+-- This is a client-side deterrent for a whitelisted PVE server, not anti-cheat: on the server a
+-- guest is a normal member while the visit lasts.
 -- One table lookup per queued action, and only for a player who is currently a guest.
 if isServer() then return end
 
@@ -34,11 +36,13 @@ local ALWAYS = set({
     "ISGatherBloodFromAnimal", "ISRemoveMeatFromAnimal", "ISRemoveLeatherFromAnimal", "ISRemoveHeadFromAnimal",
     "ISGetAnimalBones", "ISCutAnimalOnHook", "ISPutAnimalOnHook", "ISRemoveAnimalFromHook",
     "ISAttachAnimalToPlayer", "ISAddAnimalInTrailer", "ISRemoveAnimalFromTrailer",
+    -- crafting pulls ingredients from the boxes around you, i.e. the host's stock
+    "ISHandcraftAction",
 })
 
 local BUILD = set({
     "ISBuildAction", "ISMultiStageBuild", "ISPaintAction", "ISPaintSignAction", "ISPlasterAction",
-    "ISWallpaperAction", "ISBarricadeAction", "ISExtendedPlacementAction", "ISHandcraftAction",
+    "ISWallpaperAction", "ISBarricadeAction", "ISExtendedPlacementAction",
     "ISInstallVehiclePart", "ISFixGenerator", "ISShovelGround",
 })
 
@@ -48,6 +52,8 @@ local CARE = set({
     "ISWaterPlantAction", "ISFertilizeAction", "ISCurePlantAction", "ISSeedActionNew", "ISPlowAction",
     "ISShovelAction", "ISAddCompost", "ISItemSlotAddAction", "ISAddFuel", "ISActivateGenerator",
     "ISPlugGenerator", "ISCleanBlood", "ISCleanGraffiti", "ISScything", "ISRemoveGrass",
+    -- water/fluids from the host's barrels and sinks (watering cans for the garden)
+    "ISFluidTransferAction", "ISTakeWaterAction", "ISDumpWaterAction", "ISTransferWaterAction",
 })
 
 -- returns (guestRecord, safehouse) when this character is a guest standing in the host house

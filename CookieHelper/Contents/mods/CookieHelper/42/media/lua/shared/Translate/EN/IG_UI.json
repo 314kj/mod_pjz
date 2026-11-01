@@ -12,8 +12,8 @@
     "IGUI_CH_Role_builder": "Builder",
     "IGUI_CH_Role_keeper": "House Keeper",
     "IGUI_CH_RoleTip_doctor": "Can come in to treat and revive people. Cannot take, break or build anything.",
-    "IGUI_CH_RoleTip_builder": "Can build, place and rotate furniture, paint, plaster and craft. Cannot take or break anything.",
-    "IGUI_CH_RoleTip_keeper": "Can feed and water animals, tend plants, run generators and clean. Cannot take or break anything.",
+    "IGUI_CH_RoleTip_builder": "Can build, place and rotate furniture, paint and plaster. Cannot take, break or craft from the house stock.",
+    "IGUI_CH_RoleTip_keeper": "Can feed and water animals, tend plants, use the house water, run generators and clean. Cannot take or break anything.",
     "IGUI_CH_AskTitle": "Guest at the door",
     "IGUI_CH_AskLine1": "%1 wants to come in as a guest.",
     "IGUI_CH_AskLine2": "House: %1  -  visit lasts %2 min",
@@ -88,7 +88,7 @@
     "IGUI_CH_FinderFound": "%1: %2 spots (floors %3) - lit up for 30s",
     "IGUI_CH_FinderScanNow": "Scan now",
     "IGUI_CH_FinderClear": "Clear highlights",
-    "IGUI_CH_FinderScanning": "Scanning the house... %1%",
+    "IGUI_CH_FinderScanning": "Scanning the house... %1",
     "IGUI_CH_FinderStatus": "%1 item kinds  -  scanned %2h ago (every %3h in-game)",
     "IGUI_CH_FinderNoIndex": "No list yet - stand in the house to scan",
     "IGUI_CH_FinderGoHome": "Go into the house to scan",
@@ -135,5 +135,8 @@
     "IGUI_CH_Msg_GuestEnded_left": "You left the house",
     "IGUI_CH_Msg_GuestEnded_kicked": "%1 ended your visit",
     "IGUI_CH_Msg_HostGuestLeft": "Guest %1 has left",
-    "IGUI_CH_Msg_TooHeavy": "Too heavy to carry everything for %1 - make room in your bags first"
+    "IGUI_CH_Msg_TooHeavy": "Too heavy to carry everything for %1 - make room in your bags first",
+    "IGUI_CH_Msg_CantReach": "Cannot reach a box for %1 - clear the way",
+    "IGUI_CH_Msg_Busy": "Finish what you are doing first",
+    "IGUI_CH_ConfirmKick": "Send %1 out of the house now?"
 }

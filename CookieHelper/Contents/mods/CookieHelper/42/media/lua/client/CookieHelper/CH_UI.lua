@@ -36,14 +36,9 @@ UI.C = {
     btnRed  = { 0.55, 0.20, 0.18, 1.00 },
 }
 
-function CHelp.t(key, a, b, c)
+function CHelp.t(key, ...)
     local k = "IGUI_CH_" .. key
-    local s
-    if c ~= nil then s = getText(k, a, b, c)
-    elseif b ~= nil then s = getText(k, a, b)
-    elseif a ~= nil then s = getText(k, a)
-    else s = getText(k) end
-    return s or k
+    return getText(k, ...) or k
 end
 local t = CHelp.t
 
@@ -67,18 +62,35 @@ function UI.textC(el, s, x, y, c, font)
     el:drawTextCentre(tostring(s), x, y, c[1], c[2], c[3], c[4], font or UI.FONT_S)
 end
 
--- cut a string so it fits w pixels
+-- cut a string so it fits w pixels (results cached: rows redraw every frame)
+local fitCache, fitCount = {}, 0
 function UI.fit(s, w, font)
     s = tostring(s or "")
     font = font or UI.FONT_S
-    if TM:MeasureStringX(font, s) <= w then return s end
-    local n = string.len(s)
-    while n > 1 do
-        n = n - 1
-        local cut = string.sub(s, 1, n) .. ".."
-        if TM:MeasureStringX(font, cut) <= w then return cut end
+    w = math.floor(w)
+    local key = s .. "\1" .. w .. "\1" .. tostring(font)
+    local hit = fitCache[key]
+    if hit then return hit end
+    local out = s
+    if TM:MeasureStringX(font, s) > w then
+        out = ".."
+        local lo, hi = 1, string.len(s) - 1
+        while lo <= hi do       -- binary search on the cut point
+            local mid = math.floor((lo + hi) / 2)
+            local m = mid
+            -- never split a multi-byte UTF-8 character (Thai is 3 bytes)
+            while m > 0 do
+                local nb = string.byte(s, m + 1)
+                if nb and nb >= 128 and nb < 192 then m = m - 1 else break end
+            end
+            local cut = string.sub(s, 1, m) .. ".."
+            if TM:MeasureStringX(font, cut) <= w then out = cut lo = mid + 1 else hi = mid - 1 end
+        end
     end
-    return ".."
+    fitCount = fitCount + 1
+    if fitCount > 3000 then fitCache, fitCount = {}, 0 end
+    fitCache[key] = out
+    return out
 end
 
 function UI.style(btn, kind)

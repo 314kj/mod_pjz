@@ -81,6 +81,20 @@ local function guestOf(user, key)
     return g ~= nil and g.sh == key
 end
 
+-- the guest's host house; if it was moved/resized (key changed) fall back to the owner's house
+local function guestHouse(g)
+    local sh = CHelp.shByKey(g.sh)
+    if sh then return sh end
+    if g.owner then
+        local ok, byOwner = pcall(function() return SafeHouse.getSafehouseByOwner(g.owner) end)
+        if ok and byOwner then
+            g.sh = CHelp.shKey(byOwner)
+            return byOwner
+        end
+    end
+    return nil
+end
+
 -- real member = owner or listed member that is not only visiting as a guest
 local function isRealMember(sh, user)
     if not sh or not user then return false end
@@ -114,7 +128,8 @@ local function saveGuestFile()
         local w = getFileWriter(GUEST_FILE, true, false)
         if not w then return end
         for user, g in pairs(data().guests) do
-            w:write(tostring(user) .. "|" .. tostring(g.sh) .. "|" .. tostring(g.exp) .. "\n")
+            w:write(tostring(user) .. "|" .. tostring(g.sh) .. "|" .. tostring(math.floor(tonumber(g.exp) or 0))
+                .. "|" .. tostring(g.owner or "") .. "\n")
         end
         w:close()
     end)
@@ -127,9 +142,11 @@ local function loadGuestFile()
         if not r then return end
         local line = r:readLine()
         while line do
-            local user, key, exp = string.match(line, "^(.-)|(.-)|(%d+)$")
+            local user, key, exp, owner = string.match(line, "^(.-)|(.-)|([%d%.eE%+%-]+)|?(.*)$")
+            exp = tonumber(exp)
             if user and key and exp and not data().guests[user] then
-                data().guests[user] = { sh = key, role = CHelp.ROLE_DOCTOR, exp = tonumber(exp), host = "?", title = "" }
+                data().guests[user] = { sh = key, role = CHelp.ROLE_DOCTOR, exp = exp, host = "?", title = "",
+                    owner = (owner ~= "" and owner or nil) }
             end
             line = r:readLine()
         end
@@ -171,7 +188,7 @@ local function endGuest(user, reason, by)
     local g = data().guests[user]
     if not g then return end
     data().guests[user] = nil
-    local sh = CHelp.shByKey(g.sh)
+    local sh = guestHouse(g)
     if sh and sh:getOwner() ~= user and sh:getPlayers():contains(user) then
         if isServer() then
             local ok, err = pcall(function() SafeHouse.kickUserFromSafehouse(sh, user) end)
@@ -220,7 +237,7 @@ local function tick()
     local now = CHelp.now()
     local finished, gone = {}, {}
     for user, g in pairs(data().guests) do
-        local sh = CHelp.shByKey(g.sh)
+        local sh = guestHouse(g)
         if not sh then
             gone[#gone + 1] = user
         elseif (tonumber(g.exp) or 0) <= now then
@@ -359,7 +376,8 @@ function H.guestAnswer(p, user, args)
     local minutes = CHelp.svInt("GuestMinutes", 1, 240)
     sh:addPlayer(r.guest)
     syncSafehouse(sh)
-    data().guests[r.guest] = { sh = r.sh, role = role, exp = CHelp.now() + minutes * 60, host = user, title = sh:getTitle() }
+    data().guests[r.guest] = { sh = r.sh, role = role, exp = CHelp.now() + minutes * 60, host = user, title = sh:getTitle(),
+        owner = sh:getOwner() }
     saveGuestFile()
     broadcastGuests()
     if gp then msg(gp, "Approved_" .. role, user, minutes) end

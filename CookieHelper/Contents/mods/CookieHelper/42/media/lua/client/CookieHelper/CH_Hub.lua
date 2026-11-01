@@ -72,8 +72,27 @@ function W:isOwnerOrAdmin()
     return CHelp.isOwner(self.sh, C.me()) or C.isAdmin()
 end
 
+local function keepSel(list, pick)
+    local it = list.items[list.selected]
+    return it and pick(it.item) or nil
+end
+
+local function restoreSel(list, pick, want)
+    list.selected = 0
+    if want == nil then return end
+    for i, it in ipairs(list.items) do
+        if pick(it.item) == want then list.selected = i return end
+    end
+end
+
+local function byName(d) return d.name end
+local function byId(z) return z.id end
+
 function W:fill()
-    if not self.sh or not CHelp.shByKey(self.key) then return self:close() end
+    self.sh = CHelp.shByKey(self.key)
+    if not self.sh then return self:close() end
+    local selG = keepSel(self.guests, byName)
+    local selZ = keepSel(self.zones, byId)
     self.members:clear()
     self.members:addItem(self.sh:getOwner(), { name = self.sh:getOwner(), owner = true })
     local players = self.sh:getPlayers()
@@ -83,16 +102,19 @@ function W:fill()
             self.members:addItem(n, { name = n, guest = C.guestOf(n, self.key) })
         end
     end
+    self.members.selected = 0
     self.guests:clear()
     for user, g in pairs(C.guests) do
         if g.sh == self.key then self.guests:addItem(user, { name = user, g = g }) end
     end
+    restoreSel(self.guests, byName, selG)
     self.zones:clear()
     local nc, nv = 0, 0
     for _, z in ipairs(C.zonesOf(self.sh)) do
         self.zones:addItem(z.name, z)
         if z.kind == CHelp.ZONE_VEHICLE then nv = nv + 1 else nc = nc + 1 end
     end
+    restoreSel(self.zones, byId, selZ)
     local mc = CHelp.svInt("CountZonesPerSafehouse", 0, 20)
     local mv = CHelp.svInt("VehicleZonesPerSafehouse", 0, 20)
     self.addCountBtn:setTitle(t("NewCountZone") .. " (" .. nc .. "/" .. mc .. ")")
@@ -152,7 +174,16 @@ end
 
 function W:onKick()
     local it = self.guests.items[self.guests.selected]
-    if it then CHelp.toServer("guestEnd", { user = it.item.name }) end
+    if not it then return end
+    local m = ISModalDialog:new(self.x + 60, self.y + 160, 320, 150, t("ConfirmKick", it.item.name), true, self, W.onKickDone)
+    m.guestName = it.item.name
+    m:initialise()
+    m:addToUIManager()
+end
+
+function W:onKickDone(button)
+    if button.internal ~= "YES" then return end
+    CHelp.toServer("guestEnd", { user = button.parent.guestName })
 end
 
 function W:onZoneOpen()

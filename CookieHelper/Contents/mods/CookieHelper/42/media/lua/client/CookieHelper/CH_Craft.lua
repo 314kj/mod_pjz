@@ -70,13 +70,20 @@ function Craft.label(r)
     return r:getName()
 end
 
+local searchKeys = nil   -- lower-cased "label|name" per recipe, built once
 function Craft.search(text, limit)
     text = string.lower(text or "")
     local out = {}
     if string.len(text) < 2 then return out end
-    for _, r in ipairs(Craft.recipes()) do
-        local lab = string.lower(Craft.label(r))
-        if string.find(lab, text, 1, true) or string.find(string.lower(r:getName()), text, 1, true) then
+    local list = Craft.recipes()
+    if not searchKeys then
+        searchKeys = {}
+        for i, r in ipairs(list) do
+            searchKeys[i] = string.lower(Craft.label(r) .. "|" .. r:getName())
+        end
+    end
+    for i, r in ipairs(list) do
+        if string.find(searchKeys[i], text, 1, true) then
             out[#out + 1] = r
             if #out >= (limit or 40) then break end
         end
@@ -151,19 +158,37 @@ local function isWeldingMask(it)
     return string.find(it:getFullType(), "WeldingMask", 1, true) ~= nil
 end
 
-local function queueWalkTo(p, c)
+-- where to stand for a box: nil,true = no walk needed (floor / carried), sq = walk next to it
+local function boxSquare(c)
+    local okT, ty = pcall(function() return c:getType() end)
+    if okT and ty == "floor" then return nil, true end
     local sq = c:getSquare()
-    if not sq then return end
-    local adj = AdjacentFreeTileFinder.Find(sq, p)
-    if adj then
-        ISTimedActionQueue.add(ISWalkToTimedAction:new(p, adj))
+    if not sq then
+        local outer = c:getOutermostContainer()
+        if outer and outer ~= c then sq = outer:getSquare() end
     end
+    return sq, false
+end
+
+-- adjacent free tile for a box, or false when it cannot be reached
+local function standFor(p, c)
+    local sq, noWalk = boxSquare(c)
+    if noWalk then return nil end
+    if not sq then return false end
+    local adj = AdjacentFreeTileFinder.Find(sq, p)
+    if not adj then return false end
+    return adj
 end
 
 -- ------------------------------------------------------------------ the job
--- job = { p, recipe, left, entriesFn, returns = { {item, c} }, refilled }
+-- job = { p, recipe, left, entriesFn, returns = { {id, c} }, refilled }
+-- items are tracked by ID: in MP the server moves them and the client gets new objects.
 function Craft.start(p, recipe, qty, entriesFn)
     if not p or not recipe then return end
+    if ISTimedActionQueue.isPlayerDoingAction(p) then
+        UI.toast(t("Msg_Busy"), false)
+        return
+    end
     local job = { p = p, recipe = recipe, left = math.max(1, floor(qty or 1)), entriesFn = entriesFn, returns = {}, refilled = false }
     Craft.step(job)
 end
@@ -206,7 +231,7 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
     local items = data:getAllInputItems()
     local keep = data:getAllPutBackInputItems()
 
-    local groups, order = {}, {}
+    local groups, order, newReturns = {}, {}, {}
     for i = 0, items:size() - 1 do
         local it = items:get(i)
         local c = it:getContainer()
@@ -218,8 +243,14 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
                 order[#order + 1] = g
             end
             g.items[#g.items + 1] = it
-            if keep:contains(it) then job.returns[#job.returns + 1] = { item = it, c = c } end
+            if keep:contains(it) then newReturns[#newReturns + 1] = { id = it:getID(), c = c } end
         end
+    end
+
+    -- every box must be reachable before anything is queued (a failed walk/transfer resets the queue)
+    for _, g in ipairs(order) do
+        g.stand = standFor(p, g.c)
+        if g.stand == false then return fail(job, "Msg_CantReach") end
     end
 
     -- everything has to fit in the backpack at once, otherwise the queue would stall half way
@@ -230,6 +261,7 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
     if need > 0 and not inv:hasRoomFor(p, need) then
         return fail(job, "Msg_TooHeavy")
     end
+    for _, r in ipairs(newReturns) do job.returns[#job.returns + 1] = r end
 
     -- nearest-first walk through the boxes
     local px, py = p:getX(), p:getY()
@@ -237,46 +269,55 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
     while #order > 0 do
         local bi, bd = 1, nil
         for i, g in ipairs(order) do
-            local sq = g.c:getSquare()
+            local sq = g.stand
             local d = sq and ((sq:getX() - px) * (sq:getX() - px) + (sq:getY() - py) * (sq:getY() - py)) or 0
             if not bd or d < bd then bi, bd = i, d end
         end
         local g = table.remove(order, bi)
         route[#route + 1] = g
-        local sq = g.c:getSquare()
-        if sq then px, py = sq:getX(), sq:getY() end
+        if g.stand then px, py = g.stand:getX(), g.stand:getY() end
     end
 
     for _, g in ipairs(route) do
-        queueWalkTo(p, g.c)
+        if g.stand then ISTimedActionQueue.add(ISWalkToTimedAction:new(p, g.stand)) end
         for _, it in ipairs(g.items) do
             ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, g.c, inv))
         end
     end
 
-    -- welding mask on (recipes only need it in the bag, this just makes it look right)
-    local wear = {}
+    -- items to wear (IsWorn inputs + welding mask) are found again by ID once they are in the bag
+    local wearIds, seen = {}, {}
+    local function addWear(it)
+        local id = it:getID()
+        if not seen[id] and not p:isEquippedClothing(it) then
+            seen[id] = true
+            wearIds[#wearIds + 1] = id
+        end
+    end
     local okW, worn = pcall(function() return data:getAllInputItemsWithFlag("IsWorn") end)
-    if okW and worn then for i = 0, worn:size() - 1 do wear[#wear + 1] = worn:get(i) end end
+    if okW and worn then for i = 0, worn:size() - 1 do addWear(worn:get(i)) end end
     if CHelp.sv("AutoWearWeldingMask") then
         for i = 0, items:size() - 1 do
             local it = items:get(i)
-            if isWeldingMask(it) then wear[#wear + 1] = it end
-        end
-    end
-    local wearSeen = {}
-    for _, it in ipairs(wear) do
-        if not wearSeen[it] and not p:isEquippedClothing(it) then
-            wearSeen[it] = true
-            ISTimedActionQueue.add(ISWearClothing:new(p, it))
+            if isWeldingMask(it) then addWear(it) end
         end
     end
 
-    ISTimedActionQueue.queueActions(p, Craft.deferredCraft, { job = job, recipe = recipe, refill = isRefill })
+    ISTimedActionQueue.queueActions(p, Craft.deferredCraft, { job = job, recipe = recipe, refill = isRefill, wear = wearIds })
 end
 
 -- runs when the queue reaches it: everything should be in the backpack now
-function Craft.deferredCraft(p, ctx)
+local function deferredCraftInner(p, ctx)
+    local inv = p:getInventory()
+    for _, id in ipairs(ctx.wear or {}) do
+        local it = inv:getItemWithIDRecursiv(id)
+        if it and not p:isEquippedClothing(it) then
+            if it:getContainer() ~= inv then
+                ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, it:getContainer(), inv))
+            end
+            ISTimedActionQueue.add(ISWearClothing:new(p, it))
+        end
+    end
     local logic = HandcraftLogic.new(p, nil, nil)
     pcall(function() logic:setIsoObject(ISEntityUI.FindCraftSurface(p, 2)) end)
     logic:setContainers(ISInventoryPaneContextMenu.getContainers(p))
@@ -293,45 +334,61 @@ function Craft.deferredCraft(p, ctx)
     ISTimedActionQueue.queueActions(p, Craft.afterCraft, ctx)
 end
 
+function Craft.deferredCraft(p, ctx)
+    local ok, err = pcall(deferredCraftInner, p, ctx)
+    if not ok then
+        CHelp.log("deferred craft failed: " .. tostring(err))
+        fail(ctx.job, "Msg_CantCraft")
+    end
+end
+
 function Craft.afterCraft(p, ctx)
     local job = ctx.job
-    if ctx.refill then
-        Craft.step(job)          -- torch is full again, try the real recipe
-        return
-    end
-    job.left = job.left - 1
-    job.refilled = false
-    if job.left > 0 then
-        Craft.step(job)
-    else
+    local ok, err = pcall(function()
+        if ctx.refill then
+            Craft.step(job)          -- torch is full again, try the real recipe
+            return
+        end
+        job.left = job.left - 1
+        job.refilled = false
+        if job.left > 0 then
+            Craft.step(job)
+        else
+            Craft.returnTools(job)
+            UI.toast(t("Msg_CraftDone", Craft.label(job.recipe)), true)
+        end
+    end)
+    if not ok then
+        CHelp.log("after craft failed: " .. tostring(err))
         Craft.returnTools(job)
-        UI.toast(t("Msg_CraftDone", Craft.label(job.recipe)), true)
     end
 end
 
 -- tools that were borrowed from boxes go back where they came from
 function Craft.returnTools(job)
-    if not CHelp.sv("ReturnToolsAfterCraft") then return end
+    if not CHelp.sv("ReturnToolsAfterCraft") then job.returns = {} return end
     local p = job.p
     local inv = p:getInventory()
-    local byBox, order = {}, {}
+    local byBox, order, seen = {}, {}, {}
     for _, r in ipairs(job.returns) do
-        local cur = r.item:getContainer()
-        if cur and (cur == inv or cur:isInCharacterInventory(p)) and r.c ~= cur then
+        local it = (not seen[r.id]) and inv:getItemWithIDRecursiv(r.id) or nil
+        if it and it:getContainer() ~= r.c then
+            seen[r.id] = true
             local g = byBox[r.c]
             if not g then g = { c = r.c, items = {} } byBox[r.c] = g order[#order + 1] = g end
-            local dup = false
-            for _, it in ipairs(g.items) do if it == r.item then dup = true end end
-            if not dup then g.items[#g.items + 1] = r.item end
+            g.items[#g.items + 1] = it
         end
     end
     job.returns = {}
     for _, g in ipairs(order) do
-        queueWalkTo(p, g.c)
-        for _, it in ipairs(g.items) do
-            local a = ISInventoryTransferUtil.newInventoryTransferAction(p, it, it:getContainer(), g.c)
-            if a.setAllowMissingItems then a:setAllowMissingItems(true) end
-            ISTimedActionQueue.add(a)
+        local stand = standFor(p, g.c)
+        if stand ~= false then
+            if stand then ISTimedActionQueue.add(ISWalkToTimedAction:new(p, stand)) end
+            for _, it in ipairs(g.items) do
+                local a = ISInventoryTransferUtil.newInventoryTransferAction(p, it, it:getContainer(), g.c)
+                if a.setAllowMissingItems then a:setAllowMissingItems(true) end
+                ISTimedActionQueue.add(a)
+            end
         end
     end
 end
