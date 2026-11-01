@@ -25,6 +25,12 @@ function Get-ActiveFolders($modDir) {
     $common = Join-Path $modDir 'common'; if (Test-Path $common) { $list += $common }
     return , $list
 }
+# value of "key=..." in mod.info lines, '' when the key is missing
+function Get-Val($lines, [string]$key) {
+    $l = $lines | Where-Object { $_ -match ('^\s*' + $key + '\s*=') } | Select-Object -First 1
+    if ($null -eq $l) { return '' }
+    return (([string]$l) -replace ('^\s*' + $key + '\s*=\s*'), '').Trim()
+}
 function Find-File($folders, $name) {
     foreach ($f in $folders) {
         $hit = Get-ChildItem $f -Recurse -File -Filter $name -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -50,8 +56,8 @@ foreach ($wid in $Sources) {
         foreach ($f in @($folders + $md.FullName)) { $p = Join-Path $f 'mod.info'; if (Test-Path $p) { $info = $p; break } }
         if (-not $info) { continue }
         $text = Get-Content $info
-        $id = (($text | Where-Object { $_ -match '^\s*id\s*=' } | Select-Object -First 1) -replace '^\s*id\s*=\s*', '').Trim()
-        $ver = (($text | Where-Object { $_ -match '^\s*modversion\s*=' } | Select-Object -First 1) -replace '^\s*modversion\s*=\s*', '').Trim()
+        $id = Get-Val $text 'id'
+        $ver = Get-Val $text 'modversion'
         $notes.Add("source $wid $id version=$ver mod.info=$info")
         foreach ($l in $text) {
             if ($l -match '^\s*tiledef\s*=\s*(\S+)\s+(\d+)') {
