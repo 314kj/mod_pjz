@@ -1,0 +1,61 @@
+VERSION = 1,
+
+option CookieHelper.GuestMinutes
+{
+    type = integer, min = 1, max = 240, default = 10,
+    page = CookieHelper, translation = CookieHelper_GuestMinutes,
+}
+
+option CookieHelper.GuestRequestRange
+{
+    type = integer, min = 1, max = 60, default = 8,
+    page = CookieHelper, translation = CookieHelper_GuestRequestRange,
+}
+
+option CookieHelper.GuestRequestCooldown
+{
+    type = integer, min = 0, max = 600, default = 30,
+    page = CookieHelper, translation = CookieHelper_GuestRequestCooldown,
+}
+
+option CookieHelper.AllowOfflineAdd
+{
+    type = boolean, default = true,
+    page = CookieHelper, translation = CookieHelper_AllowOfflineAdd,
+}
+
+option CookieHelper.CountZonesPerSafehouse
+{
+    type = integer, min = 0, max = 20, default = 3,
+    page = CookieHelper, translation = CookieHelper_CountZonesPerSafehouse,
+}
+
+option CookieHelper.VehicleZonesPerSafehouse
+{
+    type = integer, min = 0, max = 20, default = 1,
+    page = CookieHelper, translation = CookieHelper_VehicleZonesPerSafehouse,
+}
+
+option CookieHelper.MaxZoneSide
+{
+    type = integer, min = 2, max = 200, default = 20,
+    page = CookieHelper, translation = CookieHelper_MaxZoneSide,
+}
+
+option CookieHelper.FinderScanHours
+{
+    type = integer, min = 1, max = 240, default = 6,
+    page = CookieHelper, translation = CookieHelper_FinderScanHours,
+}
+
+option CookieHelper.AutoWearWeldingMask
+{
+    type = boolean, default = true,
+    page = CookieHelper, translation = CookieHelper_AutoWearWeldingMask,
+}
+
+option CookieHelper.ReturnToolsAfterCraft
+{
+    type = boolean, default = true,
+    page = CookieHelper, translation = CookieHelper_ReturnToolsAfterCraft,
+}

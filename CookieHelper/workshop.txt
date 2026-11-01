@@ -1,0 +1,5 @@
+version=1
+title=Cookie Helper
+description=CookieCheetah License
+tags=Build 42;Interface;Multiplayer
+visibility=public

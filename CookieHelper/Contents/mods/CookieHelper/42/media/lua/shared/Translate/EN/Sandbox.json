@@ -1,0 +1,21 @@
+{
+    "Sandbox_CookieHelper": "Cookie Helper",
+    "Sandbox_CookieHelper_GuestMinutes": "Guest visit length (minutes)",
+    "Sandbox_CookieHelper_GuestMinutes_tooltip": "Same for every guest. Real minutes. Default 10.",
+    "Sandbox_CookieHelper_GuestRequestRange": "Guest request range (tiles)",
+    "Sandbox_CookieHelper_GuestRequestRange_tooltip": "How close to the house a player must stand to ask. Default 8.",
+    "Sandbox_CookieHelper_GuestRequestCooldown": "Guest request cooldown (seconds)",
+    "Sandbox_CookieHelper_GuestRequestCooldown_tooltip": "Stops request spam. Default 30.",
+    "Sandbox_CookieHelper_AllowOfflineAdd": "Owners can add members by name (offline ok)",
+    "Sandbox_CookieHelper_AllowOfflineAdd_tooltip": "Admins can always do it.",
+    "Sandbox_CookieHelper_CountZonesPerSafehouse": "Auto Count zones per safehouse",
+    "Sandbox_CookieHelper_CountZonesPerSafehouse_tooltip": "Default 3.",
+    "Sandbox_CookieHelper_VehicleZonesPerSafehouse": "Vehicle zones per safehouse",
+    "Sandbox_CookieHelper_VehicleZonesPerSafehouse_tooltip": "Default 1.",
+    "Sandbox_CookieHelper_MaxZoneSide": "Max zone side (tiles)",
+    "Sandbox_CookieHelper_MaxZoneSide_tooltip": "Bigger zones cost more to count. Default 20.",
+    "Sandbox_CookieHelper_FinderScanHours": "Cookie Finder rescan (in-game hours)",
+    "Sandbox_CookieHelper_FinderScanHours_tooltip": "The house item list refreshes at most this often. Default 6.",
+    "Sandbox_CookieHelper_AutoWearWeldingMask": "Auto-wear welding mask when crafting from a zone",
+    "Sandbox_CookieHelper_ReturnToolsAfterCraft": "Put borrowed tools back after crafting"
+}

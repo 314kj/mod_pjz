@@ -1,0 +1,8 @@
+name=Cookie Helper - Safehouse Tools
+id=CookieHelper
+author=lookchinnoi (AKA)
+description=CookieCheetah safehouse helper: add members while they are offline, timed guest visits (Doctor / Builder / House Keeper), show your safehouse area, Auto Count stock zones, Vehicle Zone parts + craft-from-zone, and Cookie Finder.
+poster=poster.png
+icon=icon.png
+versionMin=42.13.0
+modversion=1.0.0
