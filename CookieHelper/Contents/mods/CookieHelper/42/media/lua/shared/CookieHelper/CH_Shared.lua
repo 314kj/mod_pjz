@@ -4,8 +4,8 @@
 -- runs on the client that asked for it, in small slices, and only while it is needed.
 
 CHelp = CHelp or {}
-CHelp.VERSION = "1.0.0"
-CHelp.BUILD = "chp-261102-c00k1e"
+CHelp.VERSION = "1.1.0"
+CHelp.BUILD = "chp-261103-t3b2"
 CHelp.NET = "CookieHelper"
 
 CHelp.ROLE_DOCTOR = "doctor"
@@ -49,6 +49,9 @@ local DEFAULTS = {
     FinderScanHours = 6,
     AutoWearWeldingMask = true,
     ReturnToolsAfterCraft = true,
+    MaxOwnedSafehouses = 3,
+    MaxMemberships = 5,
+    LinkDepth = 2,
 }
 
 function CHelp.sv(name)
@@ -134,6 +137,72 @@ function CHelp.shListFor(username)
         if sh:playerAllowed(username) then out[#out + 1] = sh end
     end
     return out
+end
+
+-- houses this username owns (stable order: by position)
+function CHelp.ownedBy(username)
+    local out = {}
+    local list = SafeHouse.getSafehouseList()
+    if not list or not username then return out end
+    for i = 0, list:size() - 1 do
+        local sh = list:get(i)
+        if sh:getOwner() == username then out[#out + 1] = sh end
+    end
+    table.sort(out, function(a, b) return CHelp.shKey(a) < CHelp.shKey(b) end)
+    return out
+end
+
+-- houses where this username is a listed member but not the owner (guests included)
+function CHelp.memberOf(username)
+    local out = {}
+    local list = SafeHouse.getSafehouseList()
+    if not list or not username then return out end
+    for i = 0, list:size() - 1 do
+        local sh = list:get(i)
+        if sh:getOwner() ~= username and sh:playerAllowed(username) then out[#out + 1] = sh end
+    end
+    table.sort(out, function(a, b) return CHelp.shKey(a) < CHelp.shKey(b) end)
+    return out
+end
+
+-- Kahlua has no next(): this is the "is the table empty" check for the whole mod
+function CHelp.hasAny(tbl)
+    if type(tbl) ~= "table" then return false end
+    for _ in pairs(tbl) do return true end
+    return false
+end
+
+function CHelp.trim(s)
+    if type(s) ~= "string" then return "" end
+    return (string.gsub(string.gsub(s, "^%s+", ""), "%s+$", ""))
+end
+
+-- the vanilla check refuses anyone who already belongs to a house; we allow that (up to the cap)
+-- and keep every other rule (days survived, spawn points, people inside, overlap, ...)
+-- the game answers nil when claiming is off for this player (PlayerSafehouse off / admin-only)
+function CHelp.claimAllowed(p)
+    local ok, v = pcall(function() return getServerOptions():getBoolean("PlayerSafehouse") end)
+    if ok and v == true then return true end
+    if CHelp.isSP() then return true end
+    return false
+end
+
+function CHelp.claimProblem(sq, p)
+    local ok, res = pcall(function() return SafeHouse.canBeSafehouse(sq, p) end)
+    if not ok then return "?" end
+    if res == nil then return getText("IGUI_CH_Msg_ClaimDisabled") end
+    res = tostring(res)
+    local already = getText("IGUI_Safehouse_AlreadyHaveSafehouse")
+    if already and already ~= "" then
+        local a, b = string.find(res, already, 1, true)
+        while a do
+            res = string.sub(res, 1, a - 1) .. string.sub(res, b + 1)
+            a, b = string.find(res, already, 1, true)
+        end
+    end
+    res = CHelp.trim(res)
+    if res == "" then return nil end
+    return res
 end
 
 -- ------------------------------------------------------------------ rectangles

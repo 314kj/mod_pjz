@@ -1,66 +1,39 @@
--- Cookie Helper : main window (members, offline add, guests, zones)
+-- Cookie Helper : zones of one house as slots (workshops + garages)
+-- Hover a slot = what it does. Click = open. Right click = rename / delete.
+-- Each zone is counted when the window opens and every 10 s while it stays open (you nearby only).
 if isServer() then return end
 
-require "ISUI/ISTextBox"
-require "ISUI/ISModalDialog"
+require "ISUI/ISContextMenu"
 require "CookieHelper/CH_Client"
+require "CookieHelper/CH_Scan"
 
 CHelp.Hub = CHelp.Hub or {}
 local Hub = CHelp.Hub
 local C = CHelp.Cl
 local UI = CHelp.UI
+local T = CHelp.Th
+local K = T.C
+local Scan = CHelp.Scan
 local t = CHelp.t
 local floor = math.floor
 
 local W = UI.Window:derive("CHelpHub")
-
-local LIST_M = 108
-local LIST_G = 72
-local LIST_Z = 108
+local COLS = 3
+local CARD_H = 184
 
 function W:createChildren()
     UI.Window.createChildren(self)
-    local x, w = UI.PAD, self.width - UI.PAD * 2
-    local y = UI.HEAD_H + UI.PAD + UI.HS * 2 + 10
-
-    local bw = floor((w - 12) / 3)
-    self.areaBtn = UI.button(self, x, y, bw, t("Menu_ShowArea"), self, W.onArea)
-    UI.button(self, x + bw + 6, y, bw, t("Menu_Finder"), self, W.onFinder)
-    UI.button(self, x + (bw + 6) * 2, y, bw, t("Refresh"), self, W.onRefresh)
-    y = y + UI.BTN_H + 12
-
-    self.yMembers = y
-    y = y + UI.HS + 4
-    self.members = UI.makeList(self, x, y, w, LIST_M, UI.HS + 8, self, W.drawMember)
-    y = y + LIST_M + 4
-    self.addBtn = UI.button(self, x, y, w, t("AddMember"), self, W.onAddMember, "mint")
-    y = y + UI.BTN_H + 12
-
-    self.yGuests = y
-    y = y + UI.HS + 4
-    self.guests = UI.makeList(self, x, y, w - 130, LIST_G, UI.HS + 8, self, W.drawGuest)
-    self.kickBtn = UI.button(self, x + w - 124, y, 124, t("KickGuest"), self, W.onKick, "red")
-    y = y + LIST_G + 12
-
-    self.yZones = y
-    y = y + UI.HS + 4
-    self.zones = UI.makeList(self, x, y, w, LIST_Z, UI.HS + 8, self, W.drawZone)
-    y = y + LIST_Z + 4
-    local zb = floor((w - 12) / 3)
-    UI.button(self, x, y, zb, t("Open"), self, W.onZoneOpen, "mint")
-    UI.button(self, x + zb + 6, y, zb, t("Rename"), self, W.onZoneRename)
-    UI.button(self, x + (zb + 6) * 2, y, zb, t("Delete"), self, W.onZoneDelete, "red")
-    y = y + UI.BTN_H + 6
-    local hb = floor((w - 6) / 2)
-    self.addCountBtn = UI.button(self, x, y, hb, t("NewCountZone"), self, W.onNewZone)
-    self.addCountBtn.kind = CHelp.ZONE_COUNT
-    self.addVehBtn = UI.button(self, x + hb + 6, y, hb, t("NewVehicleZone"), self, W.onNewZone)
-    self.addVehBtn.kind = CHelp.ZONE_VEHICLE
-
-    C.on("zones", self, W.fill)
-    C.on("guests", self, W.fill)
-    C.on("safehouses", self, W.fill)
-    self:fill()
+    local hr = self:headRight()
+    self.areaBtn = UI.button(self, hr - 190, floor((UI.HEAD_H - UI.BTN_H) / 2), 190, "", self, W.onArea, "sec")
+    self.areaBtn:setIcon("eye")
+    self.headTextRight = self.areaBtn:getX() - 10
+    self.info = {}
+    self.lastInfo = 0
+    self.hits = {}
+    C.on("zones", self, W.onZones)
+    C.on("safehouses", self, W.onZones)
+    C.on("highlight", self, W.paintArea)
+    self:paintArea()
 end
 
 function W:onClose()
@@ -68,238 +41,286 @@ function W:onClose()
     if Hub.instance == self then Hub.instance = nil end
 end
 
-function W:isOwnerOrAdmin()
-    return CHelp.isOwner(self.sh, C.me()) or C.isAdmin()
+function W:paintArea()
+    local lit = C.hl[self.key] == true
+    self.areaBtn:setTitle(lit and t("HideHouseArea") or t("ShowHouseArea"))
+    self.areaBtn:setKind(lit and "soft" or "sec")
 end
 
-local function keepSel(list, pick)
-    local it = list.items[list.selected]
-    return it and pick(it.item) or nil
+function W:onArea()
+    local sh = CHelp.shByKey(self.key)
+    if sh then C.toggleHouse(sh) end
 end
 
-local function restoreSel(list, pick, want)
-    list.selected = 0
-    if want == nil then return end
-    for i, it in ipairs(list.items) do
-        if pick(it.item) == want then list.selected = i return end
-    end
-end
-
-local function byName(d) return d.name end
-local function byId(z) return z.id end
-
-function W:fill()
+function W:onZones()
     self.sh = CHelp.shByKey(self.key)
     if not self.sh then return self:close() end
-    local selG = keepSel(self.guests, byName)
-    local selZ = keepSel(self.zones, byId)
-    self.members:clear()
-    self.members:addItem(self.sh:getOwner(), { name = self.sh:getOwner(), owner = true })
-    local players = self.sh:getPlayers()
-    for i = 0, players:size() - 1 do
-        local n = players:get(i)
-        if n ~= self.sh:getOwner() then
-            self.members:addItem(n, { name = n, guest = C.guestOf(n, self.key) })
+    self.lastInfo = 0
+    self.countQ = nil
+end
+
+function W:near()
+    local p = C.player()
+    if not p or not self.sh then return false end
+    return CHelp.shDist(self.sh, floor(p:getX()), floor(p:getY())) <= 30
+end
+
+-- counts per zone (only squares that are loaded: you must be near)
+-- one zone per frame (a full pass every 10 s) so a big house never hitches
+function W:pumpCount()
+    local ms = CHelp.nowMs()
+    if not self.countQ or #self.countQ == 0 then
+        if ms - self.lastInfo < 10000 then return end
+        self.lastInfo = ms
+        self.countQ = {}
+        for _, z in ipairs(C.zonesOf(self.sh)) do self.countQ[#self.countQ + 1] = z end
+        return
+    end
+    local z = table.remove(self.countQ, 1)
+    local ok, err = pcall(function() self:recountOne(z) end)
+    if not ok then CHelp.log("zone count failed: " .. tostring(err)) end
+end
+
+function W:recountOne(z)
+    do
+        local entries = Scan.containers(z, z.z, z.kind == CHelp.ZONE_VEHICLE)
+        local map, total = Scan.count(entries)
+        local boxes = 0
+        for _, e in ipairs(entries) do if not e.veh then boxes = boxes + 1 end end
+        local inf = { total = total, boxes = boxes, chips = {} }
+        if z.kind == CHelp.ZONE_VEHICLE then
+            for _, v in ipairs(Scan.vehicles(z, z.z)) do
+                local sc = v:getScript()
+                if sc then
+                    local short = sc:getName()
+                    local nm = getTextOrNull("IGUI_VehicleName" .. short) or short
+                    inf.chips[#inf.chips + 1] = { label = nm, px = "car", white = true }
+                end
+            end
+        else
+            local st = Scan.stations(z, z.z)
+            for _, b in ipairs(st.benches) do
+                inf.chips[#inf.chips + 1] = { label = b.name, px = CHelp.Count.stationPx(b.name) }
+            end
+            if #st.surfaces > 0 then inf.chips[#inf.chips + 1] = { label = t("TablesN", #st.surfaces), px = "table" } end
+            for _, m in ipairs(st.machines) do inf.chips[#inf.chips + 1] = { label = m.name, px = "furnace", dim = true } end
         end
+        self.info[z.id] = inf
     end
-    self.members.selected = 0
-    self.guests:clear()
-    for user, g in pairs(C.guests) do
-        if g.sh == self.key then self.guests:addItem(user, { name = user, g = g }) end
-    end
-    restoreSel(self.guests, byName, selG)
-    self.zones:clear()
-    local nc, nv = 0, 0
+end
+
+local function slotsFor(self, kind)
+    local list = {}
     for _, z in ipairs(C.zonesOf(self.sh)) do
-        self.zones:addItem(z.name, z)
-        if z.kind == CHelp.ZONE_VEHICLE then nv = nv + 1 else nc = nc + 1 end
+        if (z.kind == CHelp.ZONE_VEHICLE) == (kind == CHelp.ZONE_VEHICLE) then list[#list + 1] = { zone = z } end
     end
-    restoreSel(self.zones, byId, selZ)
-    local mc = CHelp.svInt("CountZonesPerSafehouse", 0, 20)
-    local mv = CHelp.svInt("VehicleZonesPerSafehouse", 0, 20)
-    self.addCountBtn:setTitle(t("NewCountZone") .. " (" .. nc .. "/" .. mc .. ")")
-    self.addVehBtn:setTitle(t("NewVehicleZone") .. " (" .. nv .. "/" .. mv .. ")")
-    self.addCountBtn:setEnable(nc < mc)
-    self.addVehBtn:setEnable(nv < mv)
-    self.addBtn:setVisible(self:isOwnerOrAdmin() and (CHelp.sv("AllowOfflineAdd") or C.isAdmin()))
+    local limit = kind == CHelp.ZONE_VEHICLE and CHelp.svInt("VehicleZonesPerSafehouse", 0, 20) or CHelp.svInt("CountZonesPerSafehouse", 0, 20)
+    local used = #list
+    for _ = used + 1, limit do list[#list + 1] = { empty = true } end
+    if used >= limit then list[#list + 1] = { locked = true } end
+    return list, used, limit
+end
+
+function W:drawSection(y, kind)
+    local x, w = UI.PAD, self.width - UI.PAD * 2
+    local list, used, limit = slotsFor(self, kind)
+    local title = kind == CHelp.ZONE_VEHICLE and t("Garages") or t("Workshops")
+    T.text(self, title, x, y, K.text)
+    local tw = T.tw(title) + 8
+    tw = tw + T.pill(self, x + tw, y - 1, used .. "/" .. limit, K.text2, K.surf2) + 8
+    T.text(self, T.fit(kind == CHelp.ZONE_VEHICLE and t("GaragesSub") or t("WorkshopsSub"), w - tw), x + tw, y, K.text3)
+    y = y + UI.HS + 10
+    local cw = floor((w - (COLS - 1) * 14) / COLS)
+    local mx, my = self:getMouseX(), self:getMouseY()
+    local rows = math.ceil(#list / COLS)
+    for i, s in ipairs(list) do
+        local col = (i - 1) % COLS
+        local row = floor((i - 1) / COLS)
+        local cx = x + col * (cw + 14)
+        local cy = y + row * (CARD_H + 14)
+        local r = { x = cx, y = cy, w = cw, h = CARD_H }
+        local hov = T.hot(r, mx, my)
+        if s.zone then
+            self:drawZoneCard(s.zone, r, hov)
+            self.hits[#self.hits + 1] = { r = r, zone = s.zone }
+        elseif s.empty then
+            T.rrect(self, cx, cy, cw, CARD_H, UI.RC, hov and K.acc or K.line)
+            T.rrect(self, cx + 2, cy + 2, cw - 4, CARD_H - 4, UI.RC - 2, K.bg)
+            T.circle(self, cx + cw / 2 - 22, cy + 34, 44, K.surf2)
+            T.icon(self, "plus", cx + cw / 2 - 11, cy + 45, 22, K.acc)
+            T.textC(self, t("EmptySlot"), cx + cw / 2, cy + 90, K.text)
+            local bl = kind == CHelp.ZONE_VEHICLE and t("NewGarage") or t("NewWorkshop")
+            local bw = T.tw(bl) + 28
+            T.rrect(self, cx + (cw - bw) / 2, cy + 116, bw, UI.BTN_H, 8, hov and K.surf3 or K.surf2)
+            T.textC(self, bl, cx + cw / 2, cy + 116 + floor((UI.BTN_H - UI.HS) / 2), K.text)
+            self.hits[#self.hits + 1] = { r = r, newKind = kind }
+        else
+            T.rrect(self, cx, cy, cw, CARD_H, UI.RC, K.surf, 0.45)
+            T.circle(self, cx + cw / 2 - 22, cy + 34, 44, K.surf)
+            T.icon(self, "lock", cx + cw / 2 - 11, cy + 45, 22, K.text3)
+            T.textC(self, t("LockedSlot"), cx + cw / 2, cy + 90, K.text2)
+            T.textC(self, t("LockedSub"), cx + cw / 2, cy + 92 + UI.HS, K.text3)
+            self.hits[#self.hits + 1] = { r = r, locked = true }
+        end
+        if hov then self.hover = { r = r, s = s, kind = kind } end
+    end
+    return y + rows * (CARD_H + 14) + 6
+end
+
+function W:drawZoneCard(z, r, hov)
+    local x, y, w, h = r.x, r.y, r.w, r.h
+    if hov then T.rring(self, x, y, w, h, UI.RC, K.acc, K.surf, 2) else T.rrect(self, x, y, w, h, UI.RC, K.surf) end
+    local veh = z.kind == CHelp.ZONE_VEHICLE
+    T.slot(self, x + 14, y + 14, 44, nil, veh and "car" or "crate")
+    T.text(self, T.fit(z.name, w - 80), x + 70, y + 16, K.text)
+    T.text(self, T.fit(t("ZoneMeta", z.x2 - z.x1, z.y2 - z.y1, z.z), w - 80), x + 70, y + 18 + UI.HS, K.text3)
+    local inf = self.info[z.id]
+    local ny = y + 70
+    if inf then
+        local a = tostring(inf.total)
+        local b = tostring(inf.boxes)
+        T.text(self, a, x + 14, ny, K.text, T.FL)
+        local ax = x + 14 + T.tw(a, T.FL) + 4
+        T.text(self, veh and t("UnitParts") or t("UnitItems"), ax, ny + UI.HL - UI.HS - 2, K.text3)
+        local bx = ax + T.tw(veh and t("UnitParts") or t("UnitItems")) + 18
+        T.text(self, b, bx, ny, K.text, T.FL)
+        T.text(self, t("UnitBoxes"), bx + T.tw(b, T.FL) + 4, ny + UI.HL - UI.HS - 2, K.text3)
+        local cx = x + 14
+        local cy = ny + UI.HL + 8
+        for _, c in ipairs(inf.chips) do
+            local label = T.fit(c.label, w - 60)
+            local cw = T.pillW(label, T.FS, { px = c.px })
+            if cx + cw > x + w - 10 then break end
+            if c.white then T.pill(self, cx, cy, label, K.bg, K.pill, T.FS, { px = c.px })
+            elseif c.dim then T.pill(self, cx, cy, label, K.text2, K.surf2, T.FS, { px = c.px })
+            else T.pill(self, cx, cy, label, K.acc, K.accD, T.FS, { px = c.px }) end
+            cx = cx + cw + 6
+        end
+    else
+        T.text(self, self:near() and t("Counting") or t("CountFar"), x + 14, ny + 4, K.text3)
+    end
+    -- open button look
+    local bl = t("Open")
+    local bw = T.tw(bl) + 28
+    local by = y + h - UI.BTN_H - 12
+    T.text(self, veh and t("GarageFoot") or t("WorkshopFoot"), x + 14, by + floor((UI.BTN_H - UI.HS) / 2), K.text3)
+    T.rrect(self, x + w - bw - 12, by, bw, UI.BTN_H, 8, K.acc)
+    T.textC(self, bl, x + w - 12 - bw / 2, by + floor((UI.BTN_H - UI.HS) / 2), K.onAcc)
 end
 
 function W:drawBody()
-    local x = UI.PAD
-    local y = UI.HEAD_H + UI.PAD
-    UI.text(self, UI.fit(t("HubOwner", self.sh:getOwner()), self.width - 20), x, y, UI.C.text)
-    UI.text(self, t("HubSize", self.sh:getW(), self.sh:getH(), self.sh:getX(), self.sh:getY()), x, y + UI.HS + 2, UI.C.muted)
-    UI.text(self, t("SecMembers"), x, self.yMembers, UI.C.gold)
-    UI.text(self, t("SecGuests", CHelp.svInt("GuestMinutes", 1, 240)), x, self.yGuests, UI.C.gold)
-    UI.text(self, t("SecZones"), x, self.yZones, UI.C.gold)
-    self.areaBtn:setTitle(C.showArea and t("Menu_HideArea") or t("Menu_ShowArea"))
+    local ms = CHelp.nowMs()
+    if not self.shMs or ms - self.shMs > 1000 then
+        self.shMs = ms
+        self.sh = CHelp.shByKey(self.key)
+    end
+    if not self.sh then return end
+    if self:near() then self:pumpCount() end
+    self.hits = {}
+    self.hover = nil
+    local y = UI.HEAD_H + 2
+    T.text(self, T.fit(t("ZonesHelp"), self.width - UI.PAD * 2), UI.PAD, y, K.text3)
+    y = y + UI.HS + 14
+    y = self:drawSection(y, CHelp.ZONE_COUNT)
+    y = self:drawSection(y + 6, CHelp.ZONE_VEHICLE)
+    local need = math.min(y + UI.PAD, getCore():getScreenHeight() - 20)
+    if math.abs(need - self.height) > 2 then self:setHeight(need) end
 end
 
-function W.drawMember(self, list, d, x, y, w, h)
-    local col = d.owner and UI.C.gold or (d.guest and UI.C.muted or UI.C.text)
-    UI.text(list, UI.fit(d.name, w - 120), x + 8, y + 4, col)
-    local tag = d.owner and t("TagOwner") or (d.guest and t("TagGuest") or t("TagMember"))
-    UI.textR(list, tag, x + w - 8, y + 4, UI.C.muted)
+local function tipFor(s, kind, info)
+    if s.zone then
+        local z = s.zone
+        if z.kind == CHelp.ZONE_VEHICLE then
+            return t("TipGarageTitle", z.name), { t("TipGarage1"), t("TipGarage2"), t("TipGarage3"), t("TipGarage4") }, t("TipZoneFoot")
+        end
+        local lines = { t("TipWork1"), t("TipWork2"), t("TipWork3"), t("TipWork4") }
+        if info and #info.chips > 0 then
+            local names = {}
+            for _, c in ipairs(info.chips) do names[#names + 1] = c.label end
+            lines[2] = t("TipWorkStations", table.concat(names, ", "))
+        end
+        return t("TipWorkTitle", z.name), lines, t("TipZoneFoot")
+    elseif s.empty then
+        return t("TipNewTitle"), { t("TipNew1"), t("TipNew2", CHelp.svInt("MaxZoneSide", 2, 200)), t("TipNew3") }, nil
+    end
+    return t("TipLockedTitle"), { t("TipLocked1", CHelp.svInt("CountZonesPerSafehouse", 0, 20), CHelp.svInt("VehicleZonesPerSafehouse", 0, 20)), t("TipLocked2") }, nil
 end
 
-function W.drawGuest(self, list, d, x, y, w, h)
-    local left = math.max(0, floor(d.g.exp - C.serverNow()))
-    local s = tostring(floor(left / 60)) .. ":" .. ((left % 60) < 10 and "0" or "") .. tostring(left % 60)
-    UI.text(list, UI.fit(d.name, w - 160), x + 8, y + 4, UI.C.text)
-    UI.textR(list, C.roleName(d.g.role) .. "  " .. s, x + w - 8, y + 4, UI.C.mint)
+function W:drawOver()
+    local hv = self.hover
+    if not hv then return end
+    local title, lines, foot = tipFor(hv.s, hv.kind, hv.s.zone and self.info[hv.s.zone.id])
+    local tw = 320
+    local ty = hv.r.y + hv.r.h + 8
+    if ty + 170 > self.height then ty = hv.r.y - 170 end
+    UI.drawTip(self, hv.r.x, ty, tw, title, lines, foot)
 end
 
-function W.drawZone(self, list, z, x, y, w, h)
-    local kind = z.kind == CHelp.ZONE_VEHICLE and t("KindVehicle") or t("KindCount")
-    UI.text(list, kind, x + 8, y + 4, z.kind == CHelp.ZONE_VEHICLE and UI.C.gold or UI.C.mint)
-    UI.text(list, UI.fit(z.name, w - 230), x + 90, y + 4, UI.C.text)
-    UI.textR(list, (z.x2 - z.x1) .. "x" .. (z.y2 - z.y1) .. "  " .. t("Floor", z.z), x + w - 8, y + 4, UI.C.muted)
+function W:onMouseDown(x, y)
+    for _, h in ipairs(self.hits or {}) do
+        if T.hot(h.r, x, y) then
+            if h.zone then
+                local z = h.zone
+                if z.kind == CHelp.ZONE_VEHICLE then CHelp.Veh.open(self.sh, z) else CHelp.Count.open(self.sh, z) end
+            elseif h.newKind then
+                if CHelp.ZoneTool then CHelp.ZoneTool.open(self.sh, h.newKind) end
+            end
+            getSoundManager():playUISound("UISelectListItem")
+            return true
+        end
+    end
+    return ISPanel.onMouseDown(self, x, y)
 end
 
-function W:selZone()
-    local it = self.zones.items[self.zones.selected]
-    return it and it.item or nil
+function W:onRightMouseDown(x, y)
+    for _, h in ipairs(self.hits or {}) do
+        if T.hot(h.r, x, y) and h.zone then
+            local z = h.zone
+            local ctx = ISContextMenu.get(0, getMouseX(), getMouseY())
+            ctx:addOption(t("Rename"), self, W.onRename, z)
+            ctx:addOption(t("Redraw"), self, W.onRedraw, z)
+            ctx:addOption(t("ShowOnFloor"), self, W.onShow, z)
+            ctx:addOption(t("Delete"), self, W.onDelete, z)
+            return true
+        end
+    end
+    return false
 end
 
-function W:onArea() C.toggleArea() end
-function W:onFinder() CHelp.Finder.open(self.sh) end
-function W:onRefresh()
-    CHelp.toServer("zonesReq", { sh = self.key })
-    self:fill()
+function W:onRename(z)
+    local key = self.key
+    UI.prompt(t("Rename"), t("RenameZoneAsk"), z.name, t("Save"), self, function(_, text)
+        CHelp.toServer("zoneRename", { sh = key, id = z.id, name = text })
+    end)
 end
 
-function W:onAddMember()
-    if Hub.openAdd then Hub.openAdd(self.sh) end
+function W:onRedraw(z)
+    if CHelp.ZoneTool then CHelp.ZoneTool.open(self.sh, z.kind, z.name, z.id) end
 end
 
-function W:onKick()
-    local it = self.guests.items[self.guests.selected]
-    if not it then return end
-    local m = ISModalDialog:new(self.x + 60, self.y + 160, 320, 150, t("ConfirmKick", it.item.name), true, self, W.onKickDone)
-    m.guestName = it.item.name
-    m:initialise()
-    m:addToUIManager()
+function W:onShow(z)
+    C.mark(z.x1, z.y1, z.x2, z.y2, z.z, K.acc[1], K.acc[2], K.acc[3], 0.35, 4000, z.name, "zone")
 end
 
-function W:onKickDone(button)
-    if button.internal ~= "YES" then return end
-    CHelp.toServer("guestEnd", { user = button.parent.guestName })
-end
-
-function W:onZoneOpen()
-    local z = self:selZone()
-    if not z then return end
-    C.mark(z.x1, z.y1, z.x2, z.y2, z.z, 1.0, 0.8, 0.4, 0.35, 3000)
-    if z.kind == CHelp.ZONE_VEHICLE then CHelp.Veh.open(self.sh, z) else CHelp.Count.open(self.sh, z) end
-end
-
-function W:onZoneRename()
-    local z = self:selZone()
-    if not z then return end
-    local box = ISTextBox:new(self.x + 60, self.y + 120, 280, 180, t("Rename"), z.name, self, W.onRenameDone)
-    box.zoneId = z.id
-    box:initialise()
-    box:addToUIManager()
-end
-
-function W:onRenameDone(button)
-    if button.internal ~= "OK" then return end
-    CHelp.toServer("zoneRename", { sh = self.key, id = button.parent.zoneId, name = button.parent.entry:getText() })
-end
-
-function W:onZoneDelete()
-    local z = self:selZone()
-    if not z then return end
-    local m = ISModalDialog:new(self.x + 60, self.y + 160, 320, 150, t("ConfirmDelete", z.name), true, self, W.onDeleteDone)
-    m.zoneId = z.id
-    m:initialise()
-    m:addToUIManager()
-end
-
-function W:onDeleteDone(button)
-    if button.internal ~= "YES" then return end
-    CHelp.toServer("zoneDel", { sh = self.key, id = button.parent.zoneId })
-end
-
-function W:onNewZone(btn)
-    if CHelp.ZoneTool then CHelp.ZoneTool.open(self.sh, btn.kind) end
+function W:onDelete(z)
+    local key = self.key
+    UI.confirm(t("Delete"), t("ConfirmDelete", z.name), t("Delete"), true, self, function()
+        CHelp.toServer("zoneDel", { sh = key, id = z.id })
+    end)
 end
 
 function Hub.open(sh)
     if not sh then return end
     if Hub.instance then Hub.instance:close() end
-    local w = 480
-    local h = UI.HEAD_H + UI.PAD + UI.HS * 2 + 10 + UI.BTN_H + 12
-        + UI.HS + 4 + LIST_M + 4 + UI.BTN_H + 12
-        + UI.HS + 4 + LIST_G + 12
-        + UI.HS + 4 + LIST_Z + 4 + UI.BTN_H + 6 + UI.BTN_H + UI.PAD
+    local sw, shh = getCore():getScreenWidth(), getCore():getScreenHeight()
+    local w = math.min(820, sw - 20)
+    local h = math.min(UI.HEAD_H + UI.HS + 16 + (UI.HS + 10 + CARD_H + 20) * 2 + 40 + UI.HS, shh - 20)
     local x, y = UI.center(w, h)
-    local win = W:new(x, y, w, h, "Cookie Helper  -  " .. sh:getTitle())
+    local win = W:new(x, y, w, h, t("ZonesTitle"))
+    win.subtitle = sh:getTitle()
     win.sh = sh
     win.key = CHelp.shKey(sh)
     win:show()
     Hub.instance = win
     CHelp.toServer("zonesReq", { sh = win.key })
-end
-
--- ------------------------------------------------------------------ add member (offline ok)
-local A = UI.Window:derive("CHelpAddMember")
-
-function A:createChildren()
-    UI.Window.createChildren(self)
-    local x, w = UI.PAD, self.width - UI.PAD * 2
-    local y = UI.HEAD_H + UI.PAD + UI.HS * 2 + 8
-    self.entry = UI.entry(self, x, y, w, "")
-    self.entry.onTextChange = function() self:fill() end
-    y = y + UI.BTN_H + 6
-    self.list = UI.makeList(self, x, y, w, self.height - y - UI.BTN_H - UI.PAD - 8, UI.HS + 8, self, nil, A.onPick)
-    local by = self.height - UI.BTN_H - UI.PAD
-    UI.button(self, x, by, floor(w / 2) - 3, t("Add"), self, A.onAdd, "mint")
-    UI.button(self, x + floor(w / 2) + 3, by, floor(w / 2) - 3, t("Cancel"), self, A.onCancel, "red")
-    self.known = {}
-    C.on("known", self, A.onKnown)
-    CHelp.toServer("knownReq", {})
-end
-
-function A:onClose() C.off(self) end
-
-function A:onKnown(list)
-    self.known = list or {}
-    self:fill()
-end
-
-function A:fill()
-    local q = string.lower(self.entry:getInternalText() or "")
-    self.list:clear()
-    for _, n in ipairs(self.known) do
-        if (q == "" or string.find(string.lower(n), q, 1, true)) and not self.sh:playerAllowed(n) then
-            self.list:addItem(n, n)
-        end
-    end
-end
-
-function A:onPick(name)
-    self.entry:setText(name)
-end
-
-function A:onAdd()
-    local name = self.entry:getInternalText()
-    if not name or name == "" then return end
-    CHelp.toServer("addMember", { sh = CHelp.shKey(self.sh), name = name })
-    self:close()
-end
-
-function A:onCancel() self:close() end
-
-function A:drawBody()
-    UI.text(self, UI.fit(t("AddHelp1"), self.width - 20), UI.PAD, UI.HEAD_H + UI.PAD, UI.C.text)
-    UI.text(self, UI.fit(t("AddHelp2"), self.width - 20), UI.PAD, UI.HEAD_H + UI.PAD + UI.HS + 2, UI.C.muted)
-end
-
-function Hub.openAdd(sh)
-    local w, h = 360, 380
-    local x, y = UI.center(w, h)
-    local win = A:new(x + 40, y + 20, w, h, t("AddMember"))
-    win.sh = sh
-    win:show()
 end

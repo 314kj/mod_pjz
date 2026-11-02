@@ -59,3 +59,21 @@ option CookieHelper.ReturnToolsAfterCraft
     type = boolean, default = true,
     page = CookieHelper, translation = CookieHelper_ReturnToolsAfterCraft,
 }
+
+option CookieHelper.MaxOwnedSafehouses
+{
+    type = integer, min = 1, max = 20, default = 3,
+    page = CookieHelper, translation = CookieHelper_MaxOwnedSafehouses,
+}
+
+option CookieHelper.MaxMemberships
+{
+    type = integer, min = 0, max = 50, default = 5,
+    page = CookieHelper, translation = CookieHelper_MaxMemberships,
+}
+
+option CookieHelper.LinkDepth
+{
+    type = integer, min = 0, max = 4, default = 2,
+    page = CookieHelper, translation = CookieHelper_LinkDepth,
+}

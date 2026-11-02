@@ -81,15 +81,34 @@ local function guestOf(user, key)
     return g ~= nil and g.sh == key
 end
 
--- the guest's host house; if it was moved/resized (key changed) fall back to the owner's house
+local function houseId(sh)
+    local ok, id = pcall(function() return sh:getId() end)
+    if ok and id then return tostring(id) end
+    return nil
+end
+
+-- the guest's host house. The game id survives a move/resize (the x_y key does not); without an id
+-- (records from v1.0) the owner's house is used only when the owner has exactly one house, because
+-- the guest may be a real member of the owner's other houses.
 local function guestHouse(g)
     local sh = CHelp.shByKey(g.sh)
-    if sh then return sh end
+    if sh and (not g.id or houseId(sh) == g.id) then return sh end
+    if g.id then
+        local list = SafeHouse.getSafehouseList()
+        for i = 0, list:size() - 1 do
+            local o = list:get(i)
+            if houseId(o) == g.id then
+                g.sh = CHelp.shKey(o)
+                return o
+            end
+        end
+        return nil
+    end
     if g.owner then
-        local ok, byOwner = pcall(function() return SafeHouse.getSafehouseByOwner(g.owner) end)
-        if ok and byOwner then
-            g.sh = CHelp.shKey(byOwner)
-            return byOwner
+        local owned = CHelp.ownedBy(g.owner)
+        if #owned == 1 then
+            g.sh = CHelp.shKey(owned[1])
+            return owned[1]
         end
     end
     return nil
@@ -120,6 +139,24 @@ local function membersOnline(sh, exceptName)
     return out
 end
 
+-- real memberships of a name (owner excluded, guest visits excluded)
+local function membershipCount(name)
+    local n = 0
+    local list = SafeHouse.getSafehouseList()
+    for i = 0, list:size() - 1 do
+        local sh = list:get(i)
+        if sh:getOwner() ~= name and sh:playerAllowed(name) and not guestOf(name, CHelp.shKey(sh)) then n = n + 1 end
+    end
+    return n
+end
+
+local function ownedCount(name)
+    return #CHelp.ownedBy(name)
+end
+
+local function maxOwned() return CHelp.svInt("MaxOwnedSafehouses", 1, 20) end
+local function maxMember() return CHelp.svInt("MaxMemberships", 0, 50) end
+
 -- ------------------------------------------------------------------ guest file (crash safety)
 -- membership is saved with the world, the guest list is written here the moment it changes,
 -- so a crash can never leave a visitor as a permanent member.
@@ -129,7 +166,7 @@ local function saveGuestFile()
         if not w then return end
         for user, g in pairs(data().guests) do
             w:write(tostring(user) .. "|" .. tostring(g.sh) .. "|" .. tostring(math.floor(tonumber(g.exp) or 0))
-                .. "|" .. tostring(g.owner or "") .. "\n")
+                .. "|" .. tostring(g.owner or "") .. "|" .. tostring(g.id or "") .. "\n")
         end
         w:close()
     end)
@@ -142,11 +179,11 @@ local function loadGuestFile()
         if not r then return end
         local line = r:readLine()
         while line do
-            local user, key, exp, owner = string.match(line, "^(.-)|(.-)|([%d%.eE%+%-]+)|?(.*)$")
+            local user, key, exp, owner, id = string.match(line, "^(.-)|(.-)|([%d%.eE%+%-]+)|?([^|]*)|?(.*)$")
             exp = tonumber(exp)
             if user and key and exp and not data().guests[user] then
                 data().guests[user] = { sh = key, role = CHelp.ROLE_DOCTOR, exp = exp, host = "?", title = "",
-                    owner = (owner ~= "" and owner or nil) }
+                    owner = (owner and owner ~= "" and owner or nil), id = (id and id ~= "" and id or nil) }
             end
             line = r:readLine()
         end
@@ -220,6 +257,11 @@ local function startupCleanup()
     end
     for _, user in ipairs(drop) do endGuest(user, "expired") end
     saveGuestFile()
+    local gone = {}
+    for key, _ in pairs(data().zones) do
+        if not CHelp.shByKey(key) then gone[#gone + 1] = key end
+    end
+    for _, key in ipairs(gone) do data().zones[key] = nil end
     CHelp.log("ready v" .. CHelp.VERSION .. " (" .. tostring(#drop) .. " expired guests cleared)")
 end
 
@@ -281,7 +323,25 @@ function H.hello(p, user, args)
     end
 end
 
+-- last visit of my houses: the client only gets lastVisited once (login), the server keeps it current
+function H.visitsReq(p, user, args)
+    local out = {}
+    local admin = isAdmin(p)
+    local function add(sh)
+        local ok, v = pcall(function() return sh:getLastVisited() end)
+        if ok and v then out[CHelp.shKey(sh)] = v end
+    end
+    for _, sh in ipairs(CHelp.shListFor(user)) do add(sh) end
+    if admin and type(args.key) == "string" then
+        local sh = CHelp.shByKey(args.key)
+        if sh then add(sh) end
+    end
+    CHelp.toClient(p, "visits", { list = out, now = CHelp.nowMs() })
+end
+
 function H.knownReq(p, user, args)
+    -- only for people who can add members somewhere (the name picker)
+    if #CHelp.ownedBy(user) == 0 and not isAdmin(p) then return end
     local names = {}
     for u, _ in pairs(data().known) do names[#names + 1] = u end
     table.sort(names, function(a, b) return string.lower(a) < string.lower(b) end)
@@ -298,11 +358,14 @@ function H.addMember(p, user, args)
     local name = trim(args.name)
     if not sh then return msg(p, "NoSafehouse") end
     if not (CHelp.isOwner(sh, user) or isAdmin(p)) then return msg(p, "OwnerOnly") end
-    if not CHelp.sv("AllowOfflineAdd") and not isAdmin(p) then return msg(p, "AddDisabled") end
     if name == "" or string.len(name) > 64 then return msg(p, "BadName") end
+    -- offline add off: owners can still add players who are online (the vanilla invite rule)
+    if not CHelp.sv("AllowOfflineAdd") and not isAdmin(p) and not playerByName(name) then return msg(p, "AddDisabled") end
     if sh:getOwner() == name then return msg(p, "AlreadyMember", name) end
     local key = CHelp.shKey(sh)
+    local cap = maxMember()
     if guestOf(name, key) then
+        if cap > 0 and membershipCount(name) >= cap then return msg(p, "MemberCap", name, cap) end
         -- a visitor becomes a real member: keep the membership, drop the timer
         data().guests[name] = nil
         saveGuestFile()
@@ -313,13 +376,7 @@ function H.addMember(p, user, args)
         return
     end
     if sh:getPlayers():contains(name) then return msg(p, "AlreadyMember", name) end
-    local list = SafeHouse.getSafehouseList()
-    for i = 0, list:size() - 1 do
-        local other = list:get(i)
-        if other ~= sh and other:playerAllowed(name) and not guestOf(name, CHelp.shKey(other)) then
-            return msg(p, "HasOtherSafehouse", name, other:getTitle())
-        end
-    end
+    if cap > 0 and membershipCount(name) >= cap then return msg(p, "MemberCap", name, cap) end
     sh:addPlayer(name)
     syncSafehouse(sh)
     msg(p, "Added", name)
@@ -377,7 +434,7 @@ function H.guestAnswer(p, user, args)
     sh:addPlayer(r.guest)
     syncSafehouse(sh)
     data().guests[r.guest] = { sh = r.sh, role = role, exp = CHelp.now() + minutes * 60, host = user, title = sh:getTitle(),
-        owner = sh:getOwner() }
+        owner = sh:getOwner(), id = houseId(sh) }
     saveGuestFile()
     broadcastGuests()
     if gp then msg(gp, "Approved_" .. role, user, minutes) end
@@ -419,16 +476,27 @@ function H.zoneAdd(p, user, args)
     local list = data().zones[key] or {}
     local limit = kind == CHelp.ZONE_VEHICLE and CHelp.svInt("VehicleZonesPerSafehouse", 0, 20)
         or CHelp.svInt("CountZonesPerSafehouse", 0, 20)
+    -- redraw: the old zone is replaced only once the new area is valid
+    local replace = tonumber(args.replace)
+    local slot = nil
     local have = 0
-    for _, z in ipairs(list) do if z.kind == kind then have = have + 1 end end
+    for i, z in ipairs(list) do
+        if replace and z.id == replace and z.kind == kind then slot = i
+        elseif z.kind == kind then have = have + 1 end
+    end
     if have >= limit then return msg(p, "ZoneLimit", limit) end
-    data().zseq = data().zseq + 1
     local z = {
-        id = data().zseq, kind = kind,
-        name = cleanName(args.name, (kind == CHelp.ZONE_VEHICLE and "Garage " or "Stock ") .. tostring(have + 1)),
+        id = slot and list[slot].id or nil, kind = kind,
+        name = cleanName(args.name, (kind == CHelp.ZONE_VEHICLE and "Garage " or "Workshop ") .. tostring(have + 1)),
         x1 = r.x1, y1 = r.y1, x2 = r.x2, y2 = r.y2, z = math.floor(tonumber(args.z) or 0), by = user,
     }
-    list[#list + 1] = z
+    if slot then
+        list[slot] = z
+    else
+        data().zseq = data().zseq + 1
+        z.id = data().zseq
+        list[#list + 1] = z
+    end
     data().zones[key] = list
     sendZonesToMembers(sh)
     msg(p, "ZoneSaved", z.name)
@@ -455,14 +523,131 @@ function H.zoneRename(p, user, args)
     sendZonesToMembers(sh)
 end
 
+-- ------------------------------------------------------------------ Safehouse Advance
+-- several houses per player. Rights always follow the list of the house in question.
+
+local function ownerOrAdmin(p, user, sh)
+    return sh ~= nil and (sh:getOwner() == user or isAdmin(p))
+end
+
+function H.claim(p, user, args)
+    local x, y, z = math.floor(tonumber(args.x) or 0), math.floor(tonumber(args.y) or 0), math.floor(tonumber(args.z) or 0)
+    if not CHelp.claimAllowed(p) and not isAdmin(p) then return msg(p, "ClaimDisabled") end
+    local sq = getCell():getGridSquare(x, y, z)
+    if not sq or not sq:getBuilding() then return msg(p, "ClaimNoBuilding") end
+    if math.abs(p:getX() - x) > 40 or math.abs(p:getY() - y) > 40 then return msg(p, "TooFar", 40) end
+    if ownedCount(user) >= maxOwned() and not isAdmin(p) then return msg(p, "ClaimLimit", maxOwned()) end
+    if SafeHouse.getSafeHouse(sq) then return msg(p, "ClaimTaken") end
+    local problem = CHelp.claimProblem(sq, p)
+    if problem then return msg(p, "ClaimDenied", problem) end
+    local ok, sh = pcall(function() return SafeHouse.addSafeHouse(sq, p) end)
+    if not ok or not sh then
+        CHelp.log("claim failed: " .. tostring(sh))
+        return msg(p, "ClaimDenied", "?")
+    end
+    local title = CHelp.trim(args.title)
+    if title == "" then title = user .. " #" .. tostring(ownedCount(user)) end
+    if string.len(title) > 40 then title = string.sub(title, 1, 40) end
+    pcall(function() sh:setTitle(title) end)
+    syncSafehouse(sh)
+    msg(p, "ClaimOk", title)
+    sendZonesTo(p, CHelp.shKey(sh))
+    CHelp.log(tostring(user) .. " claimed safehouse " .. CHelp.shKey(sh) .. " (" .. tostring(ownedCount(user)) .. " owned)")
+end
+
+function H.removeMember(p, user, args)
+    local sh = CHelp.shByKey(args.sh)
+    local name = trim(args.name)
+    if not sh then return msg(p, "NoSafehouse") end
+    if not ownerOrAdmin(p, user, sh) then return msg(p, "OwnerOnly") end
+    if name == "" or name == sh:getOwner() then return msg(p, "BadName") end
+    if data().guests[name] and data().guests[name].sh == CHelp.shKey(sh) then
+        return endGuest(name, "kicked", user)
+    end
+    if not sh:playerAllowed(name) then return msg(p, "NotMember", name) end
+    local ok = pcall(function() SafeHouse.kickUserFromSafehouse(sh, name) end)
+    if not ok then sh:removePlayer(name) syncSafehouse(sh) end
+    msg(p, "Removed", name)
+    local tp = playerByName(name)
+    if tp then msg(tp, "YouWereRemoved", sh:getTitle()) end
+end
+
+function H.leave(p, user, args)
+    local sh = CHelp.shByKey(args.sh)
+    if not sh then return msg(p, "NoSafehouse") end
+    if sh:getOwner() == user then return msg(p, "OwnerCantLeave") end
+    if data().guests[user] and data().guests[user].sh == CHelp.shKey(sh) then return endGuest(user, "left", user) end
+    if not sh:playerAllowed(user) then return end
+    local ok = pcall(function() SafeHouse.kickUserFromSafehouse(sh, user) end)
+    if not ok then sh:removePlayer(user) syncSafehouse(sh) end
+    msg(p, "YouLeft", sh:getTitle())
+    for _, o in ipairs(membersOnline(sh, user)) do msg(o, "MemberLeft", user) end
+end
+
+function H.transfer(p, user, args)
+    local sh = CHelp.shByKey(args.sh)
+    local name = trim(args.name)
+    if not sh then return msg(p, "NoSafehouse") end
+    if not ownerOrAdmin(p, user, sh) then return msg(p, "OwnerOnly") end
+    if name == "" or name == sh:getOwner() then return msg(p, "BadName") end
+    if not isRealMember(sh, name) then return msg(p, "TransferMemberOnly", name) end
+    if ownedCount(name) >= maxOwned() then return msg(p, "TransferCap", name, maxOwned()) end
+    local old = sh:getOwner()
+    local cap = maxMember()
+    local oldFull = cap > 0 and membershipCount(old) >= cap   -- counted while old still owns this one
+    sh:setOwner(name)
+    if oldFull then
+        sh:removePlayer(old)
+    elseif not sh:getPlayers():contains(old) then
+        sh:addPlayer(old)
+    end
+    syncSafehouse(sh)
+    msg(p, "Transferred", name)
+    local tp = playerByName(name)
+    if tp then msg(tp, "YouOwnNow", sh:getTitle()) end
+    CHelp.log(tostring(user) .. " gave safehouse " .. CHelp.shKey(sh) .. " to " .. name)
+end
+
+function H.rename(p, user, args)
+    local sh = CHelp.shByKey(args.sh)
+    if not sh then return msg(p, "NoSafehouse") end
+    if not ownerOrAdmin(p, user, sh) then return msg(p, "OwnerOnly") end
+    local title = trim(args.title)
+    if title == "" then return msg(p, "BadName") end
+    if string.len(title) > 40 then title = string.sub(title, 1, 40) end
+    sh:setTitle(title)
+    syncSafehouse(sh)
+    msg(p, "Renamed", title)
+end
+
 -- vehicle part lists are only known for models someone has actually parked in a zone;
 -- the first client that sees one reports it so every safehouse can browse it later.
+local function realVehicle(name)
+    local sm = getScriptManager()
+    local ok, v = pcall(function() return sm:getVehicle(name) end)
+    if ok and v then return true end
+    local short = string.match(name, "%.(.+)$")
+    if short then
+        ok, v = pcall(function() return sm:getVehicle(short) end)
+        if ok and v then return true end
+    end
+    return false
+end
+
+local function realItem(ft)
+    local ok, it = pcall(function() return getScriptManager():getItem(ft) end)
+    return ok and it ~= nil
+end
+
 function H.vparts(p, user, args)
     local veh = trim(args.veh)
     if veh == "" or string.len(veh) > 120 or type(args.items) ~= "table" then return end
+    -- the shared cache only takes real models / items from players who have a house
+    if #CHelp.shListFor(user) == 0 and not isAdmin(p) then return end
+    if not realVehicle(veh) then return end
     local items, n = {}, 0
     for _, it in pairs(args.items) do
-        if type(it) == "string" and string.len(it) <= 140 and n < MAX_VEH_ITEMS then
+        if type(it) == "string" and string.len(it) <= 140 and n < MAX_VEH_ITEMS and realItem(it) then
             n = n + 1
             items[n] = it
         end

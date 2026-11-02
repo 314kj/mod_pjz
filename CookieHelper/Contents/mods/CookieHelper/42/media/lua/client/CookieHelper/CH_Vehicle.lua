@@ -18,10 +18,11 @@ local RB = CHelp.RecipeBox
 local t = CHelp.t
 local floor = math.floor
 
+local T = CHelp.Th
+local K = T.C
 local W = UI.Window:derive("CHelpVehicle")
-local LEFT_W = 210
-local PARTS_H = 220
-local RECIPE_H = 210
+local LEFT_W = 220
+local PARTS_H = 170
 
 local function normType(s)
     if not s or s == "" then return nil end
@@ -90,33 +91,34 @@ function W:createChildren()
     self.inZone = {}
     self.known = {}
     local x = UI.PAD
-    local y = UI.HEAD_H + UI.PAD
+    local y = UI.HEAD_H + 2
     local fullH = self.height - y - UI.PAD
     self.mfilter = UI.entry(self, x, y, LEFT_W, "")
     self.mfilter:setPlaceholderText(t("FilterModels"))
     self.mfilter.onTextChange = function() self:fillModels() end
-    self.models = UI.makeList(self, x, y + UI.BTN_H + 6, LEFT_W, fullH - UI.BTN_H - 6, UI.HS + 10, self, W.drawModel, W.onModel)
+    self.models = UI.makeList(self, x, y + UI.BTN_H + 8, LEFT_W, fullH - UI.BTN_H - 8, UI.HS + 16, self, W.drawModel, W.onModel)
+    self.models.rowGap = 4
 
-    local rx = x + LEFT_W + 10
+    local rx = x + LEFT_W + 16
     local rw = self.width - rx - UI.PAD
     self.rx, self.rw = rx, rw
     self.yTitle = y
-    local py = y + UI.HS * 2 + 10
-    self.parts = UI.makeList(self, rx, py, rw, PARTS_H, UI.HS + 14, self, W.drawPart, W.onPart)
-    py = py + PARTS_H + 8
+    local py = y + UI.HM + UI.HS + 12
+    self.parts = UI.makeList(self, rx, py, rw, PARTS_H, UI.HS + 26, self, W.drawPart, W.onPart)
+    self.parts.rowGap = 4
+    py = py + PARTS_H + 10
     self.yRecipes = py
-    py = py + UI.HS + 6
-    self.rsearch = UI.entry(self, rx, py, rw - 188, "")
-    self.rsearch:setPlaceholderText(t("SearchRecipes"))
-    self.rsearch.onTextChange = function() self.recipeDirty = true end
-    self.addBtn = UI.button(self, rx + rw - 182, py, 88, t("AddToModel"), self, W.onAddExtra, "mint")
-    self.delBtn = UI.button(self, rx + rw - 88, py, 88, t("RemoveFromModel"), self, W.onDelExtra, "red")
+    self.addBtn = UI.button(self, rx + rw - 260, py - 4, 130, t("AddToModel"), self, W.onAddExtra, "soft")
+    self.addBtn:setIcon("plus")
+    self.delBtn = UI.button(self, rx + rw - 124, py - 4, 124, t("RemoveFromModel"), self, W.onDelExtra, "bad")
     py = py + UI.BTN_H + 6
-    self.box = RB.create(self, rx, py, rw, RECIPE_H, {
-        getEntries = function() return self:entries() end,
+    self.box = RB.create(self, rx, py, rw, self.height - py - UI.PAD, {
+        zone = function() return self.zone end,
         canCraft = function() return self:playerInZone() end,
         why = "Msg_StandInZone",
+        listW = 300,
     })
+    self.box.onSearch = function() self.recipeDirty = true end
 
     self.known = {}
     self.data = {}          -- scriptName -> { items, extra, source }
@@ -193,7 +195,7 @@ function W:fillModels()
     local keepSel = self.selModel
     self.models:clear()
     local seen = {}
-    local function add(name, header)
+    local function add(name)
         if seen[name] then return end
         local lab = modelLabel(name)
         if q ~= "" and not string.find(string.lower(lab), q, 1, true) and not string.find(string.lower(name), q, 1, true) then return end
@@ -213,9 +215,13 @@ function W:fillModels()
 end
 
 function W.drawModel(self, list, m, x, y, w, h)
-    local col = m.here and UI.C.mint or (m.known and UI.C.text or UI.C.muted)
-    if m.here then UI.rect(list, x + 4, y + h / 2 - 3, 6, 6, UI.C.mint) end
-    UI.text(list, UI.fit(m.label, w - 22), x + 16, y + (h - UI.HS) / 2, col)
+    local col = m.here and K.acc or (m.known and K.text or K.text3)
+    local tx = x + 12
+    if m.here then
+        T.px(list, "car", x + 8, y + floor((h - 16) / 2), 16)
+        tx = x + 30
+    end
+    T.text(list, T.fit(m.label, w - (tx - x) - 8), tx, y + floor((h - UI.HS) / 2), col)
 end
 
 function W:onModel(m)
@@ -245,11 +251,12 @@ function W:fillParts()
 end
 
 function W.drawPart(self, list, p, x, y, w, h)
-    if p.tex then list:drawTextureScaledAspect(p.tex, x + 6, y + 4, h - 8, h - 8, 1, 1, 1, 1) end
-    UI.text(list, UI.fit(Scan.itemName(p.ft), w - h - 150), x + h + 2, y + (h - UI.HS) / 2, UI.C.text)
+    T.slot(list, x + 8, y + 4, h - 8, p.tex, nil)
+    local tx = x + h + 8
+    T.text(list, T.fit(Scan.itemName(p.ft), w - (tx - x) - 190), tx, y + floor((h - UI.HS) / 2), K.text)
     local have = self.counts[p.ft] or 0
-    UI.textR(list, t("InZone", have), x + w - 70, y + (h - UI.HS) / 2, have > 0 and UI.C.mint or UI.C.muted)
-    UI.textR(list, t("Recipes", p.recipes), x + w - 8, y + (h - UI.HS) / 2, p.recipes > 0 and UI.C.gold or UI.C.muted)
+    T.pill(list, x + w - 180, y + floor((h - UI.HS - 4) / 2), t("InZoneN", have), have > 0 and K.acc or K.text3, have > 0 and K.accD or K.surf2)
+    T.pill(list, x + w - 84, y + floor((h - UI.HS - 4) / 2), t("Recipes", p.recipes), p.recipes > 0 and K.warn or K.text3, p.recipes > 0 and K.warnD or K.surf2)
 end
 
 function W:onPart(p)
@@ -258,10 +265,10 @@ function W:onPart(p)
 end
 
 function W:refreshRecipes()
-    local q = self.rsearch:getInternalText() or ""
+    local q = self.box.search:getInternalText() or ""
     local list = {}
     if string.len(q) >= 2 then
-        list = Craft.search(q, 40)
+        list = Craft.search(q, 60)
     else
         local seen = {}
         local function add(r) if r and not seen[r] then seen[r] = true list[#list + 1] = r end end
@@ -288,12 +295,17 @@ function W:onDelExtra()
 end
 
 function W:recount()
+    local p = C.player()
     local entries = self:entries()
     local map = Scan.count(entries)
     self.counts = {}
     for ft, e in pairs(map) do self.counts[ft] = e.n end
     self.lastCount = CHelp.nowMs()
-    self.box:invalidate(Craft.planContainers(C.player(), entries))
+    if CHelp.nowMs() - (self.lastStations or 0) > 5000 then
+        self.lastStations = CHelp.nowMs()
+        self.stations = Scan.stations(self.zone, self.zone.z)
+    end
+    self.box:invalidate(Craft.planContainers(p, entries), Craft.countWithBag(p, map), self.stations)
 end
 
 function W:drawBody()
@@ -308,12 +320,11 @@ function W:drawBody()
         end
     end
     if self.recipeDirty then self:refreshRecipes() end
-    self.box:pump(2)
 
     local rx = self.rx
     local d = self.selModel and self.data[self.selModel]
     local title = self.selModel and modelLabel(self.selModel) or t("PickModel")
-    UI.text(self, UI.fit(title, self.rw), rx, self.yTitle, UI.C.gold, UI.FONT_M)
+    T.text(self, T.fit(title, self.rw - 200, T.FM), rx, self.yTitle, K.text, T.FM)
     local src = ""
     if d then
         if d.source == "real" then src = t("SrcReal", #d.items)
@@ -321,10 +332,12 @@ function W:drawBody()
         elseif d.source == "guess" then src = (#d.items > 0) and t("SrcGuess", #d.items) or t("SrcNone")
         else src = t("St_Checking") end
     end
-    UI.text(self, UI.fit(src, self.rw), rx, self.yTitle + UI.HM + 2, UI.C.muted)
+    T.text(self, T.fit(src, self.rw), rx, self.yTitle + UI.HM + 4, K.text3)
+    local inside = self:playerInZone()
+    local s = inside and t("InZone") or t("Msg_StandInZone")
+    T.textR(self, s, rx + self.rw, self.yTitle + 4, inside and K.acc or K.bad)
     local head = self.selPart and t("CraftFor", Scan.itemName(self.selPart)) or t("ModelRecipes")
-    UI.text(self, UI.fit(head, self.rw - 160), rx, self.yRecipes, UI.C.gold)
-    if not self:playerInZone() then UI.textR(self, t("Msg_StandInZone"), rx + self.rw, self.yRecipes, UI.C.red) end
+    T.text(self, T.fit(head, self.rw - 280), rx, self.yRecipes + floor((UI.BTN_H - UI.HS) / 2) - 4, K.text2)
 end
 
 local sortedModels = nil
@@ -343,10 +356,12 @@ end
 
 function V.open(sh, zone, auto)
     if V.instance then V.instance:close() end
-    local w = 700
-    local h = UI.HEAD_H + UI.PAD + UI.HS * 2 + 10 + PARTS_H + 8 + UI.HS + 6 + UI.BTN_H + 6 + RECIPE_H + UI.PAD
+    local sw, shh = getCore():getScreenWidth(), getCore():getScreenHeight()
+    local w, h = math.min(1020, sw - 20), math.min(760, shh - 20)
     local x, y = UI.center(w, h)
-    local win = W:new(x, y, w, h, t("VehTitle", zone.name))
+    local win = W:new(x, y, w, h, zone.name)
+    win.subtitle = t("Garage")
+    win.headIcon = "px_car"
     win.sh = sh
     win.zone = zone
     win.autoOpened = auto == true
