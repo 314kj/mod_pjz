@@ -323,6 +323,15 @@ function H.hello(p, user, args)
     end
 end
 
+local function onlineSet()
+    local set = {}
+    for _, op in ipairs(CHelp.onlinePlayers()) do
+        local n = uname(op)
+        if n then set[n] = true end
+    end
+    return set
+end
+
 -- last visit of my houses: the client only gets lastVisited once (login), the server keeps it current
 function H.visitsReq(p, user, args)
     local out = {}
@@ -331,21 +340,64 @@ function H.visitsReq(p, user, args)
         local ok, v = pcall(function() return sh:getLastVisited() end)
         if ok and v then out[CHelp.shKey(sh)] = v end
     end
-    for _, sh in ipairs(CHelp.shListFor(user)) do add(sh) end
+    local houses = CHelp.shListFor(user)
     if admin and type(args.key) == "string" then
         local sh = CHelp.shByKey(args.key)
-        if sh then add(sh) end
+        if sh then houses[#houses + 1] = sh end
     end
-    CHelp.toClient(p, "visits", { list = out, now = CHelp.nowMs() })
+    -- who of these houses is online right now (the client only sees players near it)
+    local on, people = onlineSet(), {}
+    for _, sh in ipairs(houses) do
+        add(sh)
+        if on[sh:getOwner()] then people[sh:getOwner()] = true end
+        local pl = sh:getPlayers()
+        for j = 0, pl:size() - 1 do
+            local n = pl:get(j)
+            if on[n] then people[n] = true end
+        end
+    end
+    CHelp.toClient(p, "visits", { list = out, now = CHelp.nowMs(), online = people })
 end
 
+-- every name the server knows: logins seen by the mod, every safehouse owner/member, every
+-- faction member, everyone online. { n = name, on = online, t = last login (unix s) }
+local MAX_NAMES = 800
 function H.knownReq(p, user, args)
     -- only for people who can add members somewhere (the name picker)
     if #CHelp.ownedBy(user) == 0 and not isAdmin(p) then return end
-    local names = {}
-    for u, _ in pairs(data().known) do names[#names + 1] = u end
-    table.sort(names, function(a, b) return string.lower(a) < string.lower(b) end)
-    CHelp.toClient(p, "known", { list = names })
+    local on = onlineSet()
+    local seen, out = {}, {}
+    local function add(n, ts)
+        if type(n) ~= "string" or n == "" or n == SYNC_DUMMY or #out >= MAX_NAMES then return end
+        local e = seen[n]
+        if not e then
+            e = { n = n, on = on[n] == true }
+            seen[n] = e
+            out[#out + 1] = e
+        end
+        ts = tonumber(ts)
+        if ts and (not e.t or ts > e.t) then e.t = ts end
+    end
+    local now = CHelp.now()
+    for n, _ in pairs(on) do add(n, now) end
+    for n, ts in pairs(data().known) do add(n, ts) end
+    local list = SafeHouse.getSafehouseList()
+    for i = 0, list:size() - 1 do
+        local sh = list:get(i)
+        add(sh:getOwner())
+        local pl = sh:getPlayers()
+        for j = 0, pl:size() - 1 do add(pl:get(j)) end
+    end
+    pcall(function()
+        local fs = Faction.getFactions()
+        for i = 0, fs:size() - 1 do
+            local f = fs:get(i)
+            add(f:getOwner())
+            local ps = f:getPlayers()
+            for j = 0, ps:size() - 1 do add(ps:get(j)) end
+        end
+    end)
+    CHelp.toClient(p, "known", { list = out, now = now })
 end
 
 function H.zonesReq(p, user, args)

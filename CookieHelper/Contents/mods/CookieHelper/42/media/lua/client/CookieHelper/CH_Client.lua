@@ -223,6 +223,11 @@ end
 C.visits = C.visits or {}
 function handlers.visits(args)
     local recv = CHelp.nowMs()
+    if type(args.online) == "table" then
+        for n, _ in pairs(C.onlineNames) do C.onlineNames[n] = nil end
+        for n, v in pairs(args.online) do if v then C.onlineNames[n] = true end end
+        C.onlineMs = recv
+    end
     for key, v in pairs(args.list or {}) do
         C.visits[key] = { v = tonumber(v) or 0, now = tonumber(args.now) or recv, recv = recv }
     end
@@ -238,12 +243,32 @@ function C.visitAge(sh)
     return CHelp.nowMs() - lv
 end
 
+-- online names reported by the server (the client itself only sees players near it)
+C.onlineNames = C.onlineNames or {}
+C.onlineMs = C.onlineMs or 0
+function C.isOnline(name)
+    if not name then return false end
+    if C.onlineNames[name] and CHelp.nowMs() - C.onlineMs < 90000 then return true end
+    return getPlayerFromUsername(name) ~= nil
+end
+
 function handlers.known(args)
     local list = {}
-    for _, n in pairs(args.list or {}) do list[#list + 1] = n end
-    table.sort(list, function(a, b) return string.lower(a) < string.lower(b) end)
-    C.emit("known", list)
+    for _, e in pairs(args.list or {}) do
+        if type(e) == "string" then
+            list[#list + 1] = { n = e, on = getPlayerFromUsername(e) ~= nil }
+        elseif type(e) == "table" and e.n then
+            list[#list + 1] = { n = tostring(e.n), on = e.on == true, t = tonumber(e.t) }
+        end
+    end
+    local on = {}
+    for _, e in ipairs(list) do if e.on then on[e.n] = true end end
+    C.onlineNames, C.onlineMs = on, CHelp.nowMs()
+    C.emit("known", list, tonumber(args.now))
 end
+
+-- admins can also see the whole account list (whitelist + user log) through the vanilla request
+if Events.OnNetworkUsersReceived then Events.OnNetworkUsersReceived.Add(function() C.emit("netusers") end) end
 
 function handlers.msg(args)
     local k = tostring(args.k)

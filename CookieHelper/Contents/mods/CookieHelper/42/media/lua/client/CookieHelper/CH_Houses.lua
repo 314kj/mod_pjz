@@ -61,7 +61,7 @@ local function liveInfo(d)
     local ms = CHelp.nowMs()
     if d.chkMs and ms - d.chkMs < 1000 then return end
     d.chkMs = ms
-    d.online = getPlayerFromUsername(d.name) ~= nil
+    d.online = C.isOnline(d.name)
     local g = C.guests[d.name]
     if g and g.sh == d.key then
         local left = math.max(0, floor(g.exp - C.serverNow()))
@@ -604,44 +604,131 @@ function A:createChildren()
     self.entry:setPlaceholderText((CHelp.sv("AllowOfflineAdd") or C.isAdmin()) and t("AddHint") or t("AddHintOnline"))
     self.entry.onTextChange = function() self:fill() end
     y = y + UI.BTN_H + 8
-    self.list = UI.makeList(self, x, y, w, self.height - y - UI.BTN_H - UI.PAD - 10, UI.HS + 18, self, A.drawRow, A.onPick)
+    self.listY = y
+    self.list = UI.makeList(self, x, y, w, self.height - y - UI.BTN_H - UI.PAD - 10, UI.HS * 2 + 14, self, A.drawRow, A.onPick)
     local by = self.height - UI.BTN_H - UI.PAD
     UI.button(self, x, by, floor(w / 2) - 4, t("Cancel"), self, A.onCancel, "sec")
     UI.button(self, x + floor(w / 2) + 4, by, floor(w / 2) - 4, t("Add"), self, A.onAdd, "pri")
-    self.known = {}
+    self.names = {}           -- name -> { n, on, t }
+    self.loaded = false
     C.on("known", self, A.onKnown)
+    C.on("netusers", self, A.onNetUsers)
+    self:request()
+end
+
+function A:request()
+    self.reqMs = CHelp.nowMs()
     CHelp.toServer("knownReq", {})
+    if C.isAdmin() then pcall(requestUsers) end
 end
 
 function A:onClose() C.off(self) end
 
-function A:onKnown(list)
-    self.known = list or {}
+function A:merge(n, on, ts)
+    if type(n) ~= "string" or n == "" then return end
+    local e = self.names[n]
+    if not e then
+        e = { n = n, on = false }
+        self.names[n] = e
+    end
+    if on then e.on = true end
+    if ts and (not e.t or ts > e.t) then e.t = ts end
+end
+
+function A:onKnown(list, now)
+    for _, e in pairs(self.names) do e.on = false end
+    for _, e in ipairs(list or {}) do self:merge(e.n, e.on, e.t) end
+    self.now = now
+    self.nowAt = CHelp.nowMs()
+    self.loaded = true
+    self:fill()
+end
+
+-- admins: whole account list of the server (whitelist + user log)
+function A:onNetUsers()
+    local ok, users = pcall(getUsers)
+    if not ok or not users then return end
+    for i = 0, users:size() - 1 do
+        local u = users:get(i)
+        local okN, n = pcall(function() return u:getUsername() end)
+        local okO, on = pcall(function() return u:isOnline() end)
+        if okN then self:merge(n, okO and on == true, nil) end
+    end
+    self.loaded = true
     self:fill()
 end
 
 function A:fill()
-    local q = string.lower(self.entry:getInternalText() or "")
-    self.list:clear()
-    for _, n in ipairs(self.known) do
-        if (q == "" or string.find(string.lower(n), q, 1, true)) and not self.sh:playerAllowed(n) then
-            self.list:addItem(n, n)
+    local q = string.lower(CHelp.trim(self.entry:getInternalText() or ""))
+    local rows = {}
+    self.total, self.online = 0, 0
+    for _, e in pairs(self.names) do
+        self.total = self.total + 1
+        if e.on then self.online = self.online + 1 end
+        if q == "" or string.find(string.lower(e.n), q, 1, true) then
+            e.inHouse = self.sh:playerAllowed(e.n)
+            rows[#rows + 1] = e
         end
+    end
+    -- online first, people already in this house last, then by name
+    table.sort(rows, function(a, b)
+        if a.inHouse ~= b.inHouse then return not a.inHouse end
+        if a.on ~= b.on then return a.on end
+        return string.lower(a.n) < string.lower(b.n)
+    end)
+    local keep = self.list.items[self.list.selected]
+    keep = keep and keep.item and keep.item.n
+    self.list:clear()
+    self.list.selected = 0
+    for i, e in ipairs(rows) do
+        self.list:addItem(e.n, e)
+        if e.n == keep then self.list.selected = i end
     end
 end
 
-function A.drawRow(self, list, n, x, y, w, h)
-    local av = h - 10
-    T.avatar(list, x + 8, y + 5, av, n)
-    T.text(list, T.fit(n, w - av - 30), x + av + 18, y + floor((h - UI.HS) / 2), K.text)
+local function seenText(self, ts)
+    if not ts or not self.now then return nil end
+    local nowS = self.now + floor((CHelp.nowMs() - (self.nowAt or 0)) / 1000)
+    local m = floor((nowS - ts) / 60)
+    if m < 60 then return t("SeenMin", math.max(1, m)) end
+    if m < 48 * 60 then return t("SeenH", floor(m / 60)) end
+    return t("SeenD", floor(m / 1440))
 end
 
-function A:onPick(name)
-    self.entry:setText(name)
+function A.drawRow(self, list, e, x, y, w, h, hover, sel)
+    local av = h - 14
+    T.avatar(list, x + 8, y + 7, av, e.n)
+    T.circle(list, x + 8 + av - 9, y + 7 + av - 9, 12, K.surf)
+    T.circle(list, x + 8 + av - 7, y + 7 + av - 7, 8, e.on and K.acc or T.rgb("4E6B68"))
+    local tx = x + av + 20
+    local pillTxt, pfg, pbg
+    if e.inHouse then
+        pillTxt, pfg, pbg = t("InHouse"), K.text3, K.surf2
+    elseif e.on then
+        pillTxt, pfg, pbg = t("Online"), K.acc, K.accD
+    else
+        pillTxt, pfg, pbg = t("Offline"), K.text3, K.surf2
+    end
+    local pw = T.pillW(pillTxt)
+    T.pill(list, x + w - pw - 10, y + floor((h - UI.HS - 4) / 2), pillTxt, pfg, pbg)
+    local tw = w - (tx - x) - pw - 20
+    T.text(list, T.fit(e.n, tw), tx, y + 7, e.inHouse and K.text3 or K.text)
+    local sub
+    if e.on then sub = t("OnlineNow") else sub = seenText(self, e.t) or t("NeverSeen") end
+    T.text(list, T.fit(sub, tw), tx, y + 9 + UI.HS, K.text3)
+end
+
+function A:onPick(e)
+    if not e or e.inHouse then return end
+    self.entry:setText(e.n)
 end
 
 function A:onAdd()
     local name = CHelp.trim(self.entry:getInternalText())
+    if name == "" then
+        local it = self.list.items[self.list.selected]
+        if it and it.item and not it.item.inHouse then name = it.item.n end
+    end
     if name == "" then return end
     CHelp.toServer("addMember", { sh = CHelp.shKey(self.sh), name = name })
     self:close()
@@ -650,12 +737,21 @@ end
 function A:onCancel() self:close() end
 
 function A:drawBody()
+    -- keep the online dots current while the window is open
+    if CHelp.nowMs() - (self.reqMs or 0) > 15000 then self:request() end
     T.text(self, T.fit(t("AddHelp1"), self.width - UI.PAD * 2), UI.PAD, UI.HEAD_H + 6, K.text)
-    T.text(self, T.fit(t("AddHelp2"), self.width - UI.PAD * 2), UI.PAD, UI.HEAD_H + 8 + UI.HS, K.text3)
+    local line = self.loaded and t("KnownCount", self.total or 0, self.online or 0) or t("KnownLoading")
+    T.text(self, T.fit(line, self.width - UI.PAD * 2), UI.PAD, UI.HEAD_H + 8 + UI.HS, K.text3)
+    if self.loaded and #self.list.items == 0 then
+        local msg = ((self.total or 0) == 0) and t("KnownEmpty") or t("KnownNone")
+        for i, l in ipairs(T.wrap(msg, self.width - UI.PAD * 2 - 20)) do
+            T.textC(self, l, self.width / 2, self.listY + 24 + (i - 1) * (UI.HS + 4), K.text3)
+        end
+    end
 end
 
 function H.openAdd(sh)
-    local w, h = 380, 440
+    local w, h = 420, 520
     local x, y = UI.center(w, h)
     local win = A:new(x + 60, y + 20, w, h, t("AddMember"))
     win.subtitle = sh:getTitle()
