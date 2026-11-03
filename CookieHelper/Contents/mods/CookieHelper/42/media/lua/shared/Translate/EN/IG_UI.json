@@ -201,6 +201,7 @@
     "IGUI_CH_Msg_TransferCap": "%1 already owns %2 houses",
     "IGUI_CH_Msg_TransferMemberOnly": "%1 must be a member of this house first",
     "IGUI_CH_Msg_Transferred": "%1 owns the house now",
+    "IGUI_CH_Msg_Trips": "Too heavy for one trip: carrying it in %1 loads to the craft spot",
     "IGUI_CH_Msg_YouLeft": "You left %1",
     "IGUI_CH_Msg_YouOwnNow": "You own %1 now",
     "IGUI_CH_Msg_YouWereAdded": "You are now a member of %1",

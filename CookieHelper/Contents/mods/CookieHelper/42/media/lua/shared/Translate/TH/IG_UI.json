@@ -201,6 +201,7 @@
     "IGUI_CH_Msg_TransferCap": "%1 เป็นเจ้าของครบ %2 หลังแล้ว",
     "IGUI_CH_Msg_TransferMemberOnly": "%1 ต้องเป็นลูกบ้านหลังนี้ก่อน",
     "IGUI_CH_Msg_Transferred": "%1 เป็นเจ้าของบ้านแล้ว",
+    "IGUI_CH_Msg_Trips": "ของหนักเกินขนรอบเดียว · จะขน %1 รอบไปวางที่จุดคราฟ",
     "IGUI_CH_Msg_YouLeft": "ออกจาก %1 แล้ว",
     "IGUI_CH_Msg_YouOwnNow": "คุณเป็นเจ้าของ %1 แล้ว",
     "IGUI_CH_Msg_YouWereAdded": "คุณเป็นลูกบ้านของ %1 แล้ว",

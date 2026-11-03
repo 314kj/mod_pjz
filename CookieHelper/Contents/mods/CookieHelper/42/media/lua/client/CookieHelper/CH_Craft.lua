@@ -192,11 +192,12 @@ function Craft.countAll(p, entries)
     return Scan.count(all)
 end
 
--- every logic the mod builds picks inputs automatically: the vanilla "manual inputs" toggle is
--- copied into new logics and would make every recipe look empty
+-- every logic the mod builds runs in the same mode as the game's crafting window: "manual inputs"
+-- on, filled automatically by setContainers/setRecipe. ISHandcraftAction only builds its input
+-- table in that mode (with it off, 42.21 passes false to convertToPZNetTable and the craft dies).
 function Craft.makeLogic(p, bench, obj)
     local logic = HandcraftLogic.new(p, bench, obj)
-    pcall(function() logic:setManualSelectInputs(false) end)
+    pcall(function() logic:setManualSelectInputs(true) end)
     return logic
 end
 
@@ -590,14 +591,6 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
         if g.stand == false then return fail(job, "Msg_CantReach") end
     end
 
-    -- everything has to fit in the backpack at once, otherwise the queue would stall half way
-    local need = 0
-    for _, g in ipairs(order) do
-        for _, it in ipairs(g.items) do need = need + it:getUnequippedWeight() end
-    end
-    if need > 0 and not inv:hasRoomFor(p, need) then
-        return fail(job, "Msg_TooHeavy")
-    end
     for _, r in ipairs(newReturns) do job.returns[#job.returns + 1] = r end
 
     -- nearest-first walk through the boxes
@@ -613,13 +606,6 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
         local g = table.remove(order, bi)
         route[#route + 1] = g
         if g.stand then px, py = g.stand:getX(), g.stand:getY() end
-    end
-
-    for _, g in ipairs(route) do
-        if g.stand then ISTimedActionQueue.add(ISWalkToTimedAction:new(p, g.stand)) end
-        for _, it in ipairs(g.items) do
-            ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, g.c, inv))
-        end
     end
 
     -- items to wear (IsWorn inputs + welding mask) are found again by ID once they are in the bag
@@ -640,8 +626,111 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
         end
     end
 
-    ISTimedActionQueue.queueActions(p, Craft.deferredCraft, { job = job, recipe = recipe, refill = isRefill, wear = wearIds,
-        station = (not isRefill) and job.station or nil })
+    -- split into loads that fit in the bag. Materials first; tools and things to wear last, so they
+    -- end up in the bag (tools go back to their box later) and only materials are put down at the spot.
+    local isKeep = {}
+    for i = 0, keep:size() - 1 do isKeep[keep:get(i)] = true end
+    for _, g in ipairs(route) do
+        for _, it in ipairs(g.items) do
+            if seen[it:getID()] then isKeep[it] = true end
+        end
+    end
+    local ordered = {}
+    for pass = 1, 2 do
+        for _, g in ipairs(route) do
+            for _, it in ipairs(g.items) do
+                if (pass == 1) ~= (isKeep[it] == true) then ordered[#ordered + 1] = { it = it, g = g } end
+            end
+        end
+    end
+    local trips, cur, curW = {}, {}, 0
+    for _, e in ipairs(ordered) do
+        local w = e.it:getUnequippedWeight()
+        if not inv:hasRoomFor(p, w) then return fail(job, "Msg_TooHeavy") end
+        if #cur > 0 and not inv:hasRoomFor(p, curW + w) then
+            trips[#trips + 1] = cur
+            cur, curW = {}, 0
+        end
+        cur[#cur + 1] = e
+        curW = curW + w
+    end
+    if #cur > 0 then trips[#trips + 1] = cur end
+    job.spot = nil
+    if #trips > 1 then
+        job.spot = Craft.dropSpot(job, recipe, isRefill)
+        if not job.spot then return fail(job, "Msg_TooHeavy") end
+        if not job.quiet then UI.toast(t("Msg_Trips", #trips), true) end
+    end
+
+    local ctx = { job = job, recipe = recipe, refill = isRefill, wear = wearIds,
+        station = (not isRefill) and job.station or nil, spot = job.spot, trips = trips, trip = 1 }
+    Craft.queueTrip(p, ctx)
+end
+
+-- where loads are put down when everything does not fit at once: next to the workstation or zone
+-- table the recipe uses, else where the character stands now. The craft runs from that square,
+-- so the floor items are in reach.
+function Craft.dropSpot(job, recipe, isRefill)
+    local p = job.p
+    local obj = nil
+    if (not isRefill) and job.station then
+        obj = job.station.obj
+    elseif Craft.isSurface(recipe) then
+        local s = Scan.surfaceNear(stationsOf(job), p:getX(), p:getY())
+        obj = s and s.obj or nil
+    end
+    if obj then
+        local okS, sq = pcall(function() return obj:getSquare() end)
+        if okS and sq then
+            local okA, adj = pcall(function() return AdjacentFreeTileFinder.Find(sq, p) end)
+            if okA and adj then return adj end
+        end
+    end
+    return p:getCurrentSquare()
+end
+
+-- one load: walk the boxes of this trip and take its items; then either put the load down at the
+-- spot and come back for the next one, or (last load) go craft
+function Craft.queueTrip(p, ctx)
+    local inv = p:getInventory()
+    local trip = ctx.trips[ctx.trip] or {}
+    local last = "none"
+    for _, e in ipairs(trip) do
+        local g = e.g
+        if g.stand and g.stand ~= last then ISTimedActionQueue.add(ISWalkToTimedAction:new(p, g.stand)) end
+        last = g.stand
+        ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, e.it, g.c, inv))
+    end
+    if ctx.trip < #ctx.trips then
+        local ids = {}
+        for _, e in ipairs(trip) do ids[#ids + 1] = e.it:getID() end
+        ISTimedActionQueue.add(ISWalkToTimedAction:new(p, ctx.spot))
+        ISTimedActionQueue.queueActions(p, Craft.dropLoad, { ctx = ctx, ids = ids })
+    else
+        ISTimedActionQueue.queueActions(p, Craft.deferredCraft, ctx)
+    end
+end
+
+-- runs at the spot: put this load on the floor (found again by ID), then fetch the next load
+function Craft.dropLoad(p, arg)
+    local ctx = arg.ctx
+    if ctx.job.dead then return end
+    local ok, err = pcall(function()
+        local inv = p:getInventory()
+        local floorC = ISInventoryPage.GetFloorContainer(p:getPlayerNum())
+        for _, id in ipairs(arg.ids) do
+            local it = inv:getItemWithIDRecursiv(id)
+            if it and it:getContainer() and not p:isEquippedClothing(it) then
+                ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, it:getContainer(), floorC))
+            end
+        end
+        ctx.trip = ctx.trip + 1
+        Craft.queueTrip(p, ctx)
+    end)
+    if not ok then
+        CHelp.log("drop load failed: " .. tostring(err))
+        fail(ctx.job, "Msg_CantCraft")
+    end
 end
 
 -- runs when the queue reaches it: everything should be in the backpack now
@@ -655,6 +744,13 @@ local function deferredCraftInner(p, ctx)
             end
             ISTimedActionQueue.add(ISWearClothing:new(p, it))
         end
+    end
+    -- loads were put down at the spot: craft standing there so the floor items are in reach
+    if ctx.spot and not ctx.atSpot then
+        ctx.atSpot = true
+        ISTimedActionQueue.add(ISWalkToTimedAction:new(p, ctx.spot))
+        ISTimedActionQueue.queueActions(p, Craft.deferredCraft, ctx)
+        return
     end
     -- a bench recipe: walk next to it first, the craft is queued after the walk
     if ctx.station and not ctx.walked then
@@ -680,6 +776,8 @@ local function deferredCraftInner(p, ctx)
         if not surf then return fail(ctx.job, "Msg_NoSurface") end
         logic:setIsoObject(surf)
     end
+    -- the loot panel lists the floor around us: refresh it so items just put down are counted
+    pcall(function() getPlayerLoot(p:getPlayerNum()):refreshBackpacks() end)
     logic:setContainers(ISInventoryPaneContextMenu.getContainers(p))
     Craft.setRecipe(logic, ctx.recipe)
     local okCan, can = pcall(function()
