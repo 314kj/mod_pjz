@@ -5,7 +5,7 @@
 
 CHelp = CHelp or {}
 CHelp.VERSION = "1.1.0"
-CHelp.BUILD = "chp-261103-t3d4"
+CHelp.BUILD = "chp-261104-t4a1"
 CHelp.NET = "CookieHelper"
 
 CHelp.ROLE_DOCTOR = "doctor"
