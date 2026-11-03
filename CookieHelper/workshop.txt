@@ -1,0 +1,6 @@
+version=1
+id=3831960747
+title=Cookie Helper
+description=CookieCheetah License
+tags=Interface;Multiplayer
+visibility=public

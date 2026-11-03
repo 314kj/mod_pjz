@@ -1,0 +1,76 @@
+/* CookieServerPatch override of Neat Building floor (same file path, loads last).
+   The original rows used the map's own ground tiles (blends_natural / blends_street),
+   so every natural ground tile in newly loaded areas became an entity (server lag).
+   Same entity names (saves keep loading), rows point at CookieServerPatch's own
+   unused tiles csp_nofloor_*, and the recipe is hidden from the build menu. */
+module Base
+{
+	xuiSkin default
+	{
+		entity ES_Floor_FallGrass
+		{
+			LuaWindowClass	= ISEntityWindow,
+			DisplayName	= NBEntityName_FallGrassFloor,
+			Icon		= Build_blends_natural_01_48,
+		}
+	}
+
+    entity Floor_FallGrass
+    {
+        component UiConfig
+                {
+                    xuiSkin         = default,
+                    entityStyle     = ES_Floor_FallGrass,
+                    uiEnabled       = false,
+                }
+
+        component SpriteConfig
+        {
+		    isThumpable     = false,
+		    OnIsValid = BuildRecipeCode.floor.OnIsValid,
+		    OnCreate = NB_BuildRecipeCode.Floors.OnCreate,
+			
+            face E
+            {
+                layer
+                {
+                    row = csp_nofloor_24,
+                }
+            }
+            face W
+            {
+                layer
+                {
+                    row = csp_nofloor_25,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = csp_nofloor_26,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = csp_nofloor_27,
+                }
+            }
+        }
+		
+	component CraftRecipe
+        {
+            OnAddToMenu   = ignoreFromBuildMenu,
+            timedAction   = EmptyBag,
+            time          = 100,
+            category      = Floors,
+            ToolTip       = Tooltip_craft_sandFloorDesc,
+            inputs
+            {
+                item 5 [Base.GrassTuft],
+            }
+        }
+    }
+}

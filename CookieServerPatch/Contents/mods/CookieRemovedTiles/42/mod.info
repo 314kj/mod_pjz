@@ -1,0 +1,10 @@
+name=Cookie - Removed Mod Tiles
+id=CookieRemovedTiles
+description=Tiles only, no code. Keeps the tiles of mods removed from CookieCheetah (Building Clipboard stairs and roof pieces, Blackout Predators Extended nest props) so objects already in the world keep their picture and stairs still work. Never turn it on together with the mods it replaces (same tile numbers).
+versionMin=42.0.0
+tiledef=bc_clipboard_surfaces 7711
+tiledef=bc_clipboard_roofs 7712
+pack=BCClipboardRoofCuts2x
+pack=BCClipboardStairs2x
+pack=BPE_Nests
+tiledef=BPE_Nests 1897

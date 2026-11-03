@@ -21,7 +21,30 @@
 -- the same tile, and they get the plain floor the next time that area loads
 -- for them. Also slower: 10 per tick instead of 25.
 --
+-- v3 (2 Nov): newest first, and a size limit. The 2 Nov log showed v2 stuck:
+-- converted=17886 for 30 minutes, queued=2,000,000, and every square taken
+-- from the queue (about 85 a second) was already unloaded. Squares were done
+-- oldest first, so with a long queue the server only reached squares from
+-- hours ago, and the queue kept growing (memory for nothing). Now the newest
+-- square (most likely still loaded) is done first, the queue keeps at most
+-- MAX_QUEUE squares (the oldest are dropped; they are queued again the next
+-- time their area loads), and unloaded squares are skipped without using up
+-- the per-tick count. The queue no longer uses # (unreliable on a table with
+-- holes in Kahlua); it keeps its own first/last numbers.
+--
+-- v4 (2 Nov): only for use together with the Neat Building floor override
+-- (scripts/generated/entities/neat_expand/floors/*.txt in this mod). With the
+-- override, natural ground no longer turns into entities, so the only entity
+-- floors left are the ones made before it (natural ground the game already
+-- turned into Neat Building floors, and floors players laid). v4 turns exactly
+-- those back into plain floors: the floor must be one of the Neat Building floor
+-- entities in TYPES and use a ground tile. Nothing is written to the floor's
+-- mod data any more (v1-v3 wrote CSP_plainFrom on every converted floor), so a
+-- converted floor is the same as natural ground: it can be tilled, dug and built
+-- over like any other grass/dirt/gravel square.
+--
 -- Every 10 minutes: [CookieServerPatch] plainfloors: converted=N queued=N failed=N
+--   unloadedBeforeTurn=N dropped=N
 -- plus entity floors left alone, by tileset (so the list can be extended).
 -- To undo: remove this file (already converted floors stay plain).
 -- No next() (Kahlua).
@@ -30,14 +53,25 @@ if not isServer() then return end
 
 local TAG = "[CookieServerPatch] plainfloors"
 local TILESETS = { "blends_natural", "blends_street", "floors_exterior_natural" }
+local TYPES = {}
+for _, n in ipairs({ "Floor_SpringGrass", "Floor_SpringGrassCorner", "Floor_SpringGrassEdge",
+    "Floor_SummerGrass", "Floor_SummerGrassCorner", "Floor_SummerGrassEdge",
+    "Floor_FallGrass", "Floor_FallGrassCorner", "Floor_FallGrassEdge",
+    "Floor_Concrete", "Floor_ConcreteCorner", "Floor_DirtCorner", "Floor_DirtEdge",
+    "Floor_SandCorner", "Floor_SandEdge", "Floor_GravelCorner", "Floor_GravelEdge" }) do
+    TYPES["Base." .. n] = true
+end
 local GROUND_ONLY = true
-local PER_TICK = 10
+local PER_TICK = 10      -- floors swapped per tick
+local CHECKS_PER_TICK = 200 -- queue entries looked at per tick (unloaded ones are skipped)
+local MAX_QUEUE = 20000
 local TRANSMIT = false   -- true = also send each swap to nearby players (v1)
 local REPORT_MS = 10 * 60 * 1000
 
+-- queue: entries first..last; the newest is at last and is done first
 local queue, queued = {}, {}
-local head = 1
-local stats = { converted = 0, failed = 0, gone = 0 }
+local first, last = 1, 0
+local stats = { converted = 0, failed = 0, gone = 0, dropped = 0 }
 local skipped = {}       -- tileset -> entity floors left alone
 local nextReport = 0
 local errorsLogged = 0
@@ -51,6 +85,17 @@ end
 local function isEntity(obj)
     local ok, sc = pcall(function() return obj:getSpriteConfig() end)
     return ok and sc ~= nil
+end
+
+local function entityType(obj)
+    local ok, ft = pcall(function() return obj:getEntityFullTypeDebug() end)
+    if ok and type(ft) == "string" then return ft end
+    return nil
+end
+
+local function isTarget(obj)
+    local ft = entityType(obj)
+    return ft ~= nil and TYPES[ft] == true
 end
 
 local function wanted(name)
@@ -72,15 +117,24 @@ local function onLoadGridsquare(square)
     if not floor or not isEntity(floor) then return end
     local name = spriteName(floor)
     if not name then return end
-    if not wanted(name) then
+    if not wanted(name) or not isTarget(floor) then
         local t = tileset(name)
         skipped[t] = (skipped[t] or 0) + 1
         return
     end
-    local key = square:getX() .. "," .. square:getY() .. "," .. square:getZ()
+    local x, y, z = square:getX(), square:getY(), square:getZ()
+    local key = x .. "," .. y .. "," .. z
     if queued[key] then return end
     queued[key] = true
-    queue[#queue + 1] = { x = square:getX(), y = square:getY(), z = square:getZ() }
+    last = last + 1
+    queue[last] = { x = x, y = y, z = z, key = key }
+    if last - first + 1 > MAX_QUEUE then
+        local old = queue[first]
+        queue[first] = nil
+        first = first + 1
+        if old then queued[old.key] = nil end
+        stats.dropped = stats.dropped + 1
+    end
 end
 
 local function copyOverlays(from, to)
@@ -106,20 +160,19 @@ local function copyModData(from, to)
     end)
 end
 
+-- returns true when a floor was swapped (or the swap failed), false when there
+-- was nothing to do (square unloaded, or floor already plain / changed)
 local function convert(item)
     local square = getCell():getGridSquare(item.x, item.y, item.z)
-    if not square then stats.gone = stats.gone + 1 return end
+    if not square then stats.gone = stats.gone + 1 return false end
     local old = square:getFloor()
-    if not old or not isEntity(old) then return end
+    if not old or not isEntity(old) then return false end
     local name = spriteName(old)
-    if not name or not wanted(name) then return end
-    local okT, fullType = pcall(function() return old:getEntityFullTypeDebug() end)
+    if not name or not wanted(name) or not isTarget(old) then return false end
     local ok, err = pcall(function()
         local plain = IsoObject.new(getCell(), square, getSprite(name))
         copyOverlays(old, plain)
         copyModData(old, plain)
-        -- remember what it was, for a later "dismantle" option
-        plain:getModData().CSP_plainFrom = (okT and type(fullType) == "string" and fullType ~= "") and fullType or name
         if TRANSMIT then square:transmitRemoveItemFromSquare(old) end
         square:RemoveTileObject(old)
         square:AddTileObject(plain, 0)
@@ -135,6 +188,7 @@ local function convert(item)
             print(TAG .. " failed at " .. item.x .. "," .. item.y .. "," .. item.z .. ": " .. tostring(err))
         end
     end
+    return true
 end
 
 local function top(tbl, n)
@@ -147,27 +201,29 @@ local function top(tbl, n)
 end
 
 local function onTick()
-    local n = 0
-    while head <= #queue and n < PER_TICK do
-        local item = queue[head]
-        queue[head] = nil
-        head = head + 1
-        queued[item.x .. "," .. item.y .. "," .. item.z] = nil
-        convert(item)
-        n = n + 1
+    local swapped, checked = 0, 0
+    while last >= first and swapped < PER_TICK and checked < CHECKS_PER_TICK do
+        local item = queue[last]
+        queue[last] = nil
+        last = last - 1
+        checked = checked + 1
+        if item then
+            queued[item.key] = nil
+            if convert(item) then swapped = swapped + 1 end
+        end
     end
-    if head > #queue and head > 1 then queue, head = {}, 1 end
+    if last < first and first > 1 then queue, first, last = {}, 1, 0 end
 
     local now = getTimestampMs()
     if nextReport == 0 then nextReport = now + REPORT_MS end
     if now >= nextReport then
         nextReport = now + REPORT_MS
-        print(TAG .. ": converted=" .. stats.converted .. " queued=" .. (#queue - head + 1) ..
-            " failed=" .. stats.failed .. " unloadedBeforeTurn=" .. stats.gone)
+        print(TAG .. ": converted=" .. stats.converted .. " queued=" .. (last - first + 1) ..
+            " failed=" .. stats.failed .. " unloadedBeforeTurn=" .. stats.gone .. " dropped=" .. stats.dropped)
         print(TAG .. " entity floors left alone: " .. top(skipped, 10))
     end
 end
 
 Events.LoadGridsquare.Add(onLoadGridsquare)
 Events.OnTick.Add(onTick)
-print(TAG .. " on v2 (tilesets: " .. table.concat(TILESETS, ", ") .. ", " .. PER_TICK .. " per tick, send to players=" .. tostring(TRANSMIT) .. ")")
+print(TAG .. " on v4 (Neat Building floor entities only, tilesets: " .. table.concat(TILESETS, ", ") .. ", " .. PER_TICK .. " per tick, newest first, queue max " .. MAX_QUEUE .. ", send to players=" .. tostring(TRANSMIT) .. ")")
