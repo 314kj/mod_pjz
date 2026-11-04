@@ -355,6 +355,7 @@ end
 function CMDock.context()
     local ctx = ISContextMenu.get(0, getMouseX(), getMouseY())
     ctx:addOption(T("IGUI_CM_Ctx_Open"), nil, function() CMBoard.open() end)
+    ctx:addOption(T("IGUI_CM_Stream_On"), nil, function() CMDock.setStream(true) end)
     ctx:addOption(T("IGUI_CM_Dock_Settings"), nil, function() CMDock.openSettings() end)
     if CMC.isAdmin() then
         ctx:addOption(T("IGUI_CM_Ctx_Admin"), nil, function() if CMAdmin then CMAdmin.toggle() end end)
@@ -411,6 +412,7 @@ local function makeSide(inst)
 end
 
 function CMDock.apply()
+    if CMDock.stream and CMDock.stream.on then return end
     local inst = sidebar()
     local btn = inst and makeSide(inst)
     CMDock.btn = btn
@@ -463,8 +465,8 @@ function P:drawBody()
     local ts = S(64)
     local gap = S(8)
     local pad = S(10)
-    local cols = math.max(1, math.min(#tiles + 1, 5))
-    local rows = math.ceil((#tiles + 1) / cols)
+    local cols = math.max(1, math.min(#tiles + 2, 5))
+    local rows = math.ceil((#tiles + 2) / cols)
     local w = pad * 2 + cols * ts + (cols - 1) * gap
     local h = pad * 2 + rows * ts + (rows - 1) * gap
     if math.abs(self.width - w) > 1 then self:setWidth(w) end
@@ -474,6 +476,7 @@ function P:drawBody()
     CMUI.glass(self, 0, 0, w, h, { tint = C.panel, a = 0.30, rad = 12, rim = C.line, rimA = 0.6 })
     local all = {}
     for i = 1, #tiles do all[i] = tiles[i] end
+    all[#all + 1] = { id = "_stream", name = T("IGUI_CM_Stream_Tile"), tex = CMUI.tex("cm_stream"), tint = C.gold, click = function() CMDock.setStream(true) end }
     all[#all + 1] = { id = "_gear", name = T("IGUI_CM_Dock_Gear"), gear = true, click = function() CMDock.openSettings() end }
     for i, e in ipairs(all) do
         local c = (i - 1) - math.floor((i - 1) / cols) * cols
@@ -498,7 +501,8 @@ function P:drawBody()
         if e.gear then
             CMUI.textC(self, "+", x + ts / 2, iy + (is - CMUI.fh(UIFont.Large)) / 2, C.dim, 1, UIFont.Large)
         elseif e.tex then
-            self:drawTextureScaledAspect(e.tex, ix, iy, is, is, 1, 1, 1, 1)
+            local tc = e.tint or C.white
+            self:drawTextureScaledAspect(e.tex, ix, iy, is, is, 1, tc[1], tc[2], tc[3])
         else
             CMUI.textC(self, string.upper(string.sub(tostring(e.name), 1, 1)), x + ts / 2, iy + (is - CMUI.fh(UIFont.Large)) / 2,
                 C.gold, 1, UIFont.Large)
@@ -544,6 +548,31 @@ function SW:drawBody()
     local pad = S(16)
     local top = self.headerH + S(12)
     local w = self.width - pad * 2
+    -- stream mode card
+    local sh = S(84)
+    CMUI.glow(self, pad + w / 2, top + sh / 2, w * 0.55, sh, C.accent, 0.10)
+    CMUI.glass(self, pad, top, w, sh, { tint = C.panel, a = 0.42, rad = 10, rim = C.accent, rimA = 0.5 })
+    local is = S(36)
+    local ic = CMUI.tex("cm_stream")
+    if ic then self:drawTextureScaledAspect(ic, pad + S(10), top + S(9), is, is, 1, C.gold[1], C.gold[2], C.gold[3]) end
+    local tx = pad + is + S(20)
+    CMUI.text(self, T("IGUI_CM_Stream"), tx, top + S(8), C.text, 1, UIFont.Medium)
+    CMUI.text(self, CMUI.fit(T("IGUI_CM_Stream_Hint"), UIFont.Small, w - is - S(170)), tx, top + S(10) + CMUI.fh(UIFont.Medium), C.dim)
+    CMUI.btn(self, pad + w - S(132), top + S(12), S(120), S(30), T("IGUI_CM_Stream_On"), function() CMDock.setStream(true) end,
+        "primary", { tip = T("IGUI_CM_Stream_KeyTip") })
+    local cy = top + sh - S(30)
+    local cx = pad + S(12)
+    CMUI.text(self, T("IGUI_CM_Stream_Keep"), cx, cy + S(3), C.faint)
+    cx = cx + CMUI.tw(UIFont.Small, T("IGUI_CM_Stream_Keep")) + S(10)
+    for _, k in ipairs(CMDock.STREAM_KEEP) do
+        local on = CMDock.keepOpt(k)
+        local lbl = T("IGUI_CM_Stream_K_" .. k)
+        local bw = CMUI.tw(UIFont.Small, lbl) + S(22)
+        CMUI.btn(self, cx, cy, bw, S(22), lbl, function() CMDock.setKeepOpt(k, not on) end, on and "sel" or "ghost",
+            { rad = 11, tip = (k == "chat") and T("IGUI_CM_Stream_ChatTip") or nil })
+        cx = cx + bw + S(6)
+    end
+    top = top + sh + S(14)
     top = top + CMUI.para(self, T("IGUI_CM_Dock_Help"), pad, top, w, C.dim, UIFont.Small, 3) + S(10)
     CMUI.btnA(self, pad, top, S(26), T("IGUI_CM_Dock_Rescan"), function() CMDock.enforce(true) end, "ghost")
     top = top + S(36)
@@ -577,12 +606,228 @@ function CMDock.openSettings()
     if CMDock.setWin then CMDock.setWin:bringToTop(); return end
     CMDock.enforce(true)
     CMUI.k = CMUI.fontScale()
-    local w, h = CMUI.size(560, 460)
+    local w, h = CMUI.size(560, 560)
     local sw, sh = getCore():getScreenWidth(), getCore():getScreenHeight()
     local win = SW:new(math.floor((sw - w) / 2), math.floor((sh - h) / 2), w, h)
     win:show()
     CMDock.setWin = win
 end
+
+-- ===================================================================== stream mode
+-- Clean screen for streaming / screenshots: only the minimap, hotbar, inventory windows and the clock stay.
+-- HUD-like things stay hidden while it is on; windows are hidden once and the player can open them again.
+-- Everything we hid is shown again when it turns off. Nothing is saved: a new session starts with it off.
+local ST = CMDock.stream or { on = false, hid = {}, at = 0, last = 0 }
+CMDock.stream = ST
+
+local KEEP_TYPES = { "MiniMap", "Minimap", "Hotbar", "ISInventoryPage", "Clock", "ContextMenu", "ToolTip", "Tooltip",
+    "Modal", "Dialog", "TextBox", "Radial", "Wheel", "WorldMap", "Loading", "Death", "Respawn", "CMFade", "CMHud", "CMDock_Ghost" }
+CMDock.STREAM_KEEP = { "chat", "moodle", "dash", "hud" }
+
+function CMDock.keepOpt(k) return CMDock.cfg["stream." .. k] == "1" end
+
+function CMDock.setKeepOpt(k, v)
+    CMDock.cfg["stream." .. k] = v and "1" or "0"
+    CMDock.save()
+    if ST.on then pcall(CMDock.streamTick, false) end
+end
+
+function CMDock.streamHidesHud() return ST.on and not CMDock.keepOpt("hud") end
+
+local function hasAny(t, list)
+    for _, s in ipairs(list) do if string.find(t, s, 1, true) then return true end end
+    return false
+end
+
+local function isWindow(el)
+    if el.closeButton or el.pinButton or el.resizeWidget then return true end
+    if string.find(tostring(el.Type or ""), "Window", 1, true) then return true end
+    if type(el.headerH) == "number" and el.headerH > 0 then return true end
+    return (el.width or 0) >= 320 and (el.height or 0) >= 240
+end
+
+-- keep | hud (kept hidden) | win (hidden once) | chat (shown only while typing)
+function CMDock.streamClass(el, java)
+    if java then
+        local s = tostring(el)
+        if string.find(s, "Moodle", 1, true) then return CMDock.keepOpt("moodle") and "keep" or "hud" end
+        if string.find(s, "SpeedControls", 1, true) then return "hud" end
+        return "keep"
+    end
+    if el == CMDock.ghost then return "keep" end
+    local t = tostring(el.Type or "")
+    if hasAny(t, KEEP_TYPES) then return "keep" end
+    if string.find(t, "ISChat", 1, true) then return CMDock.keepOpt("chat") and "keep" or "chat" end
+    if string.find(t, "Moodle", 1, true) then return CMDock.keepOpt("moodle") and "keep" or "hud" end
+    if string.find(t, "Dashboard", 1, true) then return CMDock.keepOpt("dash") and "keep" or "hud" end
+    if isWindow(el) then return "win" end
+    return "hud"
+end
+
+local HUD_WORDS = { "Hud", "HUD", "Toast", "Tracker", "Notif", "Indicator", "Overlay", "Dashboard", "Moodle", "Float",
+    "Btn", "Button", "Icon", "Sidebar", "ISEquippedItem", "SpeedControls" }
+
+local function hudLike(el)
+    if el == CMDock.float then return true end
+    return hasAny(tostring(el.Type or ""), HUD_WORDS)
+end
+
+local function chatTyping()
+    if not ISChat then return false end
+    if ISChat.focused == true then return true end
+    return ISChat.instance ~= nil and ISChat.instance.focused == true
+end
+
+function CMDock.streamTick(first)
+    local okL, list = pcall(function() return UIManager.getUI() end)
+    if not okL or not list then return end
+    local seen = {}
+    local n = list:size()
+    for i = 0, n - 1 do
+        local jel = list:get(i)
+        local okT, tbl = pcall(function() return jel:getTable() end)
+        local java = not (okT and type(tbl) == "table")
+        local el = java and jel or tbl
+        if el then
+            seen[el] = true
+            local okC, cls = pcall(CMDock.streamClass, el, java)
+            if not okC then cls = "keep" end
+            local mine = ST.hid[el]
+            if cls == "keep" then
+                if mine then setVis(el, true); ST.hid[el] = nil end
+            elseif cls == "chat" then
+                if chatTyping() then
+                    if mine and not visible(el) then setVis(el, true) end
+                elseif visible(el) then
+                    setVis(el, false); ST.hid[el] = "chat"
+                end
+            elseif cls == "win" then
+                if first then
+                    if visible(el) then setVis(el, false); ST.hid[el] = "win" end
+                elseif mine and visible(el) then
+                    ST.hid[el] = nil -- the player opened it again, it is theirs now
+                end
+            elseif visible(el) then
+                -- HUD: hide everything at the start; later only what comes back or looks like a HUD,
+                -- so a panel the player opens on purpose is never fought
+                if first or mine == "hud" or java or hudLike(el) then
+                    setVis(el, false); ST.hid[el] = "hud"
+                end
+            end
+        end
+    end
+    -- forget things that left the screen for good (closed windows, finished toasts)
+    local gone = {}
+    for el, _ in pairs(ST.hid) do if not seen[el] then gone[#gone + 1] = el end end
+    for _, el in ipairs(gone) do ST.hid[el] = nil end
+end
+
+-- the only thing left of the dock: a faint button where the dock was, click = back to normal
+CMDock.Ghost = ISPanel:derive("CMDock_Ghost")
+local G = CMDock.Ghost
+function G:new(x, y, s)
+    local o = ISPanel.new(self, x, y, s, s)
+    o.background = false
+    return o
+end
+function G:prerender() end
+function G:render()
+    local s = self.width
+    local over = self:isMouseOver()
+    local age = CMC.ms() - (ST.at or 0)
+    local intro = age < 5000
+    local a = 0.16
+    if over then a = 1 elseif intro then a = 0.9 end
+    if over or intro then CMUI.glow(self, s / 2, s / 2, s * 1.3, s * 1.3, C.accent, 0.35 * a) end
+    local tex = CMUI.tex("cm_stream")
+    if tex then self:drawTextureScaledAspect(tex, 0, 0, s, s, a, C.gold[1], C.gold[2], C.gold[3])
+    else self:drawRect(4, 4, s - 8, s - 8, a, C.accent[1], C.accent[2], C.accent[3]) end
+    if over or intro then
+        local la = 1
+        if not over then la = math.max(0, math.min(1, (5000 - age) / 1000)) end
+        local label = over and T("IGUI_CM_Stream_Exit") or T("IGUI_CM_Stream_Intro")
+        local fh = CMUI.fh(UIFont.Small)
+        local tw = CMUI.tw(UIFont.Small, label) + 18
+        local ly = math.floor((s - fh - 8) / 2)
+        CMUI.rbox(self, s + 6, ly, tw, fh + 8, C.bg, 0.82 * la, 7)
+        CMUI.rborder(self, s + 6, ly, tw, fh + 8, C.line, 0.6 * la, 7)
+        CMUI.text(self, label, s + 15, ly + 4, C.text, la)
+    end
+end
+function G:onMouseDown(x, y) return true end
+function G:onMouseUp(x, y) CMDock.setStream(false); return true end
+function G:onRightMouseDown(x, y) return true end
+function G:onRightMouseUp(x, y) CMDock.setStream(false); return true end
+
+function CMDock.showGhost(on)
+    if CMDock.ghost then
+        pcall(function() CMDock.ghost:setVisible(false); CMDock.ghost:removeFromUIManager() end)
+        CMDock.ghost = nil
+    end
+    if not on then return end
+    local x, y, s = 10, 140, 32
+    local ref = nil
+    if CMDock.float and visible(CMDock.float) then ref = CMDock.float
+    elseif CMDock.btn and visible(CMDock.btn) and sidebar() and visible(sidebar()) then ref = CMDock.btn end
+    if ref then
+        pcall(function() x, y, s = ref:getAbsoluteX(), ref:getAbsoluteY(), math.floor(ref:getWidth() * 0.7) end)
+    end
+    s = math.max(24, math.min(48, s))
+    local g = G:new(x, y, s)
+    g:initialise()
+    g:instantiate()
+    g:addToUIManager()
+    pcall(function() g:setAlwaysOnTop(true) end)
+    CMDock.ghost = g
+end
+
+function CMDock.setStream(on)
+    on = on == true
+    if on == (ST.on == true) then return end
+    if on then
+        if CMDock.pop then CMDock.pop:close() end
+        if CMDock.setWin then CMDock.setWin:close() end
+        CMDock.showGhost(true)
+        ST.on = true
+        ST.hid = {}
+        ST.at = CMC.ms()
+        ST.last = ST.at
+        CMDock.streamTick(true)
+    else
+        ST.on = false
+        local back = ST.hid
+        ST.hid = {}
+        for el, _ in pairs(back) do setVis(el, true) end
+        CMDock.showGhost(false)
+        local ok, err = pcall(CMDock.apply)
+        if not ok then CM.log("dock apply error: " .. tostring(err)) end
+    end
+end
+
+-- optional hotkey: Options > Mods > Cookie Mission (unbound by default)
+local function initOptions()
+    if CMDock.opt or not (PZAPI and PZAPI.ModOptions) then return end
+    local ok, o = pcall(function() return PZAPI.ModOptions:create("CookieMission", "Cookie Mission") end)
+    if not ok or not o then return end
+    pcall(function() o:addKeyBind("streamKey", getText("IGUI_CM_Opt_StreamKey"), 0, getText("IGUI_CM_Opt_StreamKeyTip")) end)
+    CMDock.opt = o
+end
+
+function CMDock.streamKey()
+    local o = CMDock.opt
+    if not o then return 0 end
+    local ok, v = pcall(function() return o:getOption("streamKey"):getValue() end)
+    if ok and type(v) == "number" then return v end
+    return 0
+end
+
+Events.OnCreateUI.Add(initOptions)
+Events.OnKeyPressed.Add(function(key)
+    local k = CMDock.streamKey()
+    if not k or k == 0 or key ~= k then return end
+    if chatTyping() or not getPlayer() then return end
+    CMDock.setStream(not ST.on)
+end)
 
 -- ===================================================================== install
 local pending = false
@@ -590,6 +835,7 @@ local waitTicks = 0
 local function onTickInstall()
     if not pending then return end
     if not (ISEquippedItem and ISEquippedItem.instance) then return end
+    if ST.on then return end -- stream mode was turned on by hotkey first: set the dock up when it ends
     -- give the other mods a moment to add their own buttons first
     waitTicks = waitTicks + 1
     if waitTicks < 30 then return end
@@ -609,13 +855,32 @@ end)
 
 -- keep grouped buttons hidden even when their mod shows them again (respawn, resolution change)
 Events.OnTick.Add(function()
+    if ST.on then
+        local t = CMC.ms()
+        if t - (ST.last or 0) < 300 then return end
+        ST.last = t
+        local okS, errS = pcall(CMDock.streamTick, false)
+        if not okS then CM.log("stream error: " .. tostring(errS)) end
+        return
+    end
     if pending or not CMDock.btn and not CMDock.float then return end
     local ok, err = pcall(CMDock.enforce, false)
     if not ok then CM.log("dock error: " .. tostring(err)) end
 end)
 
 Events.OnResolutionChange.Add(function()
+    if ST.on then return end
     if sidebar() and (CMDock.btn or CMDock.float) then pcall(CMDock.apply) end
+end)
+
+-- respawn with it on: give everything back, the dock is set up again by the install step
+Events.OnCreatePlayer.Add(function(playerNum)
+    if playerNum ~= 0 or not ST.on then return end
+    ST.on = false
+    local back = ST.hid
+    ST.hid = {}
+    for el, _ in pairs(back) do setVis(el, true) end
+    CMDock.showGhost(false)
 end)
 
 return CMDock

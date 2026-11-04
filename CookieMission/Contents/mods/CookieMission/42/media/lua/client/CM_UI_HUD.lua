@@ -317,6 +317,7 @@ function CMHud.savePos(x, y)
 end
 
 function CMHud.wanted()
+    if CMDock and CMDock.streamHidesHud and CMDock.streamHidesHud() then return false end
     return CMC.run() ~= nil or CMC.result ~= nil or #CMC.toasts > 0
 end
 
