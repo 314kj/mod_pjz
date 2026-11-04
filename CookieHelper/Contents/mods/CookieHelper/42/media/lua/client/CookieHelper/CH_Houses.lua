@@ -410,6 +410,10 @@ function Win:drawPanel()
         cy = cy + UI.HS + 2
     end
     cy = cy + 8
+    -- respawn in this house (the vanilla Safehouse window's tick box, which this window replaces)
+    if h.role == "owner" or h.role == "member" then
+        cy = self:drawRespawn(h, px, cy, pw) + 10
+    end
     -- people header
     local online = 0
     for _, it in ipairs(self.people.items) do if it.item.online then online = online + 1 end end
@@ -424,6 +428,43 @@ function Win:drawPanel()
     if self.addEntry:getIsVisible() then
         T.text(self, t("AddMember"), px, self.addLabelY + floor((UI.BTN_H - UI.HS) / 2), K.text2)
     end
+end
+
+function Win:drawRespawn(h, px, cy, pw)
+    local sh = h.sh
+    local me = C.me()
+    local okR, on = pcall(function() return sh:isRespawnInSafehouse(me) end)
+    on = okR and on == true
+    local allowed = C.respawnAllowed()
+    local main = C.mainHouse()
+    local isMain = main ~= nil and CHelp.shKey(main) == h.key
+    local active = allowed and (isMain or on)
+    local sub
+    if not allowed then sub = t("RespawnDisabled")
+    elseif not isMain then sub = t("RespawnMainOnly", main and main:getTitle() or "-")
+    elseif on then sub = t("RespawnOn")
+    else sub = t("RespawnOff") end
+    local bh = UI.HS * 2 + 18
+    local r = { x = px, y = cy, w = pw, h = bh }
+    local hov = active and T.hot(r, self:getMouseX(), self:getMouseY())
+    T.rrect(self, px, cy, pw, bh, 10, hov and K.surf2 or K.bg)
+    local is = 32
+    T.px(self, "bed", px + 10, cy + floor((bh - is) / 2), is, active and 1 or 0.5)
+    local tx = px + 10 + is + 10
+    T.text(self, T.fit(t("RespawnTitle"), pw - (tx - px) - 64), tx, cy + 7, active and K.text or K.text3)
+    T.text(self, T.fit(sub, pw - (tx - px) - 64), tx, cy + 9 + UI.HS, (on and isMain and allowed) and K.acc or K.text3)
+    UI.drawSwitch(self, px + pw - 52, cy + floor((bh - 22) / 2), on)
+    if not active then T.rrect(self, px + pw - 52, cy + floor((bh - 22) / 2), 40, 22, 11, K.bg, 0.45) end
+    if active then self.hits[#self.hits + 1] = { r = r, kind = "respawn", h = h, on = on } end
+    return cy + bh
+end
+
+function Win:toggleRespawn(h, on)
+    local me = C.me()
+    local want = not on
+    pcall(function() sendSafehouseChangeRespawn(h.sh, me, want) end)
+    pcall(function() h.sh:setRespawnInSafehouse(want, me) end)   -- show it right away; the server syncs it
+    UI.toast(want and t("Msg_RespawnOn", h.sh:getTitle()) or t("Msg_RespawnOff"), want)
 end
 
 function Win.drawPerson(self, list, d, x, y, w, h, hover, sel)
@@ -473,6 +514,8 @@ function Win:onMouseDown(x, y)
         if T.hot(hit.r, x, y) then
             if hit.kind == "eye" then
                 C.toggleHouse(hit.h.sh)
+            elseif hit.kind == "respawn" then
+                self:toggleRespawn(hit.h, hit.on)
             else
                 self.selKey = hit.h.key
                 self.sel = hit.h
@@ -588,8 +631,6 @@ function H.open(key)
     win.extraKey = key
     win:show()
     H.instance = win
-    local sh = key and CHelp.shByKey(key)
-    if sh then C.flash(sh) end
     return win
 end
 

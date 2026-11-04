@@ -1,0 +1,53 @@
+/*
+================================================================
+  Cookie - Removed Mod Tiles : Ammo Maker entity stubs
+  Written for CookieCheetah. Contains nothing from Ammo Maker.
+
+  Ammo Maker (2788256295, mod id ammomaker) was removed on
+  4 Nov 2026. The save's WorldDictionary (SpriteConfigs) still
+  lists three of its entity scripts, and a client refuses to
+  load the world when one of them is missing:
+      Base.ammomaker_BirdFeeder
+      Base.ammomaker_ElectrolysisSetup
+      Base.ammomaker_NitreBed
+  (names taken from the save's WorldDictionaryReadable.lua)
+
+  These stubs only keep those names alive:
+  - no CraftRecipe = not in the build menu, nobody can make one
+  - no UI, no containers, no Lua
+  - one face, one tile each (a tile may belong to only one
+    SpriteConfig, or the world load aborts). The tiles are
+    unused invisible ones from CookieServerPatch's own
+    csp_nofloor set (tiledef csp_nofloor 7395).
+
+  NEVER enable together with Ammo Maker (same entity names).
+  If Ammo Maker is ever put back, delete this file first.
+================================================================
+*/
+
+module Base
+{
+    entity ammomaker_BirdFeeder
+    {
+        component SpriteConfig
+        {
+            face S { layer { row = csp_nofloor_65, } }
+        }
+    }
+
+    entity ammomaker_ElectrolysisSetup
+    {
+        component SpriteConfig
+        {
+            face S { layer { row = csp_nofloor_66, } }
+        }
+    }
+
+    entity ammomaker_NitreBed
+    {
+        component SpriteConfig
+        {
+            face S { layer { row = csp_nofloor_67, } }
+        }
+    }
+}

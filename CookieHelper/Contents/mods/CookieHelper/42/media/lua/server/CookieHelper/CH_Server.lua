@@ -356,7 +356,10 @@ function H.visitsReq(p, user, args)
             if on[n] then people[n] = true end
         end
     end
-    CHelp.toClient(p, "visits", { list = out, now = CHelp.nowMs(), online = people })
+    -- the house the game respawns this player in (it only looks at the first house it finds)
+    local okM, mainSh = pcall(function() return SafeHouse.hasSafehouse(user) end)
+    CHelp.toClient(p, "visits", { list = out, now = CHelp.nowMs(), online = people,
+        main = (okM and mainSh) and CHelp.shKey(mainSh) or "" })
 end
 
 -- every name the server knows: logins seen by the mod, every safehouse owner/member, every

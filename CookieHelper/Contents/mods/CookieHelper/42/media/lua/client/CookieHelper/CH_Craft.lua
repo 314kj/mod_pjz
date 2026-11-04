@@ -192,11 +192,12 @@ function Craft.countAll(p, entries)
     return Scan.count(all)
 end
 
--- every logic the mod builds picks inputs automatically: the vanilla "manual inputs" toggle is
--- copied into new logics and would make every recipe look empty
+-- every logic the mod builds runs in the same mode as the game's crafting window: "manual inputs"
+-- on, filled automatically by setContainers/setRecipe. ISHandcraftAction only builds its input
+-- table in that mode (with it off, 42.21 passes false to convertToPZNetTable and the craft dies).
 function Craft.makeLogic(p, bench, obj)
     local logic = HandcraftLogic.new(p, bench, obj)
-    pcall(function() logic:setManualSelectInputs(false) end)
+    pcall(function() logic:setManualSelectInputs(true) end)
     return logic
 end
 
@@ -219,8 +220,55 @@ function Craft.newLogic(p, containers, recipe, station)
     return logic
 end
 
+-- the recipe needs light and it is too dark where the character stands
+function Craft.tooDark(r, p)
+    local ok, v = pcall(function() return (not r:canBeDoneInDark()) and p:tooDarkToRead() end)
+    return ok and v == true
+end
+
+-- every input except the blowtorch is there and a torch can be refilled from a propane tank
+local function refillCovers(lg, r, p)
+    if not usesBlowTorch(r) then return false end
+    local rr = refillRecipe()
+    if not rr then return false end
+    local okA, rest = pcall(function()
+        local ins = r:getInputs()
+        for i = 0, ins:size() - 1 do
+            local input = ins:get(i)
+            local torch = false
+            for _, ft in ipairs(Craft.inputItems(input)) do if ft == "Base.BlowTorch" then torch = true end end
+            if not torch and not lg:isInputSatisfied(input) then return false end
+        end
+        return true
+    end)
+    if not (okA and rest) then return false end
+    local rl = Craft.makeLogic(p, nil, nil)
+    local okC, cont = pcall(function() return lg:getContainers() end)
+    if not (okC and cont) then return false end
+    rl:setContainers(cont)
+    Craft.setRecipe(rl, rr)
+    local okR, canR = pcall(function() return rl:canPerformCurrentRecipe() end)
+    return okR and canR == true
+end
+Craft.refillCovers = refillCovers
+
+-- the blowtorch input of r is not satisfied (not enough gas)
+function Craft.torchShort(lg, r)
+    local ok, short = pcall(function()
+        local ins = r:getInputs()
+        for i = 0, ins:size() - 1 do
+            local input = ins:get(i)
+            for _, ft in ipairs(Craft.inputItems(input)) do
+                if ft == "Base.BlowTorch" and not lg:isInputSatisfied(input) then return true end
+            end
+        end
+        return false
+    end)
+    return ok and short == true
+end
+
 -- is r something this character may make, and where
--- st = { known, learned, skills, needsBench, station, can, max }
+-- st = { known, learned, skills, needsBench, station, can, max, refill, dark, noTable }
 function Craft.statusOne(logic, r, p, stations, benchLogic)
     local st = { known = true, learned = true, skills = true, can = false, max = 0 }
     local ok = pcall(function()
@@ -236,12 +284,21 @@ function Craft.statusOne(logic, r, p, stations, benchLogic)
             if not lg then return end
         end
         Craft.setRecipe(lg, r)
+        st.dark = Craft.tooDark(r, p)
+        if (not st.needsBench) and Craft.isSurface(r) and stations and #(stations.surfaces or {}) == 0 then
+            local okF, f = pcall(function() return ISEntityUI.FindCraftSurface(p, 2) end)
+            st.noTable = not (okF and f)
+        end
         st.can = lg:canPerformCurrentRecipe()
-        if not st.can and (st.needsBench or Craft.isSurface(r)) then
-            -- only too far from the bench / table: we walk there, so the inputs decide
+        if not st.can and (st.needsBench or Craft.isSurface(r) or st.dark) then
+            -- only too far from the bench / table (we walk there) or dark here: the inputs decide
             st.can = lg:areAllInputItemsSatisfied() and st.known
         end
         if st.can then st.max = math.max(1, lg:getPossibleCraftCount(false)) end
+        if not st.can and st.known and refillCovers(lg, r, p) then
+            st.can, st.refill, st.max = true, true, 1
+        end
+        if st.noTable then st.can = false end
     end)
     if not ok then st.can = false end
     if not st.known then st.can = false st.max = 0 end
@@ -505,6 +562,8 @@ end
 
 local function fail(job, key)
     if job.dead then return end
+    Craft.releaseBench(job.p, job.benchObj)
+    job.benchObj = nil
     if not job.quiet then UI.toast(t(key, Craft.label(job.recipe)), false) end
     Craft.returnTools(job)
     if job.onFail then
@@ -539,24 +598,22 @@ function Craft.step(job)
         if not (okF and f) then return fail(job, "Msg_NoSurface") end
     end
     local logic = Craft.newLogic(p, cont, job.recipe, station)
+    local dark = Craft.tooDark(job.recipe, p)
     local okCan, can = pcall(function()
-        return logic:canPerformCurrentRecipe() or ((station ~= nil or Craft.isSurface(job.recipe)) and logic:areAllInputItemsSatisfied())
+        return logic:canPerformCurrentRecipe() or ((station ~= nil or Craft.isSurface(job.recipe) or dark) and logic:areAllInputItemsSatisfied())
     end)
     if not (okCan and can) then
-        if not job.refilled and usesBlowTorch(job.recipe) then
+        -- refill only when the torch is the one thing missing and a propane tank can fill it
+        if not job.refilled and refillCovers(logic, job.recipe, p) then
             job.refilled = true
             local rr = refillRecipe()
-            if rr then
-                local rl = Craft.newLogic(p, cont, rr)
-                local okR, canR = pcall(function() return rl:canPerformCurrentRecipe() end)
-                if okR and canR then
-                    if not job.quiet then UI.toast(t("Msg_Refill"), true) end
-                    Craft.fetchAndCraft(job, rl, rr, true)
-                    return
-                end
-            end
+            local rl = Craft.newLogic(p, cont, rr)
+            UI.toast(t("Msg_Refill"), true)
+            Craft.fetchAndCraft(job, rl, rr, true)
+            return
         end
-        return fail(job, "Msg_CantCraft")
+        if job.refilled and Craft.torchShort(logic, job.recipe) then return fail(job, "Msg_TorchEmpty") end
+        return fail(job, dark and "Msg_TooDark" or "Msg_CantCraft")
     end
     Craft.fetchAndCraft(job, logic, job.recipe, false)
 end
@@ -590,14 +647,6 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
         if g.stand == false then return fail(job, "Msg_CantReach") end
     end
 
-    -- everything has to fit in the backpack at once, otherwise the queue would stall half way
-    local need = 0
-    for _, g in ipairs(order) do
-        for _, it in ipairs(g.items) do need = need + it:getUnequippedWeight() end
-    end
-    if need > 0 and not inv:hasRoomFor(p, need) then
-        return fail(job, "Msg_TooHeavy")
-    end
     for _, r in ipairs(newReturns) do job.returns[#job.returns + 1] = r end
 
     -- nearest-first walk through the boxes
@@ -613,13 +662,6 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
         local g = table.remove(order, bi)
         route[#route + 1] = g
         if g.stand then px, py = g.stand:getX(), g.stand:getY() end
-    end
-
-    for _, g in ipairs(route) do
-        if g.stand then ISTimedActionQueue.add(ISWalkToTimedAction:new(p, g.stand)) end
-        for _, it in ipairs(g.items) do
-            ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, g.c, inv))
-        end
     end
 
     -- items to wear (IsWorn inputs + welding mask) are found again by ID once they are in the bag
@@ -640,8 +682,146 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
         end
     end
 
-    ISTimedActionQueue.queueActions(p, Craft.deferredCraft, { job = job, recipe = recipe, refill = isRefill, wear = wearIds,
-        station = (not isRefill) and job.station or nil })
+    -- split into loads that fit in the bag. Materials first; tools and things to wear last, so they
+    -- end up in the bag (tools go back to their box later) and only materials are put down at the spot.
+    local isKeep = {}
+    for i = 0, keep:size() - 1 do isKeep[keep:get(i)] = true end
+    for _, g in ipairs(route) do
+        for _, it in ipairs(g.items) do
+            if seen[it:getID()] then isKeep[it] = true end
+        end
+    end
+    local ordered = {}
+    for pass = 1, 2 do
+        for _, g in ipairs(route) do
+            for _, it in ipairs(g.items) do
+                if (pass == 1) ~= (isKeep[it] == true) then ordered[#ordered + 1] = { it = it, g = g } end
+            end
+        end
+    end
+    -- a load is what the character carries without getting slow (encumbrance limit), never more
+    -- than the bag takes. An item heavier than that still goes alone in its own load.
+    local room = Craft.carryRoom(p) * (job.loadScale or 1)
+    local trips, cur, curW = {}, {}, 0
+    for _, e in ipairs(ordered) do
+        local w = e.it:getUnequippedWeight()
+        if not inv:hasRoomFor(p, w) then return fail(job, "Msg_TooHeavy") end
+        if #cur > 0 and (curW + w > room or not inv:hasRoomFor(p, curW + w)) then
+            trips[#trips + 1] = cur
+            cur, curW = {}, 0
+        end
+        cur[#cur + 1] = e
+        curW = curW + w
+    end
+    if #cur > 0 then trips[#trips + 1] = cur end
+    job.spot = nil
+    if #trips > 1 then
+        job.spot = Craft.dropSpot(job, recipe, isRefill)
+        if not job.spot then return fail(job, "Msg_TooHeavy") end
+        if not job.quiet then UI.toast(t("Msg_Trips", #trips), true) end
+    end
+
+    local ctx = { job = job, recipe = recipe, refill = isRefill, wear = wearIds,
+        station = (not isRefill) and job.station or nil, spot = job.spot, trips = trips, trip = 1 }
+    Craft.queueTrip(p, ctx)
+end
+
+-- weight the character can still pick up before the heavy-load moodle
+function Craft.carryRoom(p)
+    local ok, v = pcall(function() return p:getMaxWeight() - p:getInventoryWeight() end)
+    if not ok or not v then return 1000 end
+    return math.max(0.5, v)
+end
+
+-- a workstation only accepts crafts from the player marked as using it (the game's bench window
+-- sets that when it opens). Taken right before the craft, given back after it.
+-- returns ok, took: took = we set it (so we give it back); the player's own open bench window
+-- already holds it and keeps it
+function Craft.claimBench(p, obj)
+    if not obj then return true, false end
+    local took = false
+    local ok, res = pcall(function()
+        local u = obj:getUsingPlayer()
+        if u and u ~= p then return false end
+        if u ~= p then
+            obj:setUsingPlayer(p)
+            took = true
+        end
+        return true
+    end)
+    if not ok then return true, false end
+    return res == true, took
+end
+
+function Craft.releaseBench(p, obj)
+    if not obj then return end
+    pcall(function() if obj:getUsingPlayer() == p then obj:setUsingPlayer(nil) end end)
+end
+
+-- where loads are put down when everything does not fit at once: next to the workstation or zone
+-- table the recipe uses, else where the character stands now. The craft runs from that square,
+-- so the floor items are in reach.
+function Craft.dropSpot(job, recipe, isRefill)
+    local p = job.p
+    local obj = nil
+    if (not isRefill) and job.station then
+        obj = job.station.obj
+    elseif Craft.isSurface(recipe) then
+        local s = Scan.surfaceNear(stationsOf(job), p:getX(), p:getY())
+        obj = s and s.obj or nil
+    end
+    if obj then
+        local okS, sq = pcall(function() return obj:getSquare() end)
+        if okS and sq then
+            local okA, adj = pcall(function() return AdjacentFreeTileFinder.Find(sq, p) end)
+            if okA and adj then return adj end
+        end
+    end
+    return p:getCurrentSquare()
+end
+
+-- one load: walk the boxes of this trip and take its items; then either put the load down at the
+-- spot and come back for the next one, or (last load) go craft
+function Craft.queueTrip(p, ctx)
+    local inv = p:getInventory()
+    local trip = ctx.trips[ctx.trip] or {}
+    local last = "none"
+    for _, e in ipairs(trip) do
+        local g = e.g
+        if g.stand and g.stand ~= last then ISTimedActionQueue.add(ISWalkToTimedAction:new(p, g.stand)) end
+        last = g.stand
+        ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, e.it, g.c, inv))
+    end
+    if ctx.trip < #ctx.trips then
+        local ids = {}
+        for _, e in ipairs(trip) do ids[#ids + 1] = e.it:getID() end
+        ISTimedActionQueue.add(ISWalkToTimedAction:new(p, ctx.spot))
+        ISTimedActionQueue.queueActions(p, Craft.dropLoad, { ctx = ctx, ids = ids })
+    else
+        ISTimedActionQueue.queueActions(p, Craft.deferredCraft, ctx)
+    end
+end
+
+-- runs at the spot: put this load on the floor (found again by ID), then fetch the next load
+function Craft.dropLoad(p, arg)
+    local ctx = arg.ctx
+    if ctx.job.dead then return end
+    local ok, err = pcall(function()
+        local inv = p:getInventory()
+        local floorC = ISInventoryPage.GetFloorContainer(p:getPlayerNum())
+        for _, id in ipairs(arg.ids) do
+            local it = inv:getItemWithIDRecursiv(id)
+            if it and it:getContainer() and not p:isEquippedClothing(it) then
+                ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, it:getContainer(), floorC))
+            end
+        end
+        ctx.trip = ctx.trip + 1
+        Craft.queueTrip(p, ctx)
+    end)
+    if not ok then
+        CHelp.log("drop load failed: " .. tostring(err))
+        fail(ctx.job, "Msg_CantCraft")
+    end
 end
 
 -- runs when the queue reaches it: everything should be in the backpack now
@@ -655,6 +835,13 @@ local function deferredCraftInner(p, ctx)
             end
             ISTimedActionQueue.add(ISWearClothing:new(p, it))
         end
+    end
+    -- loads were put down at the spot: craft standing there so the floor items are in reach
+    if ctx.spot and not ctx.atSpot then
+        ctx.atSpot = true
+        ISTimedActionQueue.add(ISWalkToTimedAction:new(p, ctx.spot))
+        ISTimedActionQueue.queueActions(p, Craft.deferredCraft, ctx)
+        return
     end
     -- a bench recipe: walk next to it first, the craft is queued after the walk
     if ctx.station and not ctx.walked then
@@ -680,6 +867,14 @@ local function deferredCraftInner(p, ctx)
         if not surf then return fail(ctx.job, "Msg_NoSurface") end
         logic:setIsoObject(surf)
     end
+    if Craft.tooDark(ctx.recipe, p) then return fail(ctx.job, "Msg_TooDark") end
+    if ctx.station then
+        local okB, took = Craft.claimBench(p, ctx.station.obj)
+        if not okB then return fail(ctx.job, "Msg_BenchBusy") end
+        ctx.job.benchObj = took and ctx.station.obj or nil
+    end
+    -- the loot panel lists the floor around us: refresh it so items just put down are counted
+    pcall(function() getPlayerLoot(p:getPlayerNum()):refreshBackpacks() end)
     logic:setContainers(ISInventoryPaneContextMenu.getContainers(p))
     Craft.setRecipe(logic, ctx.recipe)
     local okCan, can = pcall(function()
@@ -709,6 +904,8 @@ end
 function Craft.afterCraft(p, ctx)
     local job = ctx.job
     if job.dead then return end
+    Craft.releaseBench(p, job.benchObj)
+    job.benchObj = nil
     local ok, err = pcall(function()
         if ctx.refill then
             Craft.step(job)          -- torch is full again, try the real recipe
@@ -716,6 +913,7 @@ function Craft.afterCraft(p, ctx)
         end
         job.left = job.left - 1
         job.refilled = false
+        job.retried = false
         if job.onProgress then pcall(job.onProgress, job.total - job.left, job.total) end
         if job.left > 0 then
             if job.stopCheck and job.stopCheck() then
@@ -742,6 +940,54 @@ function Craft.afterCraft(p, ctx)
         CHelp.log("after craft failed: " .. tostring(err))
         fail(job, "Msg_CantCraft")
     end
+end
+
+-- walk to the boxes holding these items (nearest first), take them, then fn(p, arg) runs from
+-- the action queue. Returns false, msgKey when a box cannot be reached (nothing is queued then).
+function Craft.isBusy(p)
+    return (CHelp.Queue and CHelp.Queue.running ~= nil) or ISTimedActionQueue.isPlayerDoingAction(p)
+end
+
+-- skipBusy: the caller checked already (and may have queued getting out of a car)
+function Craft.fetchThen(p, items, fn, arg, skipBusy)
+    if not skipBusy and Craft.isBusy(p) then return false, "Msg_Busy" end
+    local inv = p:getInventory()
+    local groups, order = {}, {}
+    for _, it in ipairs(items or {}) do
+        local c = it:getContainer()
+        if c and c ~= inv and not c:isInCharacterInventory(p) then
+            local g = groups[c]
+            if not g then
+                g = { c = c, items = {} }
+                groups[c] = g
+                order[#order + 1] = g
+            end
+            g.items[#g.items + 1] = it
+        end
+    end
+    for _, g in ipairs(order) do
+        g.stand = standFor(p, g.c)
+        if g.stand == false then return false, "Msg_CantReach" end
+    end
+    local px, py = p:getX(), p:getY()
+    while #order > 0 do
+        local bi, bd = 1, nil
+        for i, g in ipairs(order) do
+            local sq = g.stand
+            local d = sq and ((sq:getX() - px) * (sq:getX() - px) + (sq:getY() - py) * (sq:getY() - py)) or 0
+            if not bd or d < bd then bi, bd = i, d end
+        end
+        local g = table.remove(order, bi)
+        if g.stand then
+            ISTimedActionQueue.add(ISWalkToTimedAction:new(p, g.stand))
+            px, py = g.stand:getX(), g.stand:getY()
+        end
+        for _, it in ipairs(g.items) do
+            ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, g.c, inv))
+        end
+    end
+    ISTimedActionQueue.queueActions(p, fn, arg)
+    return true
 end
 
 -- tools that were borrowed from boxes go back where they came from

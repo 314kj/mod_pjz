@@ -6,3 +6,6 @@ source 3812370808 BuildingClipboardB42 version=1.9.12 mod.info=P:\cookiev1\steam
 source 3807510799 BlackoutPredatorsExtended version= mod.info=P:\cookiev1\steamapps\workshop\content\108600\3807510799\mods\BlackoutPredatorsExtended\42\mod.info
   pack BPE_Nests <- P:\cookiev1\steamapps\workshop\content\108600\3807510799\mods\BlackoutPredatorsExtended\42\media\texturepacks\BPE_Nests.pack  md5=C4C5AD94B43301A5A17AF1E3F3736495
   tiledef BPE_Nests 1897 <- P:\cookiev1\steamapps\workshop\content\108600\3807510799\mods\BlackoutPredatorsExtended\42\media\BPE_Nests.tiles  md5=80C92840D8DA6E63A55915C47F84B7A7
+source 2788256295 ammomaker (Ammo Maker) removed 2026-11-04 - NO files copied (author forbids repacking)
+  script 42/media/scripts/CRT_AmmoMakerStub.txt = own stub entities Base.ammomaker_BirdFeeder / Base.ammomaker_ElectrolysisSetup / Base.ammomaker_NitreBed
+  names from P:\Zomboid\Saves\Multiplayer\cookiev1\WorldDictionaryReadable.lua (SpriteConfigs 459-461), sprites csp_nofloor_65..67 (CookieServerPatch)

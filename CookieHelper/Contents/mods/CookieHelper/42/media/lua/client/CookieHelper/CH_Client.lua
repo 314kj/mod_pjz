@@ -231,7 +231,26 @@ function handlers.visits(args)
     for key, v in pairs(args.list or {}) do
         C.visits[key] = { v = tonumber(v) or 0, now = tonumber(args.now) or recv, recv = recv }
     end
+    if type(args.main) == "string" then C.mainHouseKey = args.main end
     C.emit("visits")
+end
+
+-- the house the game respawns me in: vanilla only checks the first house it finds for a player
+-- (SafeHouse.hasSafehouse). The server tells us which one that is; the local list is the fallback.
+function C.mainHouse()
+    if C.mainHouseKey and C.mainHouseKey ~= "" then
+        local sh = CHelp.shByKey(C.mainHouseKey)
+        if sh then return sh end
+    end
+    local p = C.player()
+    if not p then return nil end
+    local ok, sh = pcall(function() return SafeHouse.hasSafehouse(p) end)
+    return ok and sh or nil
+end
+
+function C.respawnAllowed()
+    local ok, v = pcall(function() return getServerOptions():getBoolean("SafehouseAllowRespawn") end)
+    return ok and v == true
 end
 
 -- ms since someone of the house was last there (server value when we have it), nil = unknown
@@ -546,7 +565,6 @@ local function onFillWorld(playerNum, context, worldobjects, test)
     local here = CHelp.shAt(x, y)
     local hereRole = here and C.roleIn(here, me) or nil
     if here and (hereRole or C.isAdmin()) then
-        C.flash(here)
         local info = C.houseInfo(here)
         local head = sub:addOption(T.fit(here:getTitle(), 220) .. "  ·  " .. C.houseRoleName(hereRole or "admin"), nil, nil)
         head.notAvailable = true
@@ -576,6 +594,14 @@ local function onFillWorld(playerNum, context, worldobjects, test)
 
     if #C.myHouses() > 0 then
         icon(sub:addOption(t("Menu_MyHouses"), nil, function() if CHelp.Houses then CHelp.Houses.open() end end), "px_key")
+        any = true
+    end
+
+    local nAsk = C.pendingAsks()
+    if nAsk > 0 then
+        icon(sub:addOption(t("DockAsks", nAsk), nil, function()
+            for _, w in pairs(C.asks) do w:bringToTop() end
+        end), "px_medkit")
         any = true
     end
 

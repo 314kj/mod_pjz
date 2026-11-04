@@ -1,6 +1,6 @@
 name=Cookie - Removed Mod Tiles
 id=CookieRemovedTiles
-description=Tiles only, no code. Keeps the tiles of mods removed from CookieCheetah (Building Clipboard stairs and roof pieces, Blackout Predators Extended nest props) so objects already in the world keep their picture and stairs still work. Never turn it on together with the mods it replaces (same tile numbers).
+description=Keeps what the world still needs from mods removed from CookieCheetah, with no Lua code: tiles of Building Clipboard (stairs, roof pieces) and Blackout Predators Extended (nest props) so objects already in the world keep their picture and stairs still work, and name-only stubs for Ammo Maker's three entities (bird feeder, electrolysis setup, nitre bed) so the world still loads. Never turn it on together with the mods it replaces (same tile numbers / entity names).
 versionMin=42.0.0
 tiledef=bc_clipboard_surfaces 7711
 tiledef=bc_clipboard_roofs 7712
