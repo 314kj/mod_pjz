@@ -144,8 +144,14 @@ local function runFix(p, arg)
     end)
 end
 
+local function leaveCar(p)
+    if p:getVehicle() then pcall(function() ISVehicleMenu.onExit(p) end) end
+end
+
 local function startFix(p, part, fi, xi, picks)
-    local ok, why = Craft.fetchThen(p, picks, runFix, { part = part, fi = fi, xi = xi })
+    if Craft.isBusy(p) then UI.toast(t("Msg_Busy"), false) return end
+    leaveCar(p)
+    local ok, why = Craft.fetchThen(p, picks, runFix, { part = part, fi = fi, xi = xi }, true)
     if not ok then UI.toast(t(why or "Msg_CantReach", ""), false) end
 end
 
@@ -242,10 +248,12 @@ local function runInstall(p, arg)
 end
 
 local function startInstall(p, part, it, entries)
+    if Craft.isBusy(p) then UI.toast(t("Msg_Busy"), false) return end
+    leaveCar(p)
     local picks = { it }
     local tools = toolPicks(p, part, entries)
     for _, x in ipairs(tools) do picks[#picks + 1] = x end
-    local ok, why = Craft.fetchThen(p, picks, runInstall, { part = part, id = it:getID() })
+    local ok, why = Craft.fetchThen(p, picks, runInstall, { part = part, id = it:getID() }, true)
     if not ok then UI.toast(t(why or "Msg_CantReach", ""), false) end
 end
 
@@ -313,6 +321,11 @@ function F.partMenu(p, part, x, y, opts)
         ctx = proxy.context
     end)
     if not ctx then ctx = ISContextMenu.get(pn, x, y) end
+    -- the game's own Repair entry expects you standing at the car (its window closes otherwise);
+    -- ours below walks there and covers the same fixes, so drop the game's one
+    if part:getId() ~= "lightbar" and part:getInventoryItem() then
+        pcall(function() ctx:removeOptionByName(getText("ContextMenu_Repair")) end)
+    end
     local zoneE = opts.zoneFn and opts.zoneFn() or {}
     local any = false
     if opts.onCraft then
@@ -337,6 +350,7 @@ function F.partMenu(p, part, x, y, opts)
     local okR, rep = pcall(addRepair, ctx, p, part, zoneE, opts.houseFn)
     if not okR then CHelp.log("repair menu failed: " .. tostring(rep)) end
     any = any or (okI and inst) or (okR and rep)
-    if any or ctx.numOptions > 1 then ctx:setVisible(true) end
+    local n = ctx.numOptions or (#(ctx.options or {}) + 1)
+    ctx:setVisible(any or n > 1)
     return ctx
 end

@@ -252,6 +252,21 @@ local function refillCovers(lg, r, p)
 end
 Craft.refillCovers = refillCovers
 
+-- the blowtorch input of r is not satisfied (not enough gas)
+function Craft.torchShort(lg, r)
+    local ok, short = pcall(function()
+        local ins = r:getInputs()
+        for i = 0, ins:size() - 1 do
+            local input = ins:get(i)
+            for _, ft in ipairs(Craft.inputItems(input)) do
+                if ft == "Base.BlowTorch" and not lg:isInputSatisfied(input) then return true end
+            end
+        end
+        return false
+    end)
+    return ok and short == true
+end
+
 -- is r something this character may make, and where
 -- st = { known, learned, skills, needsBench, station, can, max, refill, dark, noTable }
 function Craft.statusOne(logic, r, p, stations, benchLogic)
@@ -588,20 +603,16 @@ function Craft.step(job)
         return logic:canPerformCurrentRecipe() or ((station ~= nil or Craft.isSurface(job.recipe) or dark) and logic:areAllInputItemsSatisfied())
     end)
     if not (okCan and can) then
-        if not job.refilled and usesBlowTorch(job.recipe) then
+        -- refill only when the torch is the one thing missing and a propane tank can fill it
+        if not job.refilled and refillCovers(logic, job.recipe, p) then
             job.refilled = true
             local rr = refillRecipe()
-            if rr then
-                local rl = Craft.newLogic(p, cont, rr)
-                local okR, canR = pcall(function() return rl:canPerformCurrentRecipe() end)
-                if okR and canR then
-                    UI.toast(t("Msg_Refill"), true)
-                    Craft.fetchAndCraft(job, rl, rr, true)
-                    return
-                end
-            end
+            local rl = Craft.newLogic(p, cont, rr)
+            UI.toast(t("Msg_Refill"), true)
+            Craft.fetchAndCraft(job, rl, rr, true)
+            return
         end
-        if usesBlowTorch(job.recipe) and job.refilled then return fail(job, "Msg_TorchEmpty") end
+        if job.refilled and Craft.torchShort(logic, job.recipe) then return fail(job, "Msg_TorchEmpty") end
         return fail(job, dark and "Msg_TooDark" or "Msg_CantCraft")
     end
     Craft.fetchAndCraft(job, logic, job.recipe, false)
@@ -724,15 +735,22 @@ end
 
 -- a workstation only accepts crafts from the player marked as using it (the game's bench window
 -- sets that when it opens). Taken right before the craft, given back after it.
+-- returns ok, took: took = we set it (so we give it back); the player's own open bench window
+-- already holds it and keeps it
 function Craft.claimBench(p, obj)
-    if not obj then return true end
+    if not obj then return true, false end
+    local took = false
     local ok, res = pcall(function()
         local u = obj:getUsingPlayer()
         if u and u ~= p then return false end
-        if u ~= p then obj:setUsingPlayer(p) end
+        if u ~= p then
+            obj:setUsingPlayer(p)
+            took = true
+        end
         return true
     end)
-    return (not ok) or res == true
+    if not ok then return true, false end
+    return res == true, took
 end
 
 function Craft.releaseBench(p, obj)
@@ -851,8 +869,9 @@ local function deferredCraftInner(p, ctx)
     end
     if Craft.tooDark(ctx.recipe, p) then return fail(ctx.job, "Msg_TooDark") end
     if ctx.station then
-        if not Craft.claimBench(p, ctx.station.obj) then return fail(ctx.job, "Msg_BenchBusy") end
-        ctx.job.benchObj = ctx.station.obj
+        local okB, took = Craft.claimBench(p, ctx.station.obj)
+        if not okB then return fail(ctx.job, "Msg_BenchBusy") end
+        ctx.job.benchObj = took and ctx.station.obj or nil
     end
     -- the loot panel lists the floor around us: refresh it so items just put down are counted
     pcall(function() getPlayerLoot(p:getPlayerNum()):refreshBackpacks() end)
@@ -925,7 +944,13 @@ end
 
 -- walk to the boxes holding these items (nearest first), take them, then fn(p, arg) runs from
 -- the action queue. Returns false, msgKey when a box cannot be reached (nothing is queued then).
-function Craft.fetchThen(p, items, fn, arg)
+function Craft.isBusy(p)
+    return (CHelp.Queue and CHelp.Queue.running ~= nil) or ISTimedActionQueue.isPlayerDoingAction(p)
+end
+
+-- skipBusy: the caller checked already (and may have queued getting out of a car)
+function Craft.fetchThen(p, items, fn, arg, skipBusy)
+    if not skipBusy and Craft.isBusy(p) then return false, "Msg_Busy" end
     local inv = p:getInventory()
     local groups, order = {}, {}
     for _, it in ipairs(items or {}) do

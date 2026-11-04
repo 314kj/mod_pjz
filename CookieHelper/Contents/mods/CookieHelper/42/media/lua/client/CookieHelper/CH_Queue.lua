@@ -30,11 +30,19 @@ local function changed() C.emit("queue") end
 local function zoneFns(zone, house)
     local function entries()
         if house then
-            local all = Scan.house(house)
-            -- vehicles in the zone still count (never looted), the zone boxes are part of the house
-            local _, veh = Scan.containers(zone, zone.z, true)
-            local out = {}
-            for _, e in ipairs(all) do out[#out + 1] = e end
+            -- the zone's own boxes first (the craft logic takes items in list order), then the rest
+            -- of the house; vehicles in the zone still count (never looted)
+            local zoneE, veh = Scan.containers(zone, zone.z, true)
+            local out, seen = {}, {}
+            for _, e in ipairs(zoneE) do
+                if not e.veh then
+                    out[#out + 1] = e
+                    seen[e.c] = true
+                end
+            end
+            for _, e in ipairs(Scan.house(house)) do
+                if not seen[e.c] then out[#out + 1] = e end
+            end
             for _, v in ipairs(veh or {}) do
                 for i = 0, v:getPartCount() - 1 do
                     local part = v:getPartByIndex(i)
@@ -273,6 +281,7 @@ end
 function Q.retry(job)
     local cj = job.craft
     cj.retried = true
+    cj.refilled = false
     Craft.releaseBench(cj.p, cj.benchObj)
     cj.benchObj = nil
     cj.loadScale = 0.5
@@ -284,18 +293,31 @@ function Q.retry(job)
     end
 end
 
-local idleSince = nil
+-- moving the character is how a player cancels: if it stood still the whole time the craft was
+-- stuck on its own, otherwise the player stopped it and the queue only pauses
+local idleSince, idleX, idleY, idleZ = nil, 0, 0, 0
 Events.OnTick.Add(function()
     local job = Q.running
     if not job then idleSince = nil return end
     local p = C.player()
     if not p then return end
-    if ISTimedActionQueue.isPlayerDoingAction(p) then idleSince = nil return end
+    if ISTimedActionQueue.isPlayerDoingAction(p) then
+        idleSince, job.walkedOff = nil, nil
+        return
+    end
     local ms = CHelp.nowMs()
-    if not idleSince then idleSince = ms return end
+    if not idleSince then
+        idleSince, idleX, idleY, idleZ = ms, p:getX(), p:getY(), p:getZ()
+        return
+    end
+    if math.abs(p:getX() - idleX) > 0.3 or math.abs(p:getY() - idleY) > 0.3 or p:getZ() ~= idleZ then
+        job.walkedOff = true
+    end
     if ms - idleSince > 2500 then
         idleSince = nil
-        if canRetry(job, p) then Q.retry(job) else Q.interrupt(job) end
+        local walked = job.walkedOff
+        job.walkedOff = nil
+        if not walked and canRetry(job, p) then Q.retry(job) else Q.interrupt(job) end
     end
 end)
 
