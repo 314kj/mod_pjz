@@ -1,0 +1,16 @@
+module CookieMission
+{
+    imports
+    {
+        Base
+    }
+
+    item SupplyCache
+    {
+        DisplayCategory = Junk,
+        ItemType = base:normal,
+        DisplayName = Cookie Supply Cache,
+        Icon = CM_SupplyCache,
+        Weight = 1.0,
+    }
+}
