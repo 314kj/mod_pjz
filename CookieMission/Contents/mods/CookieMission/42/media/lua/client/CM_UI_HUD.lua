@@ -47,12 +47,20 @@ function FP:render()
     local sw, sh = getCore():getScreenWidth(), getCore():getScreenHeight()
     if self.width ~= sw then self:setWidth(sw) end
     if self.height ~= sh then self:setHeight(sh) end
-    self:drawRect(0, 0, sw, sh, self.a, 0.03, 0.025, 0.05)
+    self:drawRect(0, 0, sw, sh, self.a, 0.010, 0.018, 0.045)
     local fh = CMUI.fh(UIFont.Large)
     local cy = sh / 2 - fh
-    self:drawTextCentre(tostring(self.text or ""), sw / 2, cy, C.gold[1], C.gold[2], C.gold[3], self.a, UIFont.Large)
-    local dots = math.floor(CM.mod(t / 300, 4))
-    self:drawTextCentre(string.rep(".", dots), sw / 2, cy + fh + 6, C.dim[1], C.dim[2], C.dim[3], self.a, UIFont.Large)
+    local aw = math.min(sw * 0.7, 900)
+    CMUI.texBox(self, "cm_dots", (sw - aw) / 2, cy - aw * 0.24, aw, aw * 0.21, C.white, self.a * 0.9)
+    CMUI.glow(self, sw / 2, cy + fh / 2, aw * 0.3, fh * 2.2, C.accent, self.a * 0.25)
+    self:drawTextCentre(tostring(self.text or ""), sw / 2, cy, C.text[1], C.text[2], C.text[3], self.a, UIFont.Large)
+    -- scanning bar under the text
+    local bw = math.min(360, sw * 0.4)
+    local bx = (sw - bw) / 2
+    local by = cy + fh + 14
+    self:drawRect(bx, by, bw, 2, self.a * 0.25, C.accent[1], C.accent[2], C.accent[3])
+    local k = CM.mod(t / 900, 1)
+    CMUI.texBox(self, "cm_hline", bx + (bw - 120) * k, by - 1, 120, 4, C.gold, self.a)
 end
 
 function CMFade.run(text, mid)
@@ -135,8 +143,8 @@ local function drawRun(self, x, y, w, run)
     local fs, fm = UIFont.Small, UIFont.Medium
     local lh = CMUI.fh(fs) + S(4)
     -- header row
-    local pw = CMUI.pill(self, x, y + 2, CMC.tierName(run.tier), tc, fs, true)
-    CMUI.text(self, CMUI.fit(CMC.typeName(run.type), fm, w - pw - S(80)), x + pw + S(8), y, C.text, 1, fm)
+    local pw = CMUI.pill(self, x, y + 2, CMC.tierName(run.tier), tc, fs, false)
+    CMUI.text(self, CMUI.fit(CMC.typeName(run.type), fm, w - pw - S(80)), x + pw + S(8), y, C.white, 1, fm)
     local left = CMC.left(run.left, CMC.meAt) or 0
     if run.phase == "live" then
         local col = left <= 60 and C.bad or C.gold
@@ -156,12 +164,11 @@ local function drawRun(self, x, y, w, run)
         else
             label = T("IGUI_CM_Prog_" .. run.type, cur, goal)
         end
-        local bh = math.max(S(16), CMUI.fh(fs) + 2)
-        CMUI.bar(self, x, y, w, bh, cur / goal, tc)
-        local ty = y + (bh - CMUI.fh(fs)) / 2
-        CMUI.textC(self, label, x + w / 2 + 1, ty + 1, { 0, 0, 0 }, 0.8, fs)
-        CMUI.textC(self, label, x + w / 2, ty, C.text, 1, fs)
-        y = y + bh + S(6)
+        CMUI.text(self, label, x, y, C.text, 1, fs)
+        CMUI.textR(self, tostring(math.floor(cur * 100 / goal)) .. "%", x + w, y, tc, 1, fs)
+        y = y + CMUI.fh(fs) + S(4)
+        CMUI.segbar(self, x, y, w, S(8), cur / goal, tc, 24)
+        y = y + S(8) + S(8)
         local nIn = 0
         for _, m in ipairs(run.members or {}) do if m.st == "in" then nIn = nIn + 1 end end
         CMUI.text(self, T("IGUI_CM_Team", nIn), x, y, C.text)
@@ -185,7 +192,7 @@ local function drawRun(self, x, y, w, run)
             if #run.caches > 0 then
                 local key, col = "cold", C.blue
                 if best <= 4 then key, col = "burning", C.bad
-                elseif best <= 10 then key, col = "hot", C.t2
+                elseif best <= 10 then key, col = "hot", C.white
                 elseif best <= 22 then key, col = "warm", C.gold end
                 CMUI.text(self, T("IGUI_CM_Heat_" .. key), x, y, col)
                 y = y + lh
@@ -275,10 +282,12 @@ local function drawToasts(self, x, y, w)
         local c = C[t.c or "text"] or C.text
         local lines = CMUI.wrap(t.s, UIFont.Small, w - CMUI.S(16))
         local h = #lines * (CMUI.fh(UIFont.Small) + 2) + CMUI.S(8)
-        CMUI.rbox(self, x, y, w, h, C.dark, 0.88, 5)
-        CMUI.rect(self, x, y + 3, 3, h - 6, c, 1)
+        CMUI.rbox(self, x + 4, y, w - 8, h, C.bg, 0.78, 6)
+        CMUI.rborder(self, x + 4, y, w - 8, h, c, 0.45, 6)
+        CMUI.rect(self, x + 4, y + 4, 2, h - 8, c, 1)
+        CMUI.glow(self, x + 6, y + h / 2, 14, h * 0.6, c, 0.35)
         for j = 1, #lines do
-            CMUI.text(self, lines[j], x + CMUI.S(10), y + CMUI.S(4) + (j - 1) * (CMUI.fh(UIFont.Small) + 2), c)
+            CMUI.text(self, lines[j], x + CMUI.S(14), y + CMUI.S(4) + (j - 1) * (CMUI.fh(UIFont.Small) + 2), c)
         end
         y = y + h + CMUI.S(4)
         local _ = lh
@@ -298,11 +307,14 @@ function HP:drawBody()
         -- measure once: draw at y then size the box to what was drawn
         local top = y
         local bh = self.lastBoxH or S(120)
-        CMUI.rbox(self, 0, top, w, bh, C.bg, 0.9, 8)
-        CMUI.rect(self, 0, top, w, 3, CMUI.tierColor(run and run.tier or 1), 0.95)
+        local tc = CMUI.tierColor(run and run.tier or 1)
+        CMUI.glow(self, w / 2, top + S(4), w * 0.45, S(40), tc, 0.18)
+        CMUI.rbox(self, 4, top + 4, w - 8, bh - 8, C.bg, 0.62, 10)
+        CMUI.glass(self, 4, top + 4, w - 8, bh - 8, { tint = C.panel, a = 0.35, rad = 10, rim = tc, rimA = 0.55 })
+        CMUI.brackets(self, 4, top + 4, w - 8, bh - 8, tc, 0.85, S(10), 2)
         local ny
-        if run then ny = drawRun(self, pad, top + pad, w - pad * 2, run)
-        else ny = drawResult(self, pad, top + pad, w - pad * 2, res) end
+        if run then ny = drawRun(self, pad + 4, top + pad + 2, w - pad * 2 - 8, run)
+        else ny = drawResult(self, pad + 4, top + pad + 2, w - pad * 2 - 8, res) end
         self.lastBoxH = ny - top + pad - S(4)
         y = top + self.lastBoxH + S(6)
     end

@@ -14,7 +14,9 @@ local confirm = { slot = 0, at = 0 }
 function BW:new(x, y, w, h)
     local o = CMUI.Window.new(self, x, y, w, h)
     o.title = T("IGUI_CM_Title")
+    o.subtitle = T("IGUI_CM_Subtitle")
     o.titleIcon = "cm_icon"
+    o.bgAlpha = 0.78
     return o
 end
 
@@ -33,83 +35,108 @@ local function rewardLines(tier)
 end
 CMBoard.rewardLines = rewardLines
 
-local function statusPill(win, x, y, c)
-    local S = CMUI.S
+local function statusBadge(win, x, y, c)
     if c.status == "open" then
-        return CMUI.pill(win, x, y, T("IGUI_CM_St_open"), C.good, UIFont.Small, false)
+        return CMUI.badge(win, x, y, T("IGUI_CM_St_open"), C.good)
     elseif c.status == "live" then
         local left = CMC.left(c.left, CMC.pubAt) or 0
-        return CMUI.pill(win, x, y, T("IGUI_CM_St_live", c.n or 0, c.cap or 0, CM.clock(left)), C.t2, UIFont.Small, false)
+        return CMUI.badge(win, x, y, T("IGUI_CM_St_live", c.n or 0, c.cap or 0, CM.clock(left)), C.gold)
     elseif c.status == "cool" then
         local left = CMC.left(c.coolLeft, CMC.pubAt) or 0
-        return CMUI.pill(win, x, y, T("IGUI_CM_St_cool", CM.clock(left)), C.dim, UIFont.Small, false)
+        return CMUI.badge(win, x, y, T("IGUI_CM_St_cool", CM.clock(left)), C.dim)
     end
-    local _ = S
-    return CMUI.pill(win, x, y, T("IGUI_CM_St_none"), C.bad, UIFont.Small, false)
+    return CMUI.badge(win, x, y, T("IGUI_CM_St_none"), C.bad)
+end
+
+-- small glass stat chip: LABEL over value; returns nothing
+local function chip(win, x, y, w, h, label, value, tc)
+    CMUI.glass(win, x, y, w, h, { tint = C.dark, a = 0.45, rad = 6, rim = tc, rimA = 0.22, shine = 0.3 })
+    local fs = UIFont.Small
+    CMUI.textC(win, CMUI.fit(label, fs, w - 6), x + w / 2, y + CMUI.S(4), C.faint, 1, fs)
+    CMUI.textC(win, CMUI.fit(value, fs, w - 6), x + w / 2, y + CMUI.S(4) + CMUI.fh(fs), C.text, 1, fs)
 end
 
 local function drawCard(win, x, y, w, h, c)
     local S = CMUI.S
-    local tc = CMUI.tierColor(c.tier or c.slot)
+    local tier = c.tier or c.slot
+    local tc = CMUI.tierColor(tier)
     local fs, fm = UIFont.Small, UIFont.Medium
     local lh = CMUI.fh(fs) + S(3)
     local myRun = CMC.run()
     local mine = myRun and myRun.slot == c.slot
-    CMUI.rbox(win, x + 3, y + 4, w, h, { 0, 0, 0 }, 0.3, 8)
-    CMUI.rbox(win, x, y, w, h, mine and C.panel2 or C.panel, 1, 8)
-    if mine then CMUI.border(win, x, y, w, h, tc, 0.9) end
-    -- tier band
-    local bandH = CMUI.fh(fm) + S(12)
-    CMUI.rbox(win, x, y, w, bandH, tc, 1, 8)
-    CMUI.rect(win, x, y + bandH - 8, w, 8, tc, 1)
-    CMUI.text(win, CMC.tierName(c.tier or c.slot), x + S(12), y + (bandH - CMUI.fh(fm)) / 2, C.dark, 1, fm)
-    local sk = S(18)
-    for i = 1, (c.tier or c.slot) do
-        local ix = x + w - S(10) - i * (sk + S(3))
-        if not CMUI.icon(win, "cm_skull", ix, y + (bandH - sk) / 2, sk, C.dark, 0.85) then
-            CMUI.textC(win, "X", ix + sk / 2, y + (bandH - CMUI.fh(fs)) / 2, C.dark)
-        end
+    local hot = win:isMouseOver() and win:getMouseX() >= x and win:getMouseX() < x + w and win:getMouseY() >= y and win:getMouseY() < y + h
+    -- glass card with the tier's light on top
+    CMUI.glow(win, x + w / 2, y + S(6), w * 0.55, S(70), tc, (mine or hot) and 0.30 or 0.18)
+    CMUI.glass(win, x, y, w, h, { tint = C.panel, a = 0.50, rad = 10, rim = tc, rimA = (mine or hot) and 0.85 or 0.40 })
+    CMUI.brackets(win, x, y, w, h, tc, (mine or hot) and 1 or 0.65, S(14), 2)
+    local ix = x + S(14)
+    local iw = w - S(28)
+    -- header: rank name + pips
+    local cy = y + S(12)
+    CMUI.text(win, CMC.tierName(tier), ix, cy, tc, 1, fm)
+    local ps = S(12)
+    for i = 1, tier do
+        local px = ix + iw - i * (ps + S(4)) + S(4)
+        CMUI.icon(win, tier == 3 and "cm_skull" or "cm_pip", px, cy + (CMUI.fh(fm) - ps) / 2, ps, tier == 3 and C.bad or tc, 1)
     end
-    local cy = y + bandH + S(10)
-    local ix = x + S(12)
-    local iw = w - S(24)
+    cy = cy + CMUI.fh(fm) + S(8)
+    CMUI.hline(win, ix - S(6), cy, iw + S(12), tc, 0.9)
+    cy = cy + S(10)
     if c.status == "none" or not c.type then
-        CMUI.para(win, T("IGUI_CM_NoPlaceLong"), ix, cy, iw, C.dim, fs, 5)
+        CMUI.para(win, T("IGUI_CM_NoPlaceLong"), ix, cy, iw, C.dim, fs, 6)
+        statusBadge(win, ix, y + h - S(46) - CMUI.fh(fs) - S(12), c)
+        CMUI.btn(win, ix, y + h - S(46), iw, S(32), T("IGUI_CM_NotNow"), nil, "primary", { disabled = true })
         return
     end
-    -- type
-    local is = S(40)
-    if not CMUI.icon(win, "cm_t_" .. c.type, ix, cy, is) then
-        CMUI.rbox(win, ix, cy, is, is, C.panel3, 1, 6)
+    -- mission type with its icon in a lit frame
+    local is = S(46)
+    CMUI.glow(win, ix + is / 2, cy + is / 2, is * 0.9, is * 0.9, tc, 0.32)
+    CMUI.rbox(win, ix, cy, is, is, C.dark, 0.55, 10)
+    CMUI.rborder(win, ix, cy, is, is, tc, 0.6, 10)
+    if not CMUI.icon(win, "cm_t_" .. c.type, ix + S(5), cy + S(5), is - S(10), tc, 1) then
+        CMUI.textC(win, "?", ix + is / 2, cy + (is - CMUI.fh(fm)) / 2, tc, 1, fm)
     end
-    CMUI.text(win, CMUI.fit(CMC.typeName(c.type), fm, iw - is - S(10)), ix + is + S(10), cy, C.text, 1, fm)
-    CMUI.para(win, CMC.goalText(c.type, c.goal), ix + is + S(10), cy + CMUI.fh(fm) + S(2), iw - is - S(10), C.dim, fs, 2)
-    cy = cy + is + S(10)
-    -- place
-    CMUI.text(win, CMUI.fit(CMC.placeText(c), fs, iw), ix, cy, C.gold)
-    cy = cy + lh
-    local size = T("IGUI_CM_Size", c.area or 0, c.floors or 1)
-    if c.pinned then size = size .. "  " .. T("IGUI_CM_Pinned") end
-    CMUI.text(win, CMUI.fit(size, fs, iw), ix, cy, C.faint)
-    cy = cy + lh + S(4)
-    CMUI.sep(win, ix, cy, iw)
-    cy = cy + S(6)
-    CMUI.text(win, T("IGUI_CM_TimeLimit", math.floor((c.limit or 0) / 60)), ix, cy, C.text)
-    CMUI.textR(win, T("IGUI_CM_TeamCap", c.cap or 0), ix + iw, cy, C.text)
+    local tx = ix + is + S(12)
+    CMUI.text(win, CMUI.fit(CMC.typeName(c.type), fm, iw - is - S(12)), tx, cy, C.white, 1, fm)
+    CMUI.para(win, CMC.goalText(c.type, c.goal), tx, cy + CMUI.fh(fm) + S(3), iw - is - S(12), C.dim, fs, 3)
+    cy = cy + math.max(is, CMUI.fh(fm) + S(3) + CMUI.paraH(CMC.goalText(c.type, c.goal), iw - is - S(12), fs, 3)) + S(12)
+    -- where
+    local place = CMC.placeText(c)
+    if (c.floors or 1) > 1 then place = place .. "  " .. T("IGUI_CM_Floors", c.floors) end
+    if c.pinned then place = place .. "  " .. T("IGUI_CM_Pinned") end
+    CMUI.text(win, CMUI.fit(place, fs, iw), ix, cy, C.gold)
     cy = cy + lh + S(6)
-    cy = cy + CMUI.section(win, ix, cy, iw, T("IGUI_CM_Rewards"))
-    for _, line in ipairs(rewardLines(c.tier or c.slot)) do
-        cy = cy + CMUI.para(win, "- " .. line, ix, cy, iw, C.text, fs, 2) + S(1)
+    -- stat chips
+    local chH = CMUI.fh(fs) * 2 + S(10)
+    local gap = S(6)
+    local cw = math.floor((iw - gap * 2) / 3)
+    chip(win, ix, cy, cw, chH, T("IGUI_CM_LblTime"), T("IGUI_CM_ValMin", math.floor((c.limit or 0) / 60)), tc)
+    chip(win, ix + cw + gap, cy, cw, chH, T("IGUI_CM_LblTeam"), T("IGUI_CM_ValTeam", c.cap or 0), tc)
+    chip(win, ix + (cw + gap) * 2, cy, cw, chH, T("IGUI_CM_LblSize"), T("IGUI_CM_ValSize", c.area or 0), tc)
+    cy = cy + chH + S(12)
+    -- threat meter
+    local thr = ({ 0.34, 0.67, 1.0 })[tier] or 0.34
+    CMUI.text(win, T("IGUI_CM_Threat"), ix, cy, C.dim)
+    CMUI.textR(win, T("IGUI_CM_Horde", CM.int(CM.tierVal(tier, "Alive"), 35)), ix + iw, cy, tier == 3 and C.bad or C.dim)
+    cy = cy + CMUI.fh(fs) + S(4)
+    CMUI.segbar(win, ix, cy, iw, S(6), thr, tier == 3 and C.bad or tc, 15)
+    cy = cy + S(6) + S(14)
+    -- loot
+    cy = cy + CMUI.section(win, ix, cy, iw, T("IGUI_CM_Rewards"), C.gold)
+    local bs = S(7)
+    for _, line in ipairs(rewardLines(tier)) do
+        CMUI.icon(win, "cm_pip", ix + S(2), cy + (CMUI.fh(fs) - bs) / 2, bs, tc, 0.9)
+        cy = cy + CMUI.para(win, line, ix + S(16), cy, iw - S(16), C.text, fs, 2) + S(2)
     end
-    -- bottom: status + button
-    local btnH = S(30)
-    local by = y + h - btnH - S(12)
-    local py = by - CMUI.fh(fs) - S(12)
-    local pw = statusPill(win, ix, py, c)
+    -- bottom: status + action
+    local btnH = S(34)
+    local by = y + h - btnH - S(14)
+    local py = by - CMUI.fh(fs) - S(16)
+    local bw = statusBadge(win, ix, py, c)
     if CMC.claimed(c.id) then
-        CMUI.pill(win, ix + pw + S(6), py, T("IGUI_CM_Claimed"), C.gold, fs, false)
+        CMUI.badge(win, ix + bw + S(6), py, T("IGUI_CM_Claimed"), C.purple)
     elseif c.last and c.status ~= "live" then
-        CMUI.textR(win, T(c.last.res == "ok" and "IGUI_CM_LastOk" or "IGUI_CM_LastFail"), ix + iw, py + 1, C.faint)
+        CMUI.textR(win, T(c.last.res == "ok" and "IGUI_CM_LastOk" or "IGUI_CM_LastFail"), ix + iw, py + S(3), C.faint)
     end
     local label, style, dis, tip = T("IGUI_CM_Accept"), "primary", false, T("IGUI_CM_AcceptTip")
     if mine then label, style, dis = T("IGUI_CM_InThis"), "sel", true
@@ -129,13 +156,13 @@ local function drawCard(win, x, y, w, h, c)
             confirm.slot = c.slot
             confirm.at = CMC.ms()
         end
-    end, style, { disabled = dis, tip = tip, font = UIFont.Small })
+    end, style, { disabled = dis, tip = tip, font = UIFont.Small, rad = 8 })
 end
 
 function BW:drawBody()
     local S = CMUI.S
-    local pad = S(14)
-    local top = self.headerH + S(10)
+    local pad = S(18)
+    local top = self.headerH + S(12)
     local pub = CMC.pub
     local w = self.width
     if not pub then
@@ -143,19 +170,20 @@ function BW:drawBody()
         return
     end
     local reset = CMC.left(pub.reset, CMC.pubAt) or 0
-    CMUI.text(self, T("IGUI_CM_Today", CM.dayText(pub.day or 0)), pad, top, C.text)
-    CMUI.textR(self, T("IGUI_CM_ResetIn", CM.clock(reset)), w - pad, top, C.dim)
-    top = top + CMUI.fh(UIFont.Small) + S(10)
-    local foot = CMUI.paraH(T("IGUI_CM_Rules"), w - pad * 2, UIFont.Small, 3) + S(12)
-    local gap = S(12)
+    CMUI.badge(self, pad, top, T("IGUI_CM_Today", CM.dayText(pub.day or 0)), C.accent)
+    CMUI.textR(self, T("IGUI_CM_ResetIn", CM.clock(reset)), w - pad, top + S(3), C.dim)
+    top = top + CMUI.fh(UIFont.Small) + S(20)
+    local foot = CMUI.paraH(T("IGUI_CM_Rules"), w - pad * 2, UIFont.Small, 3) + S(14)
+    local gap = S(16)
     local cw = math.floor((w - pad * 2 - gap * 2) / 3)
-    local ch = self.height - top - foot - S(10)
+    local ch = self.height - top - foot - S(12)
     for s = 1, 3 do
         local c = pub.cards and pub.cards[s] or { slot = s, status = "none" }
         c.slot = c.slot or s
         drawCard(self, pad + (s - 1) * (cw + gap), top, cw, ch, c)
     end
-    CMUI.para(self, T("IGUI_CM_Rules"), pad, self.height - foot, w - pad * 2, C.faint, UIFont.Small, 3)
+    CMUI.hline(self, pad, self.height - foot - S(4), w - pad * 2, C.line, 0.5)
+    CMUI.para(self, T("IGUI_CM_Rules"), pad, self.height - foot + S(4), w - pad * 2, C.faint, UIFont.Small, 3)
 end
 
 function BW:onClosed()
@@ -165,7 +193,7 @@ end
 function CMBoard.open()
     if CMBoard.win then CMBoard.win:bringToTop(); return end
     CMUI.k = CMUI.fontScale()
-    local w, h = CMUI.size(920, 560)
+    local w, h = CMUI.size(960, 620)
     local sw, sh = getCore():getScreenWidth(), getCore():getScreenHeight()
     local win = BW:new(math.floor((sw - w) / 2), math.floor((sh - h) / 2), w, h)
     win:show()

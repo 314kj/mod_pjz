@@ -5,28 +5,30 @@ require "CM_Client"
 
 CMUI = CMUI or {}
 
+-- glass / RPG-tech theme: blue on black, everything a little see-through
 CMUI.C = {
-    bg     = { 0.070, 0.075, 0.110 },
-    panel  = { 0.115, 0.120, 0.175 },
-    panel2 = { 0.155, 0.160, 0.230 },
-    panel3 = { 0.200, 0.205, 0.290 },
-    line   = { 0.250, 0.270, 0.370 },
-    text   = { 0.960, 0.940, 0.890 },
-    dim    = { 0.640, 0.660, 0.740 },
-    faint  = { 0.420, 0.440, 0.520 },
-    accent = { 1.000, 0.620, 0.240 },
-    accentD= { 0.420, 0.250, 0.100 },
-    gold   = { 1.000, 0.840, 0.350 },
-    good   = { 0.400, 0.880, 0.600 },
-    bad    = { 0.980, 0.400, 0.400 },
-    purple = { 0.680, 0.500, 0.980 },
+    bg     = { 0.012, 0.022, 0.052 },
+    panel  = { 0.040, 0.075, 0.160 },
+    panel2 = { 0.065, 0.115, 0.235 },
+    panel3 = { 0.100, 0.165, 0.320 },
+    line   = { 0.330, 0.520, 0.920 },
+    text   = { 0.925, 0.955, 1.000 },
+    dim    = { 0.600, 0.690, 0.840 },
+    faint  = { 0.380, 0.460, 0.620 },
+    accent = { 0.330, 0.640, 1.000 },
+    accentD= { 0.090, 0.200, 0.440 },
+    gold   = { 0.560, 0.860, 1.000 },     -- the highlight colour (cyan) of this theme
+    good   = { 0.380, 0.950, 0.820 },
+    bad    = { 1.000, 0.380, 0.480 },
+    purple = { 0.700, 0.520, 1.000 },
     blue   = { 0.450, 0.750, 1.000 },
-    ink    = { 0.200, 0.120, 0.060 },
-    dark   = { 0.080, 0.060, 0.040 },
-    -- tier colours: easy / medium / very hard
-    t1     = { 0.420, 0.860, 0.520 },
-    t2     = { 1.000, 0.650, 0.250 },
-    t3     = { 0.950, 0.300, 0.350 },
+    ink    = { 0.020, 0.040, 0.090 },
+    dark   = { 0.010, 0.018, 0.045 },
+    white  = { 1.000, 1.000, 1.000 },
+    -- tier colours, read like item rarity: easy = cyan, medium = azure, very hard = violet
+    t1     = { 0.300, 0.900, 1.000 },
+    t2     = { 0.420, 0.570, 1.000 },
+    t3     = { 0.760, 0.420, 1.000 },
 }
 function CMUI.tierColor(t)
     if t == 2 then return CMUI.C.t2 elseif t == 3 then return CMUI.C.t3 end
@@ -178,6 +180,116 @@ function CMUI.rbox(win, x, y, w, h, c, a, rad)
     win:drawTextureScaled(tr, x + w - rad, y, rad, rad, a, c[1], c[2], c[3])
     win:drawTextureScaled(bl, x, y + h - rad, rad, rad, a, c[1], c[2], c[3])
     win:drawTextureScaled(br, x + w - rad, y + h - rad, rad, rad, a, c[1], c[2], c[3])
+end
+
+-- rounded outline: ring corner textures + 4 edge lines (1 px)
+function CMUI.rborder(win, x, y, w, h, c, a, rad)
+    a = a or 1
+    rad = rad or 6
+    if w <= 0 or h <= 0 then return end
+    local pre = rad >= 10 and "cm_k_" or "cm_ks_"
+    local tl, tr, bl, br = CMUI.tex(pre .. "tl"), CMUI.tex(pre .. "tr"), CMUI.tex(pre .. "bl"), CMUI.tex(pre .. "br")
+    if rad < 2 or not (tl and tr and bl and br) or w < rad * 2 or h < rad * 2 then
+        win:drawRectBorder(x, y, w, h, a, c[1], c[2], c[3])
+        return
+    end
+    win:drawRect(x + rad, y, w - rad * 2, 1, a, c[1], c[2], c[3])
+    win:drawRect(x + rad, y + h - 1, w - rad * 2, 1, a, c[1], c[2], c[3])
+    win:drawRect(x, y + rad, 1, h - rad * 2, a, c[1], c[2], c[3])
+    win:drawRect(x + w - 1, y + rad, 1, h - rad * 2, a, c[1], c[2], c[3])
+    win:drawTextureScaled(tl, x, y, rad, rad, a, c[1], c[2], c[3])
+    win:drawTextureScaled(tr, x + w - rad, y, rad, rad, a, c[1], c[2], c[3])
+    win:drawTextureScaled(bl, x, y + h - rad, rad, rad, a, c[1], c[2], c[3])
+    win:drawTextureScaled(br, x + w - rad, y + h - rad, rad, rad, a, c[1], c[2], c[3])
+end
+
+-- a texture stretched over a box (gradients, glows); silently nothing when missing
+function CMUI.texBox(win, name, x, y, w, h, c, a)
+    local t = CMUI.tex(name)
+    if not t or w <= 0 or h <= 0 then return false end
+    c = c or C.white
+    win:drawTextureScaled(t, x, y, w, h, a or 1, c[1], c[2], c[3])
+    return true
+end
+
+-- frosted glass panel: tinted see-through fill, light from the top, thin bright rim
+-- opts = { tint, a (fill alpha), rad, rim (colour), rimA, shine (0..1) }
+function CMUI.glass(win, x, y, w, h, opts)
+    opts = opts or {}
+    local rad = opts.rad or 8
+    local tint = opts.tint or C.panel
+    CMUI.rbox(win, x, y, w, h, tint, opts.a or 0.55, rad)
+    local sh = opts.shine or 1
+    if sh > 0 then
+        CMUI.texBox(win, "cm_grad", x + 1, y + 1, w - 2, math.min(h - 2, math.max(16, h * 0.45)), C.blue, 0.10 * sh)
+    end
+    CMUI.rborder(win, x, y, w, h, opts.rim or C.line, opts.rimA or 0.45, rad)
+    -- a brighter strip along the top edge, fading out to the sides
+    CMUI.texBox(win, "cm_hline", x + rad, y, w - rad * 2, 1, opts.rim or C.line, (opts.rimA or 0.45) * 1.6)
+end
+
+-- HUD corner brackets just outside a box
+function CMUI.brackets(win, x, y, w, h, c, a, len, th)
+    len = len or 10; th = th or 2; a = a or 0.9
+    local o = 3
+    local x1, y1, x2, y2 = x - o, y - o, x + w + o, y + h + o
+    win:drawRect(x1, y1, len, th, a, c[1], c[2], c[3]); win:drawRect(x1, y1, th, len, a, c[1], c[2], c[3])
+    win:drawRect(x2 - len, y1, len, th, a, c[1], c[2], c[3]); win:drawRect(x2 - th, y1, th, len, a, c[1], c[2], c[3])
+    win:drawRect(x1, y2 - th, len, th, a, c[1], c[2], c[3]); win:drawRect(x1, y2 - len, th, len, a, c[1], c[2], c[3])
+    win:drawRect(x2 - len, y2 - th, len, th, a, c[1], c[2], c[3]); win:drawRect(x2 - th, y2 - len, th, len, a, c[1], c[2], c[3])
+end
+
+-- glowing divider that fades out at both ends
+function CMUI.hline(win, x, y, w, c, a)
+    if not CMUI.texBox(win, "cm_hline", x, y, w, 1, c or C.line, a or 0.8) then
+        win:drawRect(x, y, w, 1, a or 0.8, (c or C.line)[1], (c or C.line)[2], (c or C.line)[3])
+    end
+end
+
+-- soft light blob (behind headers, icons, primary buttons)
+function CMUI.glow(win, cx, cy, rw, rh, c, a)
+    CMUI.texBox(win, "cm_glow", cx - rw, cy - rh, rw * 2, rh * 2, c or C.accent, a or 0.3)
+end
+
+-- segmented "tech" bar
+function CMUI.segbar(win, x, y, w, h, frac, c, n)
+    frac = CM.clamp(CM.num(frac, 0), 0, 1)
+    n = n or 20
+    local gap = 2
+    local sw = (w - gap * (n - 1)) / n
+    local lit = math.floor(frac * n + 0.0001)
+    local part = frac * n - lit
+    c = c or C.accent
+    CMUI.rbox(win, x - 2, y - 2, w + 4, h + 4, C.dark, 0.55, 4)
+    for i = 0, n - 1 do
+        local sx = x + i * (sw + gap)
+        if i < lit then
+            win:drawRect(sx, y, sw, h, 0.95, c[1], c[2], c[3])
+            win:drawRect(sx, y, sw, math.max(1, math.floor(h / 3)), 0.35, 1, 1, 1)
+        elseif i == lit and part > 0.05 then
+            win:drawRect(sx, y, sw, h, 0.25 + 0.6 * part, c[1], c[2], c[3])
+        else
+            win:drawRect(sx, y, sw, h, 0.16, c[1], c[2], c[3])
+        end
+    end
+    if lit > 0 then CMUI.glow(win, x + (lit * (sw + gap)) - sw / 2, y + h / 2, sw * 3, h * 1.6, c, 0.35) end
+end
+
+-- status badge like "WAITLIST OPEN": glassy pill with a glowing dot; returns width
+function CMUI.badge(win, x, y, text, c, font)
+    font = font or UIFont.Small
+    c = c or C.accent
+    local fh = CMUI.fh(font)
+    local d = math.max(4, math.floor(fh / 3))
+    local w = CMUI.tw(font, text) + d + 22
+    local h = fh + 6
+    CMUI.rbox(win, x, y, w, h, c, 0.16, math.floor(h / 2))
+    CMUI.rborder(win, x, y, w, h, c, 0.55, math.floor(h / 2))
+    local dx, dy = x + 9, y + (h - d) / 2
+    CMUI.glow(win, dx + d / 2, dy + d / 2, d * 1.8, d * 1.8, c, 0.6)
+    win:drawRect(dx, dy, d, d, 1, c[1], c[2], c[3])
+    CMUI.text(win, text, dx + d + 6, y + 3, c, 1, font)
+    return w
 end
 
 function CMUI.text(win, s, x, y, c, a, font)
@@ -415,28 +527,34 @@ function W:endScroll(contentH)
     if max > 0 then
         local barH = math.max(24, a.h * a.h / (contentH + 1))
         local by = a.y + (a.h - barH) * (v / max)
-        CMUI.rbox(self, a.x + a.w - 5, by, 4, barH, C.accent, 0.55, 2)
+        CMUI.rbox(self, a.x + a.w - 5, by, 3, barH, C.accent, 0.65, 2)
     end
 end
 
 function W:drawFrame()
     local w, h = self.width, self.height
-    CMUI.rbox(self, 4, 5, w, h, { 0, 0, 0 }, 0.35, 10)
-    CMUI.rbox(self, 0, 0, w, h, C.bg, 0.96, 10)
-    CMUI.rbox(self, 0, 0, w, self.headerH, C.panel, 1, 10)
-    CMUI.rect(self, 0, self.headerH - 10, w, 10, C.panel, 1)
-    CMUI.rect(self, 0, self.headerH, w, 2, C.accent, 0.85)
-    local tx = 14
-    if self.titleIcon and CMUI.icon(self, self.titleIcon, 10, (self.headerH - 26) / 2, 26) then tx = 42 end
+    -- see-through black glass, light coming from the top, LED arc over the header
+    CMUI.rbox(self, 0, 0, w, h, C.bg, self.bgAlpha or 0.80, 12)
+    CMUI.texBox(self, "cm_grad", 1, 1, w - 2, math.min(h * 0.5, 260), C.accent, 0.16)
+    local dh = math.min(h * 0.32, self.headerH * 2.6)
+    CMUI.texBox(self, "cm_dots", w * 0.08, -dh * 0.18, w * 0.84, dh, C.white, 1)
+    CMUI.glow(self, w / 2, 0, w * 0.38, self.headerH * 1.6, C.accent, 0.28)
+    CMUI.rborder(self, 0, 0, w, h, C.line, 0.50, 12)
+    CMUI.texBox(self, "cm_hline", 20, 0, w - 40, 1, C.blue, 0.9)
+    local tx = 16
+    if self.titleIcon and CMUI.icon(self, self.titleIcon, 12, (self.headerH - 28) / 2, 28) then tx = 48 end
     CMUI.text(self, self.title, tx, (self.headerH - CMUI.fh(UIFont.Medium)) / 2, C.text, 1, UIFont.Medium)
     if self.subtitle then
-        CMUI.text(self, self.subtitle, tx + CMUI.tw(UIFont.Medium, self.title) + 10,
+        CMUI.text(self, self.subtitle, tx + CMUI.tw(UIFont.Medium, self.title) + 12,
             (self.headerH - CMUI.fh(UIFont.Small)) / 2 + 1, C.dim, 1, UIFont.Small)
     end
-    local cs = self.headerH - 14
-    local over = self:hit(w - cs - 8, 7, cs, cs, function() self:close() end)
-    CMUI.rbox(self, w - cs - 8, 7, cs, cs, over and C.bad or C.panel2, over and 0.9 or 1, 5)
-    CMUI.textC(self, "x", w - cs / 2 - 8, 7 + (cs - CMUI.fh(UIFont.Small)) / 2 - 1, C.text, 1, UIFont.Small)
+    CMUI.hline(self, 12, self.headerH, w - 24, C.accent, 0.75)
+    local cs = self.headerH - 16
+    local cx, cy = w - cs - 10, 8
+    local over = self:hit(cx, cy, cs, cs, function() self:close() end)
+    CMUI.rbox(self, cx, cy, cs, cs, over and C.bad or C.panel2, over and 0.55 or 0.45, 6)
+    CMUI.rborder(self, cx, cy, cs, cs, over and C.bad or C.line, 0.6, 6)
+    CMUI.textC(self, "x", cx + cs / 2, cy + (cs - CMUI.fh(UIFont.Small)) / 2 - 1, C.text, 1, UIFont.Small)
 end
 
 -- design sizes grow with the player's font size and never exceed the screen
@@ -511,8 +629,8 @@ function W:render()
         local y = self:getMouseY() + 16
         if x + w > self.width then x = self.width - w - 4 end
         if y + h > self.height then y = self:getMouseY() - h - 6 end
-        CMUI.rbox(self, x, y, w, h, C.dark, 0.95, 5)
-        CMUI.border(self, x, y, w, h, C.accent, 0.5)
+        CMUI.rbox(self, x, y, w, h, C.dark, 0.92, 6)
+        CMUI.rborder(self, x, y, w, h, C.accent, 0.6, 6)
         for i = 1, #lines do CMUI.text(self, lines[i], x + 8, y + 5 + (i - 1) * lh, C.text) end
     end
 end
@@ -533,13 +651,13 @@ end
 
 -- ===================================================================== widgets
 local STY = {
-    primary = { bg = C.accent, hov = { 1.0, 0.72, 0.38 }, fg = C.dark },
-    ghost   = { bg = C.panel2, hov = C.panel3, fg = C.text },
-    good    = { bg = { 0.16, 0.36, 0.25 }, hov = { 0.20, 0.46, 0.32 }, fg = C.good },
-    danger  = { bg = { 0.38, 0.13, 0.13 }, hov = { 0.52, 0.17, 0.17 }, fg = { 1.0, 0.78, 0.78 } },
-    flat    = { bg = C.bg, hov = C.panel2, fg = C.dim },
-    sel     = { bg = C.accentD, hov = { 0.52, 0.31, 0.12 }, fg = C.gold },
-    purple  = { bg = { 0.30, 0.20, 0.48 }, hov = { 0.38, 0.26, 0.60 }, fg = { 0.90, 0.84, 1.0 } },
+    primary = { bg = { 0.14, 0.34, 0.80 }, hov = { 0.22, 0.46, 0.98 }, fg = C.white, rim = { 0.55, 0.78, 1.0 }, glow = true },
+    ghost   = { bg = C.panel2, hov = C.panel3, fg = C.text, rim = C.line },
+    good    = { bg = { 0.06, 0.48, 0.66 }, hov = { 0.10, 0.60, 0.80 }, fg = C.white, rim = { 0.45, 0.95, 1.0 }, glow = true },
+    danger  = { bg = { 0.38, 0.08, 0.20 }, hov = { 0.52, 0.12, 0.27 }, fg = { 1.0, 0.82, 0.86 }, rim = { 1.0, 0.40, 0.52 } },
+    flat    = { bg = C.bg, hov = C.panel2, fg = C.dim, rim = C.panel3 },
+    sel     = { bg = C.accentD, hov = { 0.12, 0.26, 0.55 }, fg = C.gold, rim = C.gold },
+    purple  = { bg = { 0.26, 0.16, 0.50 }, hov = { 0.34, 0.22, 0.62 }, fg = { 0.92, 0.86, 1.0 }, rim = C.purple },
 }
 CMUI.STY = STY
 
@@ -551,7 +669,11 @@ function CMUI.btn(win, x, y, w, h, label, fn, style, opts)
     local bg = st.bg
     if dis then bg = C.panel elseif over then bg = st.hov end
     local yo = pressed and 1 or 0
-    CMUI.rbox(win, x, y + yo, w, h, bg, dis and 0.6 or 1, opts.rad or 5)
+    local rad = opts.rad or 6
+    if st.glow and not dis then CMUI.glow(win, x + w / 2, y + h / 2 + 2, w * 0.62, h * 1.1, bg, over and 0.45 or 0.28) end
+    CMUI.rbox(win, x, y + yo, w, h, bg, dis and 0.35 or 0.78, rad)
+    CMUI.texBox(win, "cm_grad", x + 1, y + yo + 1, w - 2, h / 2, C.white, dis and 0.03 or 0.13)
+    CMUI.rborder(win, x, y + yo, w, h, dis and C.faint or st.rim, dis and 0.35 or (over and 0.95 or 0.65), rad)
     local font = opts.font or UIFont.Small
     local fg = dis and C.faint or (opts.fg or st.fg)
     local iw = 0
@@ -599,7 +721,8 @@ function CMUI.cycle(win, x, y, w, h, text, onPrev, onNext, opts)
     local o1 = win:hit(x, y, aw, h, onPrev, opts.tip)
     local o2 = win:hit(x + w - aw, y, aw, h, onNext, opts.tip)
     local o3 = win:hit(x + aw, y, w - aw * 2, h, onNext, opts.tip)
-    CMUI.rbox(win, x, y, w, h, (o3) and C.panel3 or C.panel2, 1, 5)
+    CMUI.rbox(win, x, y, w, h, (o3) and C.panel3 or C.panel2, 0.75, 5)
+    CMUI.rborder(win, x, y, w, h, C.line, 0.4, 5)
     CMUI.rbox(win, x, y, aw, h, o1 and C.accentD or C.panel3, 1, 5)
     CMUI.rbox(win, x + w - aw, y, aw, h, o2 and C.accentD or C.panel3, 1, 5)
     local fy = y + (h - CMUI.fh(UIFont.Small)) / 2
@@ -613,7 +736,8 @@ function CMUI.stepper(win, x, y, w, h, text, onMinus, onPlus, opts)
     local bw = h
     local o1 = win:hit(x, y, bw, h, onMinus, opts.tip)
     local o2 = win:hit(x + w - bw, y, bw, h, onPlus, opts.tip)
-    CMUI.rbox(win, x, y, w, h, C.panel2, 1, 5)
+    CMUI.rbox(win, x, y, w, h, C.panel2, 0.75, 5)
+    CMUI.rborder(win, x, y, w, h, C.line, 0.4, 5)
     CMUI.rbox(win, x, y, bw, h, o1 and C.accentD or C.panel3, 1, 5)
     CMUI.rbox(win, x + w - bw, y, bw, h, o2 and C.accentD or C.panel3, 1, 5)
     local fy = y + (h - CMUI.fh(UIFont.Small)) / 2
@@ -627,17 +751,19 @@ function CMUI.tabs(win, x, y, w, h, items, cur, onSel)
     local n = #items
     if n == 0 then return end
     local tw = w / n
-    CMUI.rbox(win, x, y, w, h, C.panel, 1, 6)
+    CMUI.glass(win, x, y, w, h, { a = 0.40, rad = 8, rimA = 0.30, shine = 0.4 })
     for i = 1, n do
         local it = items[i]
         local tx = x + (i - 1) * tw
         local sel = it.key == cur
         local over = win:hit(tx, y, tw, h, function() onSel(it.key) end)
         if sel then
-            CMUI.rbox(win, tx + 3, y + 3, tw - 6, h - 6, C.panel3, 1, 5)
-            CMUI.rect(win, tx + 10, y + h - 4, tw - 20, 2, C.accent, 1)
+            CMUI.rbox(win, tx + 3, y + 3, tw - 6, h - 6, C.accentD, 0.75, 6)
+            CMUI.rborder(win, tx + 3, y + 3, tw - 6, h - 6, C.accent, 0.7, 6)
+            CMUI.glow(win, tx + tw / 2, y + h - 3, tw * 0.4, 6, C.accent, 0.5)
+            CMUI.rect(win, tx + 12, y + h - 4, tw - 24, 1, C.gold, 1)
         elseif over then
-            CMUI.rbox(win, tx + 3, y + 3, tw - 6, h - 6, C.panel2, 1, 5)
+            CMUI.rbox(win, tx + 3, y + 3, tw - 6, h - 6, C.panel3, 0.55, 6)
         end
         local label = it.label
         local fy = y + (h - CMUI.fh(UIFont.Small)) / 2
@@ -645,11 +771,11 @@ function CMUI.tabs(win, x, y, w, h, items, cur, onSel)
             local bw = CMUI.tw(UIFont.Small, it.badge) + 10
             local lw = CMUI.tw(UIFont.Small, label)
             local sx = tx + (tw - lw - bw - 6) / 2
-            CMUI.text(win, label, sx, fy, sel and C.gold or C.dim)
-            CMUI.rbox(win, sx + lw + 6, fy, bw, CMUI.fh(UIFont.Small), sel and C.accent or C.panel3, 1, 6)
+            CMUI.text(win, label, sx, fy, sel and C.text or C.dim)
+            CMUI.rbox(win, sx + lw + 6, fy, bw, CMUI.fh(UIFont.Small), sel and C.accent or C.panel3, 0.9, 6)
             CMUI.textC(win, it.badge, sx + lw + 6 + bw / 2, fy, sel and C.dark or C.text)
         else
-            CMUI.textC(win, CMUI.fit(label, UIFont.Small, tw - 8), tx + tw / 2, fy, sel and C.gold or C.dim)
+            CMUI.textC(win, CMUI.fit(label, UIFont.Small, tw - 8), tx + tw / 2, fy, sel and C.text or C.dim)
         end
     end
 end
@@ -659,7 +785,8 @@ function CMUI.pill(win, x, y, text, c, font, fill)
     c = c or C.accent
     local w = CMUI.tw(font, text) + 14
     local h = CMUI.fh(font) + 2
-    CMUI.rbox(win, x, y, w, h, c, fill and 0.95 or 0.20, 6)
+    CMUI.rbox(win, x, y, w, h, c, fill and 0.90 or 0.16, 6)
+    CMUI.rborder(win, x, y, w, h, c, fill and 1 or 0.55, 6)
     CMUI.textC(win, text, x + w / 2, y + 1, fill and C.dark or c, 1, font)
     return w
 end
@@ -674,11 +801,16 @@ function CMUI.sep(win, x, y, w)
     CMUI.rect(win, x, y, w, 1, C.line, 0.7)
 end
 
-function CMUI.section(win, x, y, w, label)
-    CMUI.text(win, label, x, y, C.gold, 1, UIFont.Small)
+function CMUI.section(win, x, y, w, label, c)
+    c = c or C.gold
+    local fh = CMUI.fh(UIFont.Small)
+    local ps = math.max(6, math.floor(fh * 0.55))
+    CMUI.icon(win, "cm_pip", x, y + (fh - ps) / 2, ps, c, 0.95)
+    local tx = x + ps + 6
+    CMUI.text(win, label, tx, y, c, 1, UIFont.Small)
     local lw = CMUI.tw(UIFont.Small, label)
-    CMUI.rect(win, x + lw + 8, y + CMUI.fh(UIFont.Small) / 2, w - lw - 8, 1, C.line, 0.8)
-    return CMUI.fh(UIFont.Small) + 6
+    CMUI.rect(win, tx + lw + 8, y + fh / 2, math.max(0, w - (tx - x) - lw - 8), 1, C.line, 0.35)
+    return fh + 6
 end
 
 -- ===================================================================== text entries (real child widgets)

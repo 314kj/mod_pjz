@@ -7,8 +7,8 @@
 
 CM = CM or {}
 CM.MOD = "CookieMission"
-CM.VERSION = "1.0.0"
-CM.BUILD = "cm-261104-a1c7e3"
+CM.VERSION = "1.0.1"
+CM.BUILD = "cm-261104-b7e2d9"
 CM.CACHE_TYPE = "CookieMission.SupplyCache"
 
 -- ===================================================================== env
