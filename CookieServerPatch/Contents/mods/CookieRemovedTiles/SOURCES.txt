@@ -1,0 +1,11 @@
+source 3812370808 BuildingClipboardB42 version=1.9.12 mod.info=P:\cookiev1\steamapps\workshop\content\108600\3812370808\mods\BuildingClipboardB42\42\mod.info
+  tiledef bc_clipboard_surfaces 7711 <- P:\cookiev1\steamapps\workshop\content\108600\3812370808\mods\BuildingClipboardB42\42\media\bc_clipboard_surfaces.tiles  md5=C4D5787ACA9E800F81494F7A37118206
+  tiledef bc_clipboard_roofs 7712 <- P:\cookiev1\steamapps\workshop\content\108600\3812370808\mods\BuildingClipboardB42\42\media\bc_clipboard_roofs.tiles  md5=1C2B3BB5BB36C719DA82BA94097CC7E5
+  pack BCClipboardRoofCuts2x <- P:\cookiev1\steamapps\workshop\content\108600\3812370808\mods\BuildingClipboardB42\42\media\texturepacks\BCClipboardRoofCuts2x.pack  md5=BA25111BBBBC16162AEB4A98EA1CCAC4
+  pack BCClipboardStairs2x <- P:\cookiev1\steamapps\workshop\content\108600\3812370808\mods\BuildingClipboardB42\42\media\texturepacks\BCClipboardStairs2x.pack  md5=E5DFB03E5B7B918845163DA3A2880679
+source 3807510799 BlackoutPredatorsExtended version= mod.info=P:\cookiev1\steamapps\workshop\content\108600\3807510799\mods\BlackoutPredatorsExtended\42\mod.info
+  pack BPE_Nests <- P:\cookiev1\steamapps\workshop\content\108600\3807510799\mods\BlackoutPredatorsExtended\42\media\texturepacks\BPE_Nests.pack  md5=C4C5AD94B43301A5A17AF1E3F3736495
+  tiledef BPE_Nests 1897 <- P:\cookiev1\steamapps\workshop\content\108600\3807510799\mods\BlackoutPredatorsExtended\42\media\BPE_Nests.tiles  md5=80C92840D8DA6E63A55915C47F84B7A7
+source 2788256295 ammomaker (Ammo Maker) removed 2026-11-04 - NO files copied (author forbids repacking)
+  script 42/media/scripts/CRT_AmmoMakerStub.txt = own stub entities Base.ammomaker_BirdFeeder / Base.ammomaker_ElectrolysisSetup / Base.ammomaker_NitreBed
+  names from P:\Zomboid\Saves\Multiplayer\cookiev1\WorldDictionaryReadable.lua (SpriteConfigs 459-461), sprites csp_nofloor_65..67 (CookieServerPatch)
