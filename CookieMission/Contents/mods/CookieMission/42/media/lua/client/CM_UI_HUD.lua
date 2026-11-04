@@ -140,105 +140,94 @@ local confirmLeave = 0
 local function drawRun(self, x, y, w, run)
     local S = CMUI.S
     local tc = CMUI.tierColor(run.tier)
-    local fs, fm = UIFont.Small, UIFont.Medium
+    local fs, fm, fl = UIFont.Small, UIFont.Medium, UIFont.Large
     local lh = CMUI.fh(fs) + S(4)
-    -- header row
-    local pw = CMUI.pill(self, x, y + 2, CMC.tierName(run.tier), tc, fs, false)
-    CMUI.text(self, CMUI.fit(CMC.typeName(run.type), fm, w - pw - S(80)), x + pw + S(8), y, C.white, 1, fm)
+    -- header: icon + mission name, timer on the right
+    local is = CMUI.fh(fm) + S(2)
+    CMUI.icon(self, "cm_t_" .. tostring(run.type), x, y, is, tc, 1)
+    CMUI.text(self, CMUI.fit(CMC.typeName(run.type), fm, w - is - S(70)), x + is + S(6), y + 1, C.white, 1, fm)
     local left = CMC.left(run.left, CMC.meAt) or 0
     if run.phase == "live" then
-        local col = left <= 60 and C.bad or C.gold
-        CMUI.textR(self, CM.clock(left), x + w, y, col, 1, fm)
+        CMUI.textR(self, CM.clock(left), x + w, y + 1, left <= 60 and C.bad or C.text, 1, fm)
     end
-    y = y + CMUI.fh(fm) + S(4)
-    CMUI.text(self, CMUI.fit(CMC.kindName(run.kind) .. " - " .. tostring(run.town), fs, w), x, y, C.dim)
-    y = y + lh
+    y = y + is + S(8)
     if run.phase == "live" then
-        -- progress
+        -- progress: one big number + a segmented bar
         local cur, goal = run.cur or 0, math.max(1, run.goal or 1)
-        local label
+        local big, small
         if run.type == "survive" then
-            local held = math.min(goal, cur + (CMC.age(CMC.meAt)))
-            label = T("IGUI_CM_Prog_survive", CM.clock(held), CM.clock(goal))
-            cur = held
+            cur = math.min(goal, cur + CMC.age(CMC.meAt))
+            big, small = CM.clock(cur), "/ " .. CM.clock(goal)
         else
-            label = T("IGUI_CM_Prog_" .. run.type, cur, goal)
+            big, small = tostring(cur), "/ " .. tostring(goal)
         end
-        CMUI.text(self, label, x, y, C.text, 1, fs)
-        CMUI.textR(self, tostring(math.floor(cur * 100 / goal)) .. "%", x + w, y, tc, 1, fs)
-        y = y + CMUI.fh(fs) + S(4)
-        CMUI.segbar(self, x, y, w, S(8), cur / goal, tc, 24)
-        y = y + S(8) + S(8)
+        local bw = CMUI.tw(fl, big)
+        CMUI.text(self, big, x, y, tc, 1, fl)
+        CMUI.text(self, small, x + bw + S(6), y + CMUI.fh(fl) - CMUI.fh(fs) - S(2), C.dim, 1, fs)
         local nIn = 0
         for _, m in ipairs(run.members or {}) do if m.st == "in" then nIn = nIn + 1 end end
-        CMUI.text(self, T("IGUI_CM_Team", nIn), x, y, C.text)
-        CMUI.textR(self, T("IGUI_CM_Near", run.alive or 0), x + w, y, C.dim)
-        y = y + lh
-        if run.type ~= "survive" and (run.myKills or 0) > 0 then
-            CMUI.text(self, T("IGUI_CM_MyKills", run.myKills), x, y, C.dim)
-            y = y + lh
-        end
+        CMUI.textR(self, T("IGUI_CM_TeamShort", nIn, run.alive or 0), x + w, y + CMUI.fh(fl) - CMUI.fh(fs) - S(2), C.dim, 1, fs)
+        y = y + CMUI.fh(fl) + S(4)
+        CMUI.segbar(self, x, y, w, S(7), cur / goal, tc, 24)
+        y = y + S(7) + S(10)
         local p = CMC.player()
         local px, py = 0, 0
         if p then px, py = p:getX(), p:getY() end
-        -- supply caches: hot / cold
-        if run.type == "find" and run.caches and p then
+        -- only what matters right now
+        if run.type == "find" and run.caches and p and #run.caches > 0 then
             local best = 99999
             for _, c in ipairs(run.caches) do
                 local dx, dy = c.x - px, c.y - py
                 local d = math.sqrt(dx * dx + dy * dy)
                 if d < best then best = d end
             end
-            if #run.caches > 0 then
-                local key, col = "cold", C.blue
-                if best <= 4 then key, col = "burning", C.bad
-                elseif best <= 10 then key, col = "hot", C.white
-                elseif best <= 22 then key, col = "warm", C.gold end
-                CMUI.text(self, T("IGUI_CM_Heat_" .. key), x, y, col)
-                y = y + lh
-            end
+            local key, col = "cold", C.faint
+            if best <= 4 then key, col = "burning", C.bad
+            elseif best <= 10 then key, col = "hot", C.white
+            elseif best <= 22 then key, col = "warm", C.gold end
+            CMUI.text(self, T("IGUI_CM_HeatS_" .. key), x, y, col)
+            y = y + lh
         end
-        -- where is the building / leaving warning
         if run.zone and p then
-            local d = CM.rectDist(run.zone, px, py)
-            if d > 2 then
-                local cx = (run.zone.x1 + run.zone.x2) / 2
-                local cy = (run.zone.y1 + run.zone.y2) / 2
-                CMUI.text(self, T("IGUI_CM_Where", T("IGUI_CM_Dir_" .. dirOf(cx - px, cy - py)), math.floor(d)), x, y, C.gold)
-                y = y + lh
-            end
             if (run.out or 0) > 0 then
                 local rest = math.max(0, CM.sv("LeaveSeconds") - run.out - CMC.age(CMC.meAt))
-                CMUI.text(self, T("IGUI_CM_OutWarn", math.ceil(rest)), x, y, C.bad)
+                CMUI.text(self, T("IGUI_CM_OutWarnS", math.ceil(rest)), x, y, C.bad)
                 y = y + lh
+            else
+                local d = CM.rectDist(run.zone, px, py)
+                if d > 2 then
+                    local cx = (run.zone.x1 + run.zone.x2) / 2
+                    local cy = (run.zone.y1 + run.zone.y2) / 2
+                    CMUI.text(self, T("IGUI_CM_WhereS", T("IGUI_CM_Dir_" .. dirOf(cx - px, cy - py)), math.floor(d)), x, y, C.gold)
+                    y = y + lh
+                end
             end
         end
         if run.claimed then
-            CMUI.text(self, T("IGUI_CM_HelperOnly"), x, y, C.faint)
+            CMUI.text(self, T("IGUI_CM_HelperShort"), x, y, C.faint)
             y = y + lh
         end
-        y = y + S(2)
         local armed = CMC.ms() - confirmLeave < 4000
-        local bw = CMUI.btnA(self, x, y, S(24), T(armed and "IGUI_CM_LeaveSure" or "IGUI_CM_Leave"), function()
+        local lw = CMUI.tw(fs, T(armed and "IGUI_CM_LeaveSure" or "IGUI_CM_Leave")) + S(20)
+        CMUI.btn(self, x + w - lw, y, lw, S(22), T(armed and "IGUI_CM_LeaveSure" or "IGUI_CM_Leave"), function()
             if CMC.ms() - confirmLeave < 4000 then
                 confirmLeave = 0
                 CMC.send("leave", {})
             else
                 confirmLeave = CMC.ms()
             end
-        end, "danger", { tip = T("IGUI_CM_LeaveTip") })
-        local _ = bw
-        y = y + S(24) + S(4)
+        end, armed and "danger" or "ghost", { tip = T("IGUI_CM_LeaveTip") })
+        y = y + S(22) + S(4)
     else
         -- finished, waiting for the trip home
         local ok = run.res == "ok"
-        CMUI.text(self, T(ok and "IGUI_CM_ResOk" or ("IGUI_CM_Res_" .. tostring(run.res))), x, y, ok and C.good or C.bad, 1, fm)
-        y = y + CMUI.fh(fm) + S(4)
+        CMUI.text(self, T(ok and "IGUI_CM_ResOk" or ("IGUI_CM_Res_" .. tostring(run.res))), x, y, ok and C.good or C.bad, 1, fl)
+        y = y + CMUI.fh(fl) + S(6)
         y = CMHud.drawRewards(self, x, y, w, CMC.result and CMC.result.rw or nil, CMC.result and CMC.result.nr or nil)
         local back = CMC.left(run.backIn, CMC.meAt) or 0
         CMUI.text(self, T("IGUI_CM_BackIn", math.ceil(back)), x, y + S(4), C.dim)
-        CMUI.btnA(self, x + w - S(120), y, S(24), T("IGUI_CM_GoHome"), function() CMC.send("home", {}) end, "primary",
-            { minW = S(120) })
+        CMUI.btnA(self, x + w - S(110), y, S(24), T("IGUI_CM_GoHome"), function() CMC.send("home", {}) end, "primary",
+            { minW = S(110) })
         y = y + S(24) + S(4)
     end
     return y
@@ -268,8 +257,8 @@ local function drawResult(self, x, y, w, res)
     local ok = res.res == "ok" or res.res == "late" or res.res == "test"
     local key = "IGUI_CM_Res_" .. tostring(res.res)
     if res.res == "ok" then key = "IGUI_CM_ResOk" end
-    CMUI.text(self, T(key), x, y, ok and C.good or C.bad, 1, fm)
-    y = y + CMUI.fh(fm) + S(4)
+    CMUI.text(self, T(key), x, y, ok and C.good or C.bad, 1, UIFont.Large)
+    y = y + CMUI.fh(UIFont.Large) + S(6)
     y = CMHud.drawRewards(self, x, y, w, res.rw, res.nr)
     CMUI.btnA(self, x + w - S(80), y, S(22), T("IGUI_CM_Close"), function() CMC.result = nil end, "ghost", { minW = S(80) })
     return y + S(26)
@@ -334,9 +323,8 @@ end
 function CMHud.update()
     local want = CMHud.wanted()
     if want and not CMHud.panel then
-        local w = CMUI.S(330)
         CMUI.k = CMUI.fontScale()
-        w = math.floor(330 * CMUI.k)
+        local w = math.floor(290 * CMUI.k)
         local sw = getCore():getScreenWidth()
         local x = CMHud.pos and CMHud.pos.x or math.floor(sw - w - 230)
         local y = CMHud.pos and CMHud.pos.y or 90
