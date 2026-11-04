@@ -35,17 +35,35 @@ local function analyse(ctx)
     pctx.link = true
     local maxLink = Craft.maxPlan(pctx, r, 50)
     local planLink = Craft.plan(pctx, r, ctx.qty)
+    -- the whole safehouse: everything in every box of the house (all floors)
+    local house = ctx.house or CHelp.shAt(ctx.zone.x1, ctx.zone.y1)
+    local maxHouse = 0
+    if house then
+        local hEntries = CHelp.Queue.zoneFns(ctx.zone, house)()
+        local hctx = { p = p, counts = Craft.countAll(p, hEntries), stations = stations, link = true }
+        maxHouse = Craft.maxPlan(hctx, r, 50)
+    end
 
+    local refill = nil
     local rows = {}
     for _, rq in ipairs(Craft.requirements(r, ctx.qty, counts, logic)) do
         local row = { name = rq.name .. (rq.tool and (" " .. t("ToolTag")) or ""), tex = rq.tex, kind = rq.ok and "ok" or "bad" }
+        local torch = false
+        for _, ft in ipairs(rq.fts) do if ft == "Base.BlowTorch" then torch = true end end
+        if rq.uses and not rq.ok and torch then
+            if refill == nil then refill = Craft.refillCovers(logic, r, p) end
+            rq.refill = refill
+        end
         if rq.uses then
-            row.right = rq.ok and t("UsesOk") or t("UsesLow")
+            row.right = rq.ok and t("UsesOk") or (rq.refill and t("UsesRefill") or t("UsesLow"))
         else
             row.right = rq.have .. "/" .. rq.need .. (rq.ok and "" or ("  ·  " .. t("ShortN", rq.need - rq.have)))
         end
         row.lines = {}
-        if rq.ok then
+        if rq.refill then
+            row.kind = "link"
+            row.lines[#row.lines + 1] = { s = t("TorchWillRefill"), c = K.warn }
+        elseif rq.ok then
             if #rq.boxes > 0 then row.lines[#row.lines + 1] = { s = table.concat(rq.boxes, ", "), c = K.text3 } end
         else
             -- what Link would do about it
@@ -84,9 +102,23 @@ local function analyse(ctx)
         end
     end
     local okS, surf = pcall(function() return r:isAnySurfaceCraft() end)
-    if okS and surf then
-        req[#req + 1] = { name = (#stations.surfaces > 0) and t("SurfaceHere", #stations.surfaces) or t("SurfaceMissing"),
-            kind = (#stations.surfaces > 0) and "ok" or "bad", px = "table" }
+    if okS and surf and not (okB and needsBench) then
+        local n = #stations.surfaces
+        local near = false
+        if n == 0 then
+            local okF, f = pcall(function() return ISEntityUI.FindCraftSurface(p, 2) end)
+            near = okF and f ~= nil
+        end
+        local name = (n > 0) and t("SurfaceHere", n) or (near and t("SurfaceNearOk") or t("TableMissing"))
+        req[#req + 1] = { name = name, kind = (n > 0 or near) and "ok" or "bad", px = "table",
+            lines = (n == 0 and not near) and { { s = t("TableHint"), c = K.text3 } } or nil }
+    end
+    local needsLight = false
+    pcall(function() needsLight = not r:canBeDoneInDark() end)
+    if needsLight then
+        local dark = Craft.tooDark(r, p)
+        req[#req + 1] = { name = dark and t("LightDark") or t("LightOk"), kind = dark and "bad" or "ok",
+            lines = dark and { { s = t("LightHint"), c = K.text3 } } or nil }
     end
     local learned = true
     pcall(function() learned = (not r:needToBeLearn()) or r:hasPlayerLearned(p) end)
@@ -143,7 +175,7 @@ local function analyse(ctx)
     reach[#reach + 1] = { name = t("WeightLine", floor(weight * 10) / 10), kind = fits and "ok" or "bad" }
     if unreachable == 0 then table.insert(reach, 1, { name = t("AllReachable"), kind = "ok" }) end
 
-    return { rows = rows, req = req, reach = reach, maxNow = maxNow, maxLink = maxLink }
+    return { rows = rows, req = req, reach = reach, maxNow = maxNow, maxLink = maxLink, maxHouse = maxHouse, house = house }
 end
 
 function W:createChildren()
@@ -155,10 +187,20 @@ function W:createChildren()
     self.linkBtn = UI.button(self, UI.PAD, by, wLink, "", self, W.onLink, "pri")
     self.queueBtn = UI.button(self, UI.PAD + wLink + 8, by, wQueue, t("QueueAnyway"), self, W.onQueue, "sec")
     UI.button(self, UI.PAD + wLink + wQueue + 16, by, bw - wLink - wQueue - 16, t("Close"), self, W.onCloseClick, "ghost")
+    self.houseBtn = UI.button(self, UI.PAD, by - UI.BTN_H - 8, bw, "", self, W.onHouse, "soft")
+    self.houseBtn:setIcon("house", true)
+    self.houseBtn:setVisible(false)
     local ok, res = pcall(analyse, self.ctx)
     if ok then self.data = res else
         CHelp.log("missing analyse failed: " .. tostring(res))
-        self.data = { rows = {}, req = {}, reach = {}, maxNow = 0, maxLink = 0 }
+        self.data = { rows = {}, req = {}, reach = {}, maxNow = 0, maxLink = 0, maxHouse = 0 }
+    end
+    -- the zone is short but the rest of the house has it: offer to fetch from the whole house
+    local best = math.max(self.data.maxNow, self.data.maxLink)
+    self.offerHouse = self.data.house ~= nil and self.data.maxHouse > best and best < self.ctx.qty
+    if self.offerHouse then
+        self.houseBtn:setTitle(t("HouseAsk", math.min(self.data.maxHouse, self.ctx.qty)))
+        self.houseBtn:setVisible(true)
     end
     local n = self.data.maxLink
     self.linkBtn:setTitle(n > 0 and t("LinkDoN", math.min(n, self.ctx.qty)) or t("LinkNone"))
@@ -211,8 +253,10 @@ function W:drawBody()
     if not d then return end
     local x, w = UI.PAD, self.width - UI.PAD * 2
     local y = UI.HEAD_H + 2
-    local cw = floor((w - 10) / 2)
-    for i, c in ipairs({ { t("CanNow"), d.maxNow, d.maxNow > 0 and K.acc or K.bad }, { t("WithLink"), d.maxLink, d.maxLink > 0 and K.warn or K.bad } }) do
+    local cards = { { t("CanNow"), d.maxNow, d.maxNow > 0 and K.acc or K.bad }, { t("WithLink"), d.maxLink, d.maxLink > 0 and K.warn or K.bad } }
+    if d.house then cards[3] = { t("WholeHouse"), d.maxHouse or 0, (d.maxHouse or 0) > 0 and K.warn or K.bad } end
+    local cw = floor((w - 10 * (#cards - 1)) / #cards)
+    for i, c in ipairs(cards) do
         local cx = x + (i - 1) * (cw + 10)
         T.rrect(self, cx, y, cw, UI.HS + UI.HL + 18, UI.RC, K.surf)
         T.text(self, c[1], cx + 14, y + 8, K.text3)
@@ -222,7 +266,7 @@ function W:drawBody()
     y = y + UI.HS + UI.HL + 18 + 12
     -- long recipes scroll (mouse wheel) inside the area above the buttons
     local top = y
-    local bottom = self.height - UI.BTN_H - UI.PAD - 10
+    local bottom = self.height - UI.BTN_H - UI.PAD - 10 - (self.offerHouse and (UI.BTN_H + 8) or 0)
     self.viewH = bottom - top
     self.scroll = self.scroll or 0
     self:setStencilRect(0, top, self.width, self.viewH)
@@ -251,6 +295,14 @@ function W:onLink()
     local n = math.min(self.data.maxLink, self.ctx.qty)
     if n <= 0 then return end
     CHelp.Queue.add({ recipe = self.ctx.recipe, qty = n, link = true, zone = self.ctx.zone })
+    self:close()
+end
+
+function W:onHouse()
+    local d = self.data
+    local n = math.min(d.maxHouse or 0, self.ctx.qty)
+    if n <= 0 or not d.house then return end
+    CHelp.Queue.add({ recipe = self.ctx.recipe, qty = n, link = true, zone = self.ctx.zone, house = d.house })
     self:close()
 end
 

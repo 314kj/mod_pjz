@@ -631,8 +631,6 @@ function H.open(key)
     win.extraKey = key
     win:show()
     H.instance = win
-    local sh = key and CHelp.shByKey(key)
-    if sh then C.flash(sh) end
     return win
 end
 

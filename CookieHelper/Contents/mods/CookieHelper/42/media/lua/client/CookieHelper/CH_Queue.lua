@@ -25,11 +25,31 @@ Q.policy = Q.policy or "skip"
 
 local function changed() C.emit("queue") end
 
-local function zoneFns(zone)
-    local function entries() return Scan.containers(zone, zone.z, true) end
+-- house = the safehouse: take things from every box in the house, not only the zone.
+-- The craft itself still happens in the zone (its workstations and tables).
+local function zoneFns(zone, house)
+    local function entries()
+        if house then
+            local all = Scan.house(house)
+            -- vehicles in the zone still count (never looted), the zone boxes are part of the house
+            local _, veh = Scan.containers(zone, zone.z, true)
+            local out = {}
+            for _, e in ipairs(all) do out[#out + 1] = e end
+            for _, v in ipairs(veh or {}) do
+                for i = 0, v:getPartCount() - 1 do
+                    local part = v:getPartByIndex(i)
+                    local c = part and part:getItemContainer()
+                    if c then out[#out + 1] = { c = c, sq = v:getSquare(), veh = v, part = part } end
+                end
+            end
+            return out
+        end
+        return Scan.containers(zone, zone.z, true)
+    end
     local function stations() return Scan.stations(zone, zone.z) end
     return entries, stations
 end
+Q.zoneFns = zoneFns
 
 local function inZone(zone)
     local p = C.player()
@@ -43,17 +63,17 @@ function Q.count()
     return n
 end
 
--- spec = { recipe, qty, link, zone, zoneName }
+-- spec = { recipe, qty, link, zone, zoneName, house = SafeHouse|nil }
 function Q.add(spec)
     local p = C.player()
     if not p or not spec.recipe or not spec.zone then return end
     Q.seq = Q.seq + 1
-    local entries, stations = zoneFns(spec.zone)
+    local entries, stations = zoneFns(spec.zone, spec.house)
     local counts = Craft.countAll(p, entries())
     local plan = Craft.plan({ p = p, counts = counts, stations = stations(), link = spec.link }, spec.recipe, spec.qty)
     local job = { id = Q.seq, recipe = spec.recipe, qty = math.max(1, spec.qty or 1), link = spec.link == true,
         zone = spec.zone, zoneName = spec.zoneName or spec.zone.name or "", status = "wait", steps = plan.steps, stepIdx = 0,
-        done = 0, why = nil, stepDone = 0 }
+        done = 0, why = nil, stepDone = 0, house = spec.house }
     Q.jobs[#Q.jobs + 1] = job
     UI.toast(t("Msg_Queued", Craft.label(spec.recipe), job.qty), true)
     changed()
@@ -141,7 +161,7 @@ function Q.runJob(job)
     local p = C.player()
     if not p then return end
     if not inZone(job.zone) then return warn(job, t("Q_StandInZone", job.zoneName)) end
-    local entries, stations = zoneFns(job.zone)
+    local entries, stations = zoneFns(job.zone, job.house)
     local counts = Craft.countAll(p, entries())
     local plan = Craft.plan({ p = p, counts = counts, stations = stations(), link = job.link }, job.recipe, job.qty)
     job.steps = plan.steps
@@ -214,6 +234,7 @@ end
 function Q.interrupt(job, quiet)
     if job.craft then
         job.craft.dead = true
+        Craft.releaseBench(job.craft.p, job.craft.benchObj)
         pcall(Craft.returnTools, job.craft)
         job.craft = nil
     end
@@ -236,6 +257,33 @@ function Q.interrupt(job, quiet)
     changed()
 end
 
+-- a stalled craft (a transfer refused, a path blocked) gets one more go with half-size loads,
+-- picked up from wherever things are now. The player walking off or zombies around = pause.
+local function canRetry(job, p)
+    local cj = job.craft
+    if not cj or cj.dead or cj.retried or job.cancel or Q.paused then return false end
+    if p:getVehicle() or p:isDead() then return false end
+    local okM, moving = pcall(function() return p:isPlayerMoving() end)
+    if okM and moving == true then return false end
+    local okZ, z = pcall(function() return p:getStats():getNumChasingZombies() end)
+    if okZ and type(z) == "number" and z > 0 then return false end
+    return true
+end
+
+function Q.retry(job)
+    local cj = job.craft
+    cj.retried = true
+    Craft.releaseBench(cj.p, cj.benchObj)
+    cj.benchObj = nil
+    cj.loadScale = 0.5
+    UI.toast(t("Msg_Retry"), true)
+    local ok, err = pcall(Craft.step, cj)
+    if not ok then
+        CHelp.log("queue retry failed: " .. tostring(err))
+        Q.interrupt(job)
+    end
+end
+
 local idleSince = nil
 Events.OnTick.Add(function()
     local job = Q.running
@@ -247,7 +295,7 @@ Events.OnTick.Add(function()
     if not idleSince then idleSince = ms return end
     if ms - idleSince > 2500 then
         idleSince = nil
-        Q.interrupt(job)
+        if canRetry(job, p) then Q.retry(job) else Q.interrupt(job) end
     end
 end)
 
@@ -329,6 +377,7 @@ function W.drawJob(self, list, d, x, y, w, h)
     T.text(list, T.fit(name, w - 330), tx, sy + 2, K.text, T.FS, a)
     local px = tx + math.min(w - 330, T.tw(name)) + 10
     if j.link then px = px + T.pill(list, px, sy + 1, "Link", K.acc, K.accD, T.FS, { ic = "link" }) + 6 end
+    if j.house then px = px + T.pill(list, px, sy + 1, t("WholeHouseTag"), K.warn, K.warnD) + 6 end
     local stl = j.status == "run" and (Q.paused and t("St_Paused") or t("St_Running")) or t("St_" .. j.status)
     local st = ST[j.status] or ST.wait
     if j.status == "run" and Q.paused then st = { fg = K.warn, bg = K.warnD } end

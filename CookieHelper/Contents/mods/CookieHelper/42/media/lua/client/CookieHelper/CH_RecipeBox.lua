@@ -225,7 +225,25 @@ function P:compute()
         d.skillText = table.concat(parts, ", ")
     end)
     d.outPer = Craft.outPer(r)
-    d.can = d.plan.ok and d.learned and d.skills and ((not d.needsBench) or station ~= nil)
+    d.needsLight = false
+    pcall(function() d.needsLight = not r:canBeDoneInDark() end)
+    d.dark = Craft.tooDark(r, p)
+    if d.surface and not d.needsBench and (not self.stations or #self.stations.surfaces == 0) then
+        local okF, f = pcall(function() return ISEntityUI.FindCraftSurface(p, 2) end)
+        d.noTable = not (okF and f)
+    end
+    d.refill = false
+    for _, rq in ipairs(d.rows) do
+        if rq.uses and not rq.ok then
+            for _, ft in ipairs(rq.fts) do
+                if ft == "Base.BlowTorch" then
+                    d.refill = Craft.refillCovers(logic, r, p)
+                    rq.refill = d.refill
+                end
+            end
+        end
+    end
+    d.can = d.plan.ok and d.learned and d.skills and ((not d.needsBench) or station ~= nil) and not d.noTable
     return d
 end
 
@@ -246,6 +264,9 @@ function P.drawRow(self, list, r, x, y, w, h, hover, sel)
         if not st.learned then line, col = t("St_NotLearned"), K.bad
         elseif not st.skills then line, col = t("St_NoSkill"), K.bad
         elseif st.needsBench and not st.station then line, col = t("St_NeedBench"), K.bad
+        elseif st.noTable then line, col = t("St_NeedTable"), K.bad
+        elseif st.can and st.dark then line, col = t("St_Dark"), K.warn
+        elseif st.can and st.refill then line, col = t("St_Refill"), K.warn
         elseif st.can then line, col = t("St_Can", st.max), K.acc
         else line, col = t("St_Missing"), K.warn end
     end
@@ -359,11 +380,18 @@ function P:prerender()
     elseif d.surface then
         local n = self.stations and #self.stations.surfaces or 0
         if n > 0 then stText, stCol, stPx = t("SurfaceUse", n), K.acc, "table"
+        elseif d.noTable then stText, stCol, stPx = t("TableMissing"), K.bad, "table"
         else stText, stCol, stPx = t("SurfaceNear"), K.warn, "table" end
     end
     if stPx then T.slot(self, x0, y, 24, nil, nil) T.px(self, stPx, x0 + 4, y + 4, 16) end
     T.text(self, T.fit(stText, w - 34), x0 + 32, y + floor((24 - UI.HS) / 2), stCol)
     y = y + 32
+    if d.needsLight then
+        T.slot(self, x0, y, 24, nil, nil)
+        T.icon(self, d.dark and "warn" or "check", x0 + 5, y + 5, 14, d.dark and K.bad or K.acc)
+        T.text(self, T.fit(d.dark and t("LightDark") or t("LightOk"), w - 34), x0 + 32, y + floor((24 - UI.HS) / 2), d.dark and K.bad or K.text2)
+        y = y + 32
+    end
     -- requirements
     T.text(self, t("NeedFor", self.qty), x0, y, K.text2)
     y = y + UI.HS + 6
@@ -376,9 +404,9 @@ function P:prerender()
             y = y + UI.HS + 4
             break
         end
-        local kind = rq.ok and "ok" or "bad"
+        local kind = rq.ok and "ok" or (rq.refill and "link" or "bad")
         local fix, fixCol = nil, nil
-        if not rq.ok then
+        if not rq.ok and not rq.refill then
             for _, st in ipairs(d.plan.steps) do
                 if st.recipe ~= d.r then
                     local o = Craft.mainOutput(st.recipe)
@@ -390,12 +418,14 @@ function P:prerender()
         T.slot(self, x0, y + 4, 40, rq.tex, nil)
         T.badge(self, x0 + 40 - 14, y + 4 + 40 - 14, 18, kind)
         local tx = x0 + 54
-        local right = rq.uses and (rq.ok and t("UsesOk") or t("UsesLow")) or (rq.have .. "/" .. rq.need)
+        local right = rq.uses and (rq.ok and t("UsesOk") or (rq.refill and t("UsesRefill") or t("UsesLow"))) or (rq.have .. "/" .. rq.need)
         local rc = kind == "ok" and K.acc or (kind == "link" and K.warn or K.bad)
         T.textR(self, right, x0 + w, y + 6, rc)
         T.text(self, T.fit(rq.name .. (rq.tool and (" " .. t("ToolTag")) or ""), w - 60 - T.tw(right) - 10), tx, y + 6, K.text)
         local sub, sc = (#rq.boxes > 0) and table.concat(rq.boxes, ", ") or t("NotInZone"), K.text3
-        if not rq.ok then
+        if rq.refill then
+            sub, sc = t("TorchWillRefill"), K.warn
+        elseif not rq.ok then
             if fix then
                 sub = self.link and t("LinkWillMake", Craft.label(fix.recipe), fix.qty) or t("LinkCould", Craft.label(fix.recipe))
                 sc = K.warn
@@ -421,6 +451,7 @@ function P:prerender()
         local info, ic
         if not d.learned then info, ic = t("St_NotLearned"), K.bad
         elseif d.needsBench and not d.station then info, ic = t("BenchMissing"), K.bad
+        elseif d.noTable then info, ic = t("St_NeedTable"), K.bad
         elseif d.can then info, ic = t("EnoughGives", self.qty * d.outPer), K.acc
         elseif d.max > 0 then info, ic = t("OnlyN", d.max), K.warn
         else info, ic = t("CantYet"), K.bad end

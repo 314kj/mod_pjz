@@ -350,7 +350,6 @@ function Count.open(sh, zone)
     Count.instance = win
     Count.open_[win] = true
     win:onQueueChanged()
-    C.mark(zone.x1, zone.y1, zone.x2, zone.y2, zone.z, K.acc[1], K.acc[2], K.acc[3], 0.25, 2500, nil, "zone")
 end
 
 Events.OnContainerUpdate.Add(function()

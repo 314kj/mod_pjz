@@ -565,7 +565,6 @@ local function onFillWorld(playerNum, context, worldobjects, test)
     local here = CHelp.shAt(x, y)
     local hereRole = here and C.roleIn(here, me) or nil
     if here and (hereRole or C.isAdmin()) then
-        C.flash(here)
         local info = C.houseInfo(here)
         local head = sub:addOption(T.fit(here:getTitle(), 220) .. "  ·  " .. C.houseRoleName(hereRole or "admin"), nil, nil)
         head.notAvailable = true
@@ -595,6 +594,14 @@ local function onFillWorld(playerNum, context, worldobjects, test)
 
     if #C.myHouses() > 0 then
         icon(sub:addOption(t("Menu_MyHouses"), nil, function() if CHelp.Houses then CHelp.Houses.open() end end), "px_key")
+        any = true
+    end
+
+    local nAsk = C.pendingAsks()
+    if nAsk > 0 then
+        icon(sub:addOption(t("DockAsks", nAsk), nil, function()
+            for _, w in pairs(C.asks) do w:bringToTop() end
+        end), "px_medkit")
         any = true
     end
 

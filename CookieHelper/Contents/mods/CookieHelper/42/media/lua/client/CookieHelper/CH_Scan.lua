@@ -48,6 +48,25 @@ function Scan.containers(r, z, withVehicles)
     return out, vehicles
 end
 
+-- every box in the whole safehouse, every floor that is loaded (basements too).
+-- Cached for a moment: crafting asks for it before each craft.
+Scan.Z_MIN, Scan.Z_MAX = -3, 8
+local houseCache = {}
+function Scan.house(sh)
+    if not sh then return {} end
+    local key = CHelp.shKey(sh)
+    local now = CHelp.nowMs()
+    local c = houseCache[key]
+    if c and now - c.t < 1500 then return c.out end
+    local r = CHelp.shRect(sh)
+    local out = {}
+    for z = Scan.Z_MIN, Scan.Z_MAX do
+        for _, e in ipairs(Scan.containers(r, z, false)) do out[#out + 1] = e end
+    end
+    houseCache[key] = { t = now, out = out }
+    return out
+end
+
 -- vehicles whose centre is inside rect r on floor z (only asks each square for its vehicle)
 function Scan.vehicles(r, z)
     local out, seen = {}, {}
