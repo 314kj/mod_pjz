@@ -28,6 +28,24 @@ Q.returns = Q.returns or {}   -- tools borrowed by the jobs, given back when the
 
 local function changed() C.emit("queue") end
 
+-- borrowed tools go back to their boxes once nothing else is left to do
+local function giveToolsBack()
+    if #Q.returns == 0 then return end
+    local p = C.player()
+    local list = Q.returns
+    Q.returns = {}
+    if p then pcall(Craft.returnToolList, p, list) end
+end
+
+-- nothing left to wait for or run (even while paused): the tools can go back now
+local function toolsBackIfEmpty()
+    if Q.running then return end
+    for _, j in ipairs(Q.jobs) do
+        if j.status == "wait" or j.status == "run" then return end
+    end
+    giveToolsBack()
+end
+
 -- house = the safehouse: take things from every box in the house, not only the zone.
 -- The craft itself still happens in the zone (its workstations and tables).
 local function zoneFns(zone, house)
@@ -105,6 +123,7 @@ function Q.remove(id)
             table.remove(Q.jobs, i)
             changed()
             if not Q.running then Q.kick() end
+            toolsBackIfEmpty()
             return
         end
     end
@@ -128,6 +147,7 @@ function Q.clearDone()
     for _, j in ipairs(Q.jobs) do if j.status ~= "done" then keep[#keep + 1] = j end end
     Q.jobs = keep
     changed()
+    toolsBackIfEmpty()
 end
 
 function Q.setPaused(v)
@@ -148,14 +168,7 @@ function Q.setLoop(v)
     if Q.loop then Q.kick() end
 end
 
--- borrowed tools go back to their boxes once nothing else is left to do
-local function giveToolsBack()
-    if #Q.returns == 0 then return end
-    local p = C.player()
-    local list = Q.returns
-    Q.returns = {}
-    if p then pcall(Craft.returnToolList, p, list) end
-end
+
 
 local function finish(job, status, why)
     job.status = status

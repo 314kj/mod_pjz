@@ -329,10 +329,11 @@ function P:onMouseDown(x, y)
             return true
         end
     end
-    return false
+    return true      -- the panel keeps its clicks (the window must not start dragging)
 end
 
 function P:prerender()
+    self.hits = {}
     -- the player changed which items a recipe may use: every answer is stale
     if self.inputsGen ~= CHelp.Inputs.gen then
         self.inputsGen = CHelp.Inputs.gen

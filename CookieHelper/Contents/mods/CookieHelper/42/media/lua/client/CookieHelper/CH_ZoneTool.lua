@@ -113,7 +113,8 @@ end
 function W:startPicking()
     self.ax, self.ay, self.bx, self.by = nil, nil, nil, nil
     local p = C.player()
-    if p then self.sz = floor(p:getZ()) end
+    -- every part of a zone is on one floor: the floor is fixed once the first part is kept
+    if p and #(self.parts or {}) == 0 then self.sz = floor(p:getZ()) end
     if not self.picker then
         self.picker = Pick:new(self)
         self.picker:initialise()

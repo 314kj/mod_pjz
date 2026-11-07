@@ -693,31 +693,62 @@ local function stationsOf(job)
     return ok and s or nil
 end
 
+-- queue taking the pile's items (still on the floor around us) into the bag, as far as they fit.
+-- The pile is only forgotten once Craft.prunePile (queued after) sees nothing of it left here.
+local function queuePileTake(p, ids)
+    pcall(function() getPlayerLoot(p:getPlayerNum()):refreshBackpacks() end)
+    local floorC = ISInventoryPage.GetFloorContainer(p:getPlayerNum())
+    local inv = p:getInventory()
+    local free = Craft.freeCapacity(p)
+    local added = false
+    for _, id in ipairs(ids or {}) do
+        local it = floorC:getItemWithID(id)
+        if it and it:getUnequippedWeight() <= free then
+            free = free - it:getUnequippedWeight()
+            ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, floorC, inv))
+            added = true
+        end
+    end
+    return added
+end
+
+-- keep only what of the pile still lies here (an interrupted pick-up keeps the rest remembered)
+function Craft.prunePile(p)
+    local pl = Craft.pile
+    if not pl then return end
+    if not Craft.nearSq(p, getCell():getGridSquare(pl.x, pl.y, pl.z), 1.6) then return end
+    pcall(function()
+        getPlayerLoot(p:getPlayerNum()):refreshBackpacks()
+        local floorC = ISInventoryPage.GetFloorContainer(p:getPlayerNum())
+        local ids, fts = {}, {}
+        for _, id in ipairs(pl.ids or {}) do
+            local it = floorC:getItemWithID(id)
+            if it then
+                ids[#ids + 1] = id
+                fts[it:getFullType()] = (fts[it:getFullType()] or 0) + 1
+            end
+        end
+        if #ids == 0 then Craft.pile = nil else pl.ids, pl.fts = ids, fts end
+    end)
+end
+
 -- go back to an interrupted pile and pick it up before planning again
 function Craft.pickPile(p, job)
     if job.dead then return end
     local ok, err = pcall(function()
-        local pl = Craft.pile
-        Craft.pile = nil
-        if pl then
-            pcall(function() getPlayerLoot(p:getPlayerNum()):refreshBackpacks() end)
-            local floorC = ISInventoryPage.GetFloorContainer(p:getPlayerNum())
-            local inv = p:getInventory()
-            local free = Craft.freeCapacity(p)
-            for _, id in ipairs(pl.ids) do
-                local it = floorC:getItemWithID(id)
-                if it and it:getUnequippedWeight() <= free then
-                    free = free - it:getUnequippedWeight()
-                    ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, floorC, inv))
-                end
-            end
-        end
-        ISTimedActionQueue.queueActions(p, Craft.queuedStep, job)
+        if Craft.pile then queuePileTake(p, Craft.pile.ids) end
+        ISTimedActionQueue.queueActions(p, Craft.pileThenStep, job)
     end)
     if not ok then
         CHelp.log("pick pile failed: " .. tostring(err))
         fail(job, "Msg_CantCraft")
     end
+end
+
+function Craft.pileThenStep(p, job)
+    if job.dead then return end
+    Craft.prunePile(p)
+    Craft.queuedStep(p, job)
 end
 
 function Craft.queuedStep(p, job)
@@ -737,14 +768,14 @@ function Craft.step(job)
         job.pileTried = true
         local pl = Craft.pile
         local sq = getCell():getGridSquare(pl.x, pl.y, pl.z)
-        -- a pile from some other workshop far away is not this job's business
-        if sq and (pl.z ~= floor(p:getZ()) or math.abs(pl.x - p:getX()) > 40 or math.abs(pl.y - p:getY()) > 40) then sq = nil end
-        if sq then
+        -- a pile from some other workshop far away is not this job's business (it stays remembered)
+        local far = sq and (pl.z ~= floor(p:getZ()) or math.abs(pl.x - p:getX()) > 40 or math.abs(pl.y - p:getY()) > 40)
+        if sq and not far then
             if not Craft.nearSq(p, sq, 0.6) then ISTimedActionQueue.add(ISWalkToTimedAction:new(p, sq)) end
             ISTimedActionQueue.queueActions(p, Craft.pickPile, job)
             return
         end
-        Craft.pile = nil
+        if not sq then Craft.pile = nil end
     end
     local entries = job.entriesFn and job.entriesFn() or {}
     local cont = Craft.planContainers(p, entries)
@@ -855,11 +886,19 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
             if seen[it:getID()] then isKeep[it] = true end
         end
     end
+    -- things on the floor around us come first (the floor list changes once we walk off)
     local ordered = {}
+    for _, g in ipairs(route) do
+        if not g.stand then
+            for _, it in ipairs(g.items) do ordered[#ordered + 1] = { it = it, g = g, here = true } end
+        end
+    end
     for pass = 1, 2 do
         for _, g in ipairs(route) do
-            for _, it in ipairs(g.items) do
-                if (pass == 1) ~= (isKeep[it] == true) then ordered[#ordered + 1] = { it = it, g = g } end
+            if g.stand then
+                for _, it in ipairs(g.items) do
+                    if (pass == 1) ~= (isKeep[it] == true) then ordered[#ordered + 1] = { it = it, g = g } end
+                end
             end
         end
     end
@@ -878,7 +917,7 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
             end
             return fail(job, "Msg_TooHeavy")
         end
-        if #cur > 0 and curW + w > room then
+        if #cur > 0 and curW + w > room and not (e.here and #trips == 0) then
             trips[#trips + 1] = cur
             cur, curW = {}, 0
         end
@@ -1050,21 +1089,15 @@ local function deferredCraftInner(p, ctx)
     end
     if not ctx.picked then
         ctx.picked = true
-        local added = false
-        pcall(function() getPlayerLoot(p:getPlayerNum()):refreshBackpacks() end)
-        if #(ctx.dropped or {}) > 0 then
-            local floorC = ISInventoryPage.GetFloorContainer(p:getPlayerNum())
-            local free = Craft.freeCapacity(p)
-            for _, id in ipairs(ctx.dropped) do
-                local it = floorC:getItemWithID(id)
-                if it and it:getUnequippedWeight() <= free then
-                    free = free - it:getUnequippedWeight()
-                    ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, floorC, inv))
-                    added = true
-                end
-            end
+        if #(ctx.dropped or {}) > 0 and queuePileTake(p, ctx.dropped) then
+            ISTimedActionQueue.queueActions(p, Craft.deferredCraft, ctx)
+            return
         end
-        Craft.pile = nil
+    end
+    if not ctx.wore then
+        ctx.wore = true
+        Craft.prunePile(p)
+        local added = false
         for _, id in ipairs(ctx.wear or {}) do
             local it = inv:getItemWithIDRecursiv(id)
             if it and not p:isEquippedClothing(it) then
@@ -1143,6 +1176,7 @@ function Craft.afterCraft(p, ctx)
         job.retried = false
         job.madeRoom = false
         job.pileTried = false
+        Craft.prunePile(p)
         if job.onProgress then pcall(job.onProgress, job.total - job.left, job.total) end
         -- carrying too much: put what was made away before going on
         if Craft.overloaded(p) and Craft.stashOutputs(job, Craft.afterStash, job) then return end
@@ -1212,8 +1246,16 @@ function Craft.stashOutputs(job, fn, arg)
     local best, bd = nil, nil
     local entries = job.entriesFn and job.entriesFn() or {}
     for _, e in ipairs(entries) do
-        if not e.veh and e.c then
-            local okR, room = pcall(function() return e.c:hasRoomFor(p, total) end)
+        local okT, ty = pcall(function() return e.c and e.c:getType() end)
+        local sameFloor = e.sq and e.sq:getZ() == floor(p:getZ())
+        if not e.veh and e.c and sameFloor and not (okT and ty == "floor") then
+            local okR, room = pcall(function()
+                if not e.c:hasRoomFor(p, total) then return false end
+                for _, it in ipairs(made) do
+                    if not e.c:isItemAllowed(it) then return false end
+                end
+                return true
+            end)
             if okR and room then
                 local stand = standFor(p, e.c)
                 if stand then
