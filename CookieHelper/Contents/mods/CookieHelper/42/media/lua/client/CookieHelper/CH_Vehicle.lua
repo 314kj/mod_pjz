@@ -278,7 +278,7 @@ end
 function W:playerInZone()
     local p = C.player()
     if not p or floor(p:getZ()) ~= self.zone.z then return false end
-    return CHelp.rectHas(self.zone, floor(p:getX()), floor(p:getY()), 1)
+    return CHelp.zoneHas(self.zone, floor(p:getX()), floor(p:getY()), 1)
 end
 
 -- the parked car of the selected model (nil = just browsing a model)

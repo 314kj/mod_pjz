@@ -173,7 +173,9 @@ function W:drawZoneCard(z, r, hov)
     local veh = z.kind == CHelp.ZONE_VEHICLE
     T.slot(self, x + 14, y + 14, 44, nil, veh and "car" or "crate")
     T.text(self, T.fit(z.name, w - 80), x + 70, y + 16, K.text)
-    T.text(self, T.fit(t("ZoneMeta", z.x2 - z.x1, z.y2 - z.y1, z.z), w - 80), x + 70, y + 18 + UI.HS, K.text3)
+    local meta = (z.parts and #z.parts > 0) and t("ZoneMetaParts", CHelp.zoneTiles(z), #z.parts + 1, z.z)
+        or t("ZoneMeta", z.x2 - z.x1, z.y2 - z.y1, z.z)
+    T.text(self, T.fit(meta, w - 80), x + 70, y + 18 + UI.HS, K.text3)
     local inf = self.info[z.id]
     local ny = y + 70
     if inf then
@@ -299,7 +301,10 @@ function W:onRedraw(z)
 end
 
 function W:onShow(z)
-    C.mark(z.x1, z.y1, z.x2, z.y2, z.z, K.acc[1], K.acc[2], K.acc[3], 0.35, 4000, z.name, "zone")
+    C.clearMarks("zone")
+    for i, r in ipairs(CHelp.zoneRects(z)) do
+        C.mark(r.x1, r.y1, r.x2, r.y2, z.z, K.acc[1], K.acc[2], K.acc[3], 0.35, 4000, i == 1 and z.name or nil, "zone")
+    end
 end
 
 function W:onDelete(z)

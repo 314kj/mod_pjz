@@ -4,8 +4,8 @@
 -- runs on the client that asked for it, in small slices, and only while it is needed.
 
 CHelp = CHelp or {}
-CHelp.VERSION = "1.2.0"
-CHelp.BUILD = "chp-261104-v12a"
+CHelp.VERSION = "1.3.0"
+CHelp.BUILD = "chp-261107-v13a"
 CHelp.NET = "CookieHelper"
 
 CHelp.ROLE_DOCTOR = "doctor"
@@ -210,6 +210,38 @@ end
 function CHelp.rectHas(r, x, y, margin)
     margin = margin or 0
     return x >= r.x1 - margin and x < r.x2 + margin and y >= r.y1 - margin and y < r.y2 + margin
+end
+
+-- a zone is one rectangle (x1..y2) plus, for L / Z shapes or two rooms, extra ones in z.parts
+CHelp.ZONE_MAX_PARTS = 4
+function CHelp.zoneRects(z)
+    if not z.parts or #z.parts == 0 then return { z } end
+    local out = { z }
+    for _, r in ipairs(z.parts) do out[#out + 1] = r end
+    return out
+end
+
+function CHelp.zoneHas(z, x, y, margin)
+    for _, r in ipairs(CHelp.zoneRects(z)) do
+        if CHelp.rectHas(r, x, y, margin) then return true end
+    end
+    return false
+end
+
+-- number of tiles (overlapping parts counted once)
+function CHelp.zoneTiles(z)
+    local rects = CHelp.zoneRects(z)
+    if #rects == 1 then return (z.x2 - z.x1) * (z.y2 - z.y1) end
+    local seen, n = {}, 0
+    for _, r in ipairs(rects) do
+        for x = r.x1, r.x2 - 1 do
+            for y = r.y1, r.y2 - 1 do
+                local k = x .. "," .. y
+                if not seen[k] then seen[k] = true n = n + 1 end
+            end
+        end
+    end
+    return n
 end
 
 function CHelp.shRect(sh)

@@ -523,10 +523,28 @@ function H.zoneAdd(p, user, args)
         x1 = math.floor(tonumber(args.x1) or 0), y1 = math.floor(tonumber(args.y1) or 0),
         x2 = math.floor(tonumber(args.x2) or 0), y2 = math.floor(tonumber(args.y2) or 0),
     }
-    if r.x2 <= r.x1 or r.y2 <= r.y1 then return msg(p, "ZoneBad") end
+    -- extra rectangles for L / Z shapes (each one checked like the first)
+    local parts = {}
+    if type(args.parts) == "table" then
+        for i, a in ipairs(args.parts) do
+            if i >= CHelp.ZONE_MAX_PARTS then break end
+            if type(a) == "table" then
+                parts[#parts + 1] = {
+                    x1 = math.floor(tonumber(a.x1) or 0), y1 = math.floor(tonumber(a.y1) or 0),
+                    x2 = math.floor(tonumber(a.x2) or 0), y2 = math.floor(tonumber(a.y2) or 0),
+                }
+            end
+        end
+    end
     local side = CHelp.svInt("MaxZoneSide", 2, 200)
-    if r.x2 - r.x1 > side or r.y2 - r.y1 > side then return msg(p, "ZoneTooBig", side) end
-    if not CHelp.rectInside(r, CHelp.shRect(sh)) then return msg(p, "ZoneOutside") end
+    local shr = CHelp.shRect(sh)
+    local all = { r }
+    for _, pr in ipairs(parts) do all[#all + 1] = pr end
+    for _, rr in ipairs(all) do
+        if rr.x2 <= rr.x1 or rr.y2 <= rr.y1 then return msg(p, "ZoneBad") end
+        if rr.x2 - rr.x1 > side or rr.y2 - rr.y1 > side then return msg(p, "ZoneTooBig", side) end
+        if not CHelp.rectInside(rr, shr) then return msg(p, "ZoneOutside") end
+    end
     local key = CHelp.shKey(sh)
     local list = data().zones[key] or {}
     local limit = kind == CHelp.ZONE_VEHICLE and CHelp.svInt("VehicleZonesPerSafehouse", 0, 20)
@@ -544,6 +562,7 @@ function H.zoneAdd(p, user, args)
         id = slot and list[slot].id or nil, kind = kind,
         name = cleanName(args.name, (kind == CHelp.ZONE_VEHICLE and "Garage " or "Workshop ") .. tostring(have + 1)),
         x1 = r.x1, y1 = r.y1, x2 = r.x2, y2 = r.y2, z = math.floor(tonumber(args.z) or 0), by = user,
+        parts = (#parts > 0) and parts or nil,
     }
     if slot then
         list[slot] = z

@@ -321,7 +321,25 @@ function P:drawLinkCard(b, w, h, hov)
     T.textR(b, self.link and t("On") or t("Off"), w - 14, floor((h - UI.HS) / 2), self.link and K.acc or K.text2)
 end
 
+-- the "pick items" chip of an ingredient row opens the picker
+function P:onMouseDown(x, y)
+    for _, hb in ipairs(self.hits or {}) do
+        if x >= hb.x and x < hb.x + hb.w and y >= hb.y and y < hb.y + hb.h then
+            CHelp.InputPick.open(hb.r, hb.rq.idx, hb.rq.allFts, self.counts)
+            return true
+        end
+    end
+    return false
+end
+
 function P:prerender()
+    -- the player changed which items a recipe may use: every answer is stale
+    if self.inputsGen ~= CHelp.Inputs.gen then
+        self.inputsGen = CHelp.Inputs.gen
+        self.gen = self.gen + 1
+        self.queue, self.queued = {}, {}
+        self.detail = nil
+    end
     -- refresh the search at most a few times a second
     if self.searchDirty and CHelp.nowMs() - self.searchDirty > 250 then
         self.searchDirty = nil
@@ -396,6 +414,7 @@ function P:prerender()
     T.text(self, t("NeedFor", self.qty), x0, y, K.text2)
     y = y + UI.HS + 6
     local rowH = 50
+    self.hits = {}
     local room = (self.reqBottom or (self.height - 200)) - y - (UI.HS + 10)
     local maxRows = math.max(1, floor(room / rowH))
     for i, rq in ipairs(d.rows) do
@@ -432,7 +451,16 @@ function P:prerender()
             elseif rq.tool then sub, sc = t("NoToolMake"), K.bad
             else sub, sc = t("NoRecipeHere"), K.bad end
         end
-        T.text(self, T.fit(sub, w - 60), tx, y + 8 + UI.HS, sc)
+        -- several items fit this slot: a chip to pick which ones (and in what order)
+        local chipW = 0
+        if rq.allFts and #rq.allFts > 1 then
+            local label = t("InputsChip", #rq.fts, #rq.allFts)
+            chipW = T.pillW(label, T.FS, { ic = "list" }) + 4
+            local cx, cy = x0 + w - chipW, y + 6 + UI.HS
+            T.pill(self, cx, cy, label, rq.custom and K.warn or K.text2, rq.custom and K.warnD or K.surf2, T.FS, { ic = "list" })
+            self.hits[#self.hits + 1] = { x = cx, y = cy, w = chipW, h = UI.HS + 6, r = d.r, rq = rq }
+        end
+        T.text(self, T.fit(sub, w - 60 - chipW), tx, y + 8 + UI.HS, sc)
         if i < #d.rows and i < maxRows then T.rect(self, x0, y + rowH - 1, w, 1, K.text, 0.06) end
         y = y + rowH
     end

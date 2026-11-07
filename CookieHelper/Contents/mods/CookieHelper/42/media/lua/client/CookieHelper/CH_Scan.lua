@@ -7,35 +7,48 @@ CHelp.Scan = CHelp.Scan or {}
 local Scan = CHelp.Scan
 local floor = math.floor
 
--- every container that stands inside rect r on floor z.
--- returns { { c = ItemContainer, sq = IsoGridSquare, veh = BaseVehicle|nil }, ... }, vehicles
-function Scan.containers(r, z, withVehicles)
-    local out, vehicles, seenVeh = {}, {}, {}
+-- every square of a zone (all its parts, each square once) on floor z
+function Scan.eachSquare(r, z, fn)
     local cell = getCell()
-    if not cell then return out, vehicles end
-    for x = r.x1, r.x2 - 1 do
-        for y = r.y1, r.y2 - 1 do
-            local sq = cell:getGridSquare(x, y, z)
-            if sq then
-                local objs = sq:getObjects()
-                for i = 0, objs:size() - 1 do
-                    local o = objs:get(i)
-                    local n = o:getContainerCount()
-                    for k = 0, n - 1 do
-                        local c = o:getContainerByIndex(k)
-                        if c then out[#out + 1] = { c = c, sq = sq } end
-                    end
-                end
-                if withVehicles then
-                    local v = sq:getVehicleContainer()
-                    if v and not seenVeh[v] then
-                        seenVeh[v] = true
-                        vehicles[#vehicles + 1] = v
-                    end
+    if not cell or not r then return end
+    local rects = CHelp.zoneRects(r)
+    local seen = (#rects > 1) and {} or nil
+    for _, rr in ipairs(rects) do
+        for x = rr.x1, rr.x2 - 1 do
+            for y = rr.y1, rr.y2 - 1 do
+                local key = seen and (x .. "," .. y) or nil
+                if not key or not seen[key] then
+                    if key then seen[key] = true end
+                    local sq = cell:getGridSquare(x, y, z)
+                    if sq then fn(sq, x, y) end
                 end
             end
         end
     end
+end
+
+-- every container that stands inside zone r on floor z.
+-- returns { { c = ItemContainer, sq = IsoGridSquare, veh = BaseVehicle|nil }, ... }, vehicles
+function Scan.containers(r, z, withVehicles)
+    local out, vehicles, seenVeh = {}, {}, {}
+    Scan.eachSquare(r, z, function(sq)
+        local objs = sq:getObjects()
+        for i = 0, objs:size() - 1 do
+            local o = objs:get(i)
+            local n = o:getContainerCount()
+            for k = 0, n - 1 do
+                local c = o:getContainerByIndex(k)
+                if c then out[#out + 1] = { c = c, sq = sq } end
+            end
+        end
+        if withVehicles then
+            local v = sq:getVehicleContainer()
+            if v and not seenVeh[v] then
+                seenVeh[v] = true
+                vehicles[#vehicles + 1] = v
+            end
+        end
+    end)
     if withVehicles then
         for _, v in ipairs(vehicles) do
             for i = 0, v:getPartCount() - 1 do
@@ -70,18 +83,13 @@ end
 -- vehicles whose centre is inside rect r on floor z (only asks each square for its vehicle)
 function Scan.vehicles(r, z)
     local out, seen = {}, {}
-    local cell = getCell()
-    if not cell then return out end
-    for x = r.x1, r.x2 - 1 do
-        for y = r.y1, r.y2 - 1 do
-            local sq = cell:getGridSquare(x, y, z)
-            local v = sq and sq:getVehicleContainer()
-            if v and not seen[v] then
-                seen[v] = true
-                if floor(v:getZ()) == z and CHelp.rectHas(r, floor(v:getX()), floor(v:getY())) then out[#out + 1] = v end
-            end
+    Scan.eachSquare(r, z, function(sq)
+        local v = sq:getVehicleContainer()
+        if v and not seen[v] then
+            seen[v] = true
+            if floor(v:getZ()) == z and CHelp.zoneHas(r, floor(v:getX()), floor(v:getY())) then out[#out + 1] = v end
         end
-    end
+    end)
     return out
 end
 
@@ -220,13 +228,9 @@ end
 
 function Scan.stations(r, z)
     local out = { benches = {}, machines = {}, surfaces = {} }
-    local cell = getCell()
-    if not cell or not r then return out end
+    if not r then return out end
     local seen = {}
-    for x = r.x1, r.x2 - 1 do
-        for y = r.y1, r.y2 - 1 do
-            local sq = cell:getGridSquare(x, y, z)
-            if sq then
+    Scan.eachSquare(r, z, function(sq, x, y)
                 local objs = sq:getObjects()
                 for i = 1, objs:size() - 1 do
                     local o = objs:get(i)
@@ -256,9 +260,7 @@ function Scan.stations(r, z)
                         end
                     end
                 end
-            end
-        end
-    end
+    end)
     return out
 end
 

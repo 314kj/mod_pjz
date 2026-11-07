@@ -22,6 +22,9 @@ Q.jobs = Q.jobs or {}
 Q.seq = Q.seq or 0
 Q.paused = Q.paused or false
 Q.policy = Q.policy or "skip"
+Q.loop = Q.loop or false      -- run the whole list again when it is done (until something runs out)
+Q.round = Q.round or 1
+Q.returns = Q.returns or {}   -- tools borrowed by the jobs, given back when the queue runs dry
 
 local function changed() C.emit("queue") end
 
@@ -62,7 +65,7 @@ Q.zoneFns = zoneFns
 local function inZone(zone)
     local p = C.player()
     if not p or floor(p:getZ()) ~= zone.z then return false end
-    return CHelp.rectHas(zone, floor(p:getX()), floor(p:getY()), 2)
+    return CHelp.zoneHas(zone, floor(p:getX()), floor(p:getY()), 2)
 end
 
 function Q.count()
@@ -79,7 +82,7 @@ function Q.add(spec)
     local entries, stations = zoneFns(spec.zone, spec.house)
     local counts = Craft.countAll(p, entries())
     local plan = Craft.plan({ p = p, counts = counts, stations = stations(), link = spec.link }, spec.recipe, spec.qty)
-    local job = { id = Q.seq, recipe = spec.recipe, qty = math.max(1, spec.qty or 1), link = spec.link == true,
+    local job = { id = Q.seq, recipe = spec.recipe, qty = math.max(1, spec.qty or 1), qty0 = math.max(1, spec.qty or 1), link = spec.link == true,
         zone = spec.zone, zoneName = spec.zoneName or spec.zone.name or "", status = "wait", steps = plan.steps, stepIdx = 0,
         done = 0, why = nil, stepDone = 0, house = spec.house }
     Q.jobs[#Q.jobs + 1] = job
@@ -101,6 +104,7 @@ function Q.remove(id)
             end
             table.remove(Q.jobs, i)
             changed()
+            if not Q.running then Q.kick() end
             return
         end
     end
@@ -137,6 +141,22 @@ function Q.setPolicy(v)
     changed()
 end
 
+function Q.setLoop(v)
+    Q.loop = v == true
+    if Q.loop then Q.round = 1 end
+    changed()
+    if Q.loop then Q.kick() end
+end
+
+-- borrowed tools go back to their boxes once nothing else is left to do
+local function giveToolsBack()
+    if #Q.returns == 0 then return end
+    local p = C.player()
+    local list = Q.returns
+    Q.returns = {}
+    if p then pcall(Craft.returnToolList, p, list) end
+end
+
 local function finish(job, status, why)
     job.status = status
     job.why = why
@@ -152,12 +172,42 @@ function Q.kick()
             return
         end
     end
+    -- loop: every job is done -> the next round starts with the same list
+    if Q.loop then
+        local again = false
+        for _, j in ipairs(Q.jobs) do
+            if j.status == "done" then
+                j.status, j.qty, j.done, j.why, j.stepIdx, j.stepDone = "wait", j.qty0 or j.qty, 0, nil, 0, 0
+                again = true
+            end
+        end
+        if again then
+            Q.round = Q.round + 1
+            changed()
+            for _, j in ipairs(Q.jobs) do
+                if j.status == "wait" then
+                    Q.runJob(j)
+                    return
+                end
+            end
+        end
+    end
+    giveToolsBack()
 end
 
 local function warn(job, why)
     finish(job, "warn", why)
+    if Q.loop then
+        -- a loop never spins on something it cannot make: stop and say why
+        Q.paused = true
+        UI.toast(t("Msg_LoopStopped", why or ""), false)
+        changed()
+        giveToolsBack()
+        return
+    end
     if Q.policy == "stop" then
         Q.paused = true
+        giveToolsBack()
         UI.toast(t("Msg_QueueStopped", Craft.label(job.recipe)), false)
         changed()
     else
@@ -204,7 +254,7 @@ function Q.nextStep(job, entries, stations)
     changed()
     local isMain = job.stepIdx == #job.steps
     local okS, cj = pcall(Craft.start, C.player(), step.recipe, step.qty, entries, {
-        force = true, quiet = true, stationsFn = stations,
+        force = true, quiet = true, stationsFn = stations, keepTools = true, returns = Q.returns,
         stopCheck = function() return Q.paused or job.cancel == true end,
         onProgress = function(n)
             job.stepDone = n
@@ -353,6 +403,14 @@ function W:createChildren()
     end
     self.policy = UI.tabs(self, UI.PAD + T.tw(t("IfMissing")) + 12, self.height - fh + 10,
         { { id = "skip", label = t("PolicySkip") }, { id = "stop", label = t("PolicyStop") } }, Q.policy, self, W.onPolicy)
+    local lw = 64 + T.tw(t("LoopLabel")) + 16
+    self.loopBtn = UI.button(self, self.width - UI.PAD - lw, self.policy:getY(), lw, "", self, W.onLoop, "sec", self.policy.height)
+    self.loopBtn.drawFn = function(b, bw, bh, hov)
+        T.rrect(b, 0, 0, bw, bh, UI.RC, Q.loop and K.accD or (hov and K.surf3 or K.surf2))
+        UI.drawSwitch(b, 10, floor((bh - 22) / 2), Q.loop)
+        T.text(b, t("LoopLabel"), 60, floor((bh - UI.HS) / 2), Q.loop and K.acc or K.text2)
+    end
+    self.loopBtn.tooltip = t("LoopTip")
     C.on("queue", self, W.fill)
     self:fill()
 end
@@ -456,6 +514,7 @@ function W:drawBody()
     if run then
         local step = run.steps[run.stepIdx]
         txt = (Q.paused and t("Q_PausedAt") or t("Q_Now")) .. "  " .. Craft.label(run.recipe) .. "  " .. tostring(run.done) .. "/" .. tostring(run.qty)
+        if Q.loop then txt = txt .. "  ·  " .. t("LoopRound", Q.round) end
         col = Q.paused and K.warn or K.acc
         local total, doneN = 0, 0
         for i, s in ipairs(run.steps) do
@@ -483,6 +542,7 @@ end
 function W:onPause() Q.setPaused(not Q.paused) end
 function W:onClear() Q.clearDone() end
 function W:onPolicy(id) Q.setPolicy(id) end
+function W:onLoop() Q.setLoop(not Q.loop) end
 
 function Q.open()
     if Q.instance then Q.instance:bringToTop() return Q.instance end

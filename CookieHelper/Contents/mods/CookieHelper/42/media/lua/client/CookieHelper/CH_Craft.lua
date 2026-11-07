@@ -11,6 +11,7 @@ require "TimedActions/ISTimedActionQueue"
 require "TimedActions/ISInventoryTransferUtil"
 require "CookieHelper/CH_Scan"
 require "CookieHelper/CH_UI"
+require "CookieHelper/CH_Inputs"
 
 CHelp.Craft = CHelp.Craft or {}
 local Craft = CHelp.Craft
@@ -184,12 +185,30 @@ function Craft.countWithBag(p, zoneMap)
     return Scan.merge(zoneMap, bag)
 end
 
+-- everything a plan may use: the bag, the floor right around the character (what a craft just
+-- put down), the zone boxes and a pile left by an interrupted run (the craft goes back for it)
 function Craft.countAll(p, entries)
     local all = {}
     local inv = p and p:getInventory()
     if inv then all[#all + 1] = { c = inv, label = t("YourBag") } end
+    pcall(function()
+        local pc = ISInventoryPaneContextMenu.getContainers(p)
+        for i = 0, pc:size() - 1 do
+            local c = pc:get(i)
+            if c:getType() == "floor" then all[#all + 1] = { c = c, label = t("FloorHere") } end
+        end
+    end)
     for _, e in ipairs(entries or {}) do all[#all + 1] = e end
-    return Scan.count(all)
+    local counts = Scan.count(all)
+    local pl = Craft.pile
+    if pl and pl.fts and not Craft.nearSq(p, getCell():getGridSquare(pl.x, pl.y, pl.z), 1.6) then
+        local pileMap = {}
+        for ft, n in pairs(pl.fts) do
+            pileMap[ft] = { ft = ft, n = n, name = Scan.itemName(ft), tex = Scan.itemTex(ft), cat = "", boxes = { t("PileLabel") }, boxSeen = {} }
+        end
+        counts = Scan.merge(counts, pileMap)
+    end
+    return counts
 end
 
 -- every logic the mod builds runs in the same mode as the game's crafting window: "manual inputs"
@@ -202,10 +221,12 @@ function Craft.makeLogic(p, bench, obj)
 end
 
 -- setRecipe also stores the vanilla crafting window's "last recipe": keep the player's own choice
+-- the player's item choices (CH_Inputs) are applied right after, so every check and craft uses them
 function Craft.setRecipe(logic, r)
     local okL, last = pcall(function() return logic:getLastSelectedRecipe() end)
     logic:setRecipe(r)
     if okL and last and last ~= r then pcall(function() logic:setLastSelectedRecipe(last) end) end
+    CHelp.Inputs.apply(logic, r)
 end
 
 function Craft.isSurface(r)
@@ -331,6 +352,7 @@ local function amount(input)
     local ok, v = pcall(function() return input:getIntAmount() end)
     return math.max(1, (ok and v) or 1)
 end
+Craft.inputAmount = amount
 
 local function countMode(input)
     local ok, v = pcall(function() return input:isItemCount() end)
@@ -344,6 +366,7 @@ local function countMode(input)
     end
     return true
 end
+Craft.inputCountMode = countMode
 
 function Craft.requirements(r, qty, counts, logic)
     local rows = {}
@@ -352,7 +375,8 @@ function Craft.requirements(r, qty, counts, logic)
     for i = 0, ins:size() - 1 do
         local input = ins:get(i)
         if isItemInput(input) then
-            local fts = inputItems(input)
+            local allFts = inputItems(input)
+            local fts = CHelp.Inputs.allowed(r, i, allFts)
             local tool = isTool(input)
             local cm = countMode(input)
             local need = tool and 1 or (amount(input) * qty)
@@ -374,6 +398,7 @@ function Craft.requirements(r, qty, counts, logic)
             local row = {
                 input = input, fts = fts, ft = ft0, name = ft0 and Scan.itemName(ft0) or "?", tex = ft0 and Scan.itemTex(ft0) or nil,
                 tool = tool, uses = not cm, need = need, have = have, boxes = boxes,
+                idx = i, allFts = allFts, custom = CHelp.Inputs.isCustom(r, i, allFts),
             }
             if cm then row.ok = have >= need else row.ok = ok1 end
             if tool then row.ok = have >= 1 end
@@ -426,7 +451,7 @@ local function planInner(ctx, r, qty, depth, path)
     for i = 0, ins:size() - 1 do
         local input = ins:get(i)
         if isItemInput(input) and countMode(input) then
-            local fts = inputItems(input)
+            local fts = CHelp.Inputs.allowed(r, i, inputItems(input))
             local tool = isTool(input)
             local need = tool and 1 or (amount(input) * qty)
             local have = 0
@@ -530,20 +555,103 @@ local function boxSquare(c)
     return sq, false
 end
 
+local function standable(sq)
+    if not sq then return false end
+    local ok, res = pcall(function()
+        if not sq:TreatAsSolidFloor() then return false end
+        if sq:isSolid() or sq:isSolidTrans() then return false end
+        return true
+    end)
+    return ok and res == true
+end
+
+-- the character is (about) on / next to sq
+function Craft.nearSq(p, sq, dist)
+    if not sq then return false end
+    dist = dist or 1.6
+    if floor(p:getZ()) ~= sq:getZ() then return false end
+    return math.abs(sq:getX() + 0.5 - p:getX()) <= dist and math.abs(sq:getY() + 0.5 - p:getY()) <= dist
+end
+
+-- a free tile touching sq with no wall in between. The game's finder first (it also skips tiles
+-- by windows and low fences); when it finds none, any standable neighbour that reaches sq. The
+-- nearest one wins - the walk itself finds the way round through other rooms.
+function Craft.adjacentStand(p, sq)
+    if not sq then return nil end
+    local okA, adj = pcall(function() return AdjacentFreeTileFinder.Find(sq, p) end)
+    if okA and adj then return adj end
+    local best, bd = nil, nil
+    local cell = getCell()
+    for dx = -1, 1 do
+        for dy = -1, 1 do
+            if dx ~= 0 or dy ~= 0 then
+                local nb = cell:getGridSquare(sq:getX() + dx, sq:getY() + dy, sq:getZ())
+                if standable(nb) then
+                    local okR, reach = pcall(function() return nb:canReachTo(sq) end)
+                    if okR and reach then
+                        local ddx, ddy = nb:getX() + 0.5 - p:getX(), nb:getY() + 0.5 - p:getY()
+                        local d = ddx * ddx + ddy * ddy
+                        if not bd or d < bd then best, bd = nb, d end
+                    end
+                end
+            end
+        end
+    end
+    return best
+end
+
 -- adjacent free tile for a box, or false when it cannot be reached
 local function standFor(p, c)
     local sq, noWalk = boxSquare(c)
     if noWalk then return nil end
     if not sq then return false end
-    local adj = AdjacentFreeTileFinder.Find(sq, p)
+    local adj = Craft.adjacentStand(p, sq)
     if not adj then return false end
     return adj
 end
 Craft.standFor = standFor
 
+-- weight the character can still pick up before the heavy-load moodle
+function Craft.carryRoom(p)
+    local ok, v = pcall(function() return p:getMaxWeight() - p:getInventoryWeight() end)
+    if not ok or not v then return 1000 end
+    return math.max(0.5, v)
+end
+
+-- weight that still fits in the main inventory at all
+function Craft.freeCapacity(p)
+    local inv = p:getInventory()
+    local ok, v = pcall(function() return inv:getEffectiveCapacity(p) - inv:getCapacityWeight() end)
+    if ok and type(v) == "number" then return v end
+    return 1000
+end
+
+function Craft.overloaded(p)
+    local ok, v = pcall(function() return p:getInventoryWeight() > p:getMaxWeight() end)
+    return ok and v == true
+end
+
 -- ------------------------------------------------------------------ the job
 -- job = { p, recipe, left, entriesFn, stationsFn, returns, refilled, onDone, onFail, onProgress }
 -- items are tracked by ID: in MP the server moves them and the client gets new objects.
+-- opts.keepTools: borrowed tools stay in the bag (opts.returns collects them) - the queue gives
+-- them back once it runs dry, so a loop does not walk every tool back and forth.
+
+-- loads that were put down for a craft that then got interrupted: { x, y, z, ids }
+Craft.pile = nil
+
+local function outTypes(r)
+    local set = {}
+    pcall(function()
+        local outs = r:getOutputs()
+        for i = 0, outs:size() - 1 do
+            local items = outs:get(i):getPossibleResultItems()
+            for j = 0, items:size() - 1 do set[items:get(j):getFullName()] = true end
+        end
+    end)
+    return set
+end
+
 function Craft.start(p, recipe, qty, entriesFn, opts)
     if not p or not recipe then return end
     if ISTimedActionQueue.isPlayerDoingAction(p) and not (opts and opts.force) then
@@ -552,8 +660,14 @@ function Craft.start(p, recipe, qty, entriesFn, opts)
         return
     end
     opts = opts or {}
+    local start = {}
+    pcall(function()
+        local items = p:getInventory():getItems()
+        for i = 0, items:size() - 1 do start[items:get(i):getID()] = true end
+    end)
     local job = { p = p, recipe = recipe, left = math.max(1, floor(qty or 1)), total = math.max(1, floor(qty or 1)),
-        entriesFn = entriesFn, stationsFn = opts.stationsFn, returns = {}, refilled = false,
+        entriesFn = entriesFn, stationsFn = opts.stationsFn, returns = opts.returns or {}, refilled = false,
+        keepTools = opts.keepTools == true, startIds = start, outTypes = outTypes(recipe),
         onDone = opts.onDone, onFail = opts.onFail, onProgress = opts.onProgress, quiet = opts.quiet,
         stopCheck = opts.stopCheck, onStopped = opts.onStopped }
     Craft.step(job)
@@ -579,9 +693,59 @@ local function stationsOf(job)
     return ok and s or nil
 end
 
+-- go back to an interrupted pile and pick it up before planning again
+function Craft.pickPile(p, job)
+    if job.dead then return end
+    local ok, err = pcall(function()
+        local pl = Craft.pile
+        Craft.pile = nil
+        if pl then
+            pcall(function() getPlayerLoot(p:getPlayerNum()):refreshBackpacks() end)
+            local floorC = ISInventoryPage.GetFloorContainer(p:getPlayerNum())
+            local inv = p:getInventory()
+            local free = Craft.freeCapacity(p)
+            for _, id in ipairs(pl.ids) do
+                local it = floorC:getItemWithID(id)
+                if it and it:getUnequippedWeight() <= free then
+                    free = free - it:getUnequippedWeight()
+                    ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, floorC, inv))
+                end
+            end
+        end
+        ISTimedActionQueue.queueActions(p, Craft.queuedStep, job)
+    end)
+    if not ok then
+        CHelp.log("pick pile failed: " .. tostring(err))
+        fail(job, "Msg_CantCraft")
+    end
+end
+
+function Craft.queuedStep(p, job)
+    if job.dead then return end
+    local ok, err = pcall(Craft.step, job)
+    if not ok then
+        CHelp.log("craft step failed: " .. tostring(err))
+        fail(job, "Msg_CantCraft")
+    end
+end
+
 function Craft.step(job)
     local p = job.p
     if job.dead or job.left <= 0 then return end
+    -- an earlier, interrupted run left loads on the floor: fetch them first
+    if Craft.pile and not job.pileTried then
+        job.pileTried = true
+        local pl = Craft.pile
+        local sq = getCell():getGridSquare(pl.x, pl.y, pl.z)
+        -- a pile from some other workshop far away is not this job's business
+        if sq and (pl.z ~= floor(p:getZ()) or math.abs(pl.x - p:getX()) > 40 or math.abs(pl.y - p:getY()) > 40) then sq = nil end
+        if sq then
+            if not Craft.nearSq(p, sq, 0.6) then ISTimedActionQueue.add(ISWalkToTimedAction:new(p, sq)) end
+            ISTimedActionQueue.queueActions(p, Craft.pickPile, job)
+            return
+        end
+        Craft.pile = nil
+    end
     local entries = job.entriesFn and job.entriesFn() or {}
     local cont = Craft.planContainers(p, entries)
     local stations = stationsOf(job)
@@ -649,14 +813,14 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
 
     for _, r in ipairs(newReturns) do job.returns[#job.returns + 1] = r end
 
-    -- nearest-first walk through the boxes
+    -- nearest-first walk through the boxes (things on the floor around us first)
     local px, py = p:getX(), p:getY()
     local route = {}
     while #order > 0 do
         local bi, bd = 1, nil
         for i, g in ipairs(order) do
             local sq = g.stand
-            local d = sq and ((sq:getX() - px) * (sq:getX() - px) + (sq:getY() - py) * (sq:getY() - py)) or 0
+            local d = sq and ((sq:getX() - px) * (sq:getX() - px) + (sq:getY() - py) * (sq:getY() - py)) or -1
             if not bd or d < bd then bi, bd = i, d end
         end
         local g = table.remove(order, bi)
@@ -682,8 +846,8 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
         end
     end
 
-    -- split into loads that fit in the bag. Materials first; tools and things to wear last, so they
-    -- end up in the bag (tools go back to their box later) and only materials are put down at the spot.
+    -- split into loads. Materials first; tools and things to wear last, so they end up in the bag
+    -- (tools go back to their box later) and only materials are put down at the spot.
     local isKeep = {}
     for i = 0, keep:size() - 1 do isKeep[keep:get(i)] = true end
     for _, g in ipairs(route) do
@@ -699,14 +863,22 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
             end
         end
     end
-    -- a load is what the character carries without getting slow (encumbrance limit), never more
-    -- than the bag takes. An item heavier than that still goes alone in its own load.
-    local room = Craft.carryRoom(p) * (job.loadScale or 1)
+    -- a load is what the character carries without getting slow (encumbrance limit) and what still
+    -- fits in the bag. One item that is heavier than that still goes alone in its own load.
+    local free = Craft.freeCapacity(p)
+    local room = math.min(Craft.carryRoom(p) * (job.loadScale or 1), free)
     local trips, cur, curW = {}, {}, 0
     for _, e in ipairs(ordered) do
         local w = e.it:getUnequippedWeight()
-        if not inv:hasRoomFor(p, w) then return fail(job, "Msg_TooHeavy") end
-        if #cur > 0 and (curW + w > room or not inv:hasRoomFor(p, curW + w)) then
+        if w > free then
+            -- the bag is full: put what this job made away first, then plan again
+            if not job.madeRoom and Craft.stashOutputs(job, Craft.queuedStep, job) then
+                job.madeRoom = true
+                return
+            end
+            return fail(job, "Msg_TooHeavy")
+        end
+        if #cur > 0 and curW + w > room then
             trips[#trips + 1] = cur
             cur, curW = {}, 0
         end
@@ -722,15 +894,8 @@ function Craft.fetchAndCraft(job, logic, recipe, isRefill)
     end
 
     local ctx = { job = job, recipe = recipe, refill = isRefill, wear = wearIds,
-        station = (not isRefill) and job.station or nil, spot = job.spot, trips = trips, trip = 1 }
+        station = (not isRefill) and job.station or nil, spot = job.spot, trips = trips, trip = 1, dropped = {} }
     Craft.queueTrip(p, ctx)
-end
-
--- weight the character can still pick up before the heavy-load moodle
-function Craft.carryRoom(p)
-    local ok, v = pcall(function() return p:getMaxWeight() - p:getInventoryWeight() end)
-    if not ok or not v then return 1000 end
-    return math.max(0.5, v)
 end
 
 -- a workstation only accepts crafts from the player marked as using it (the game's bench window
@@ -759,8 +924,7 @@ function Craft.releaseBench(p, obj)
 end
 
 -- where loads are put down when everything does not fit at once: next to the workstation or zone
--- table the recipe uses, else where the character stands now. The craft runs from that square,
--- so the floor items are in reach.
+-- table the recipe uses, else where the character stands now
 function Craft.dropSpot(job, recipe, isRefill)
     local p = job.p
     local obj = nil
@@ -773,8 +937,8 @@ function Craft.dropSpot(job, recipe, isRefill)
     if obj then
         local okS, sq = pcall(function() return obj:getSquare() end)
         if okS and sq then
-            local okA, adj = pcall(function() return AdjacentFreeTileFinder.Find(sq, p) end)
-            if okA and adj then return adj end
+            local adj = Craft.adjacentStand(p, sq)
+            if adj then return adj end
         end
     end
     return p:getCurrentSquare()
@@ -813,8 +977,13 @@ function Craft.dropLoad(p, arg)
             local it = inv:getItemWithIDRecursiv(id)
             if it and it:getContainer() and not p:isEquippedClothing(it) then
                 ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, it:getContainer(), floorC))
+                ctx.dropped[#ctx.dropped + 1] = id
+                ctx.droppedFts = ctx.droppedFts or {}
+                ctx.droppedFts[it:getFullType()] = (ctx.droppedFts[it:getFullType()] or 0) + 1
             end
         end
+        -- remembered so an interrupted run can come back for it
+        Craft.pile = { x = ctx.spot:getX(), y = ctx.spot:getY(), z = ctx.spot:getZ(), ids = ctx.dropped, fts = ctx.droppedFts }
         ctx.trip = ctx.trip + 1
         Craft.queueTrip(p, ctx)
     end)
@@ -824,69 +993,127 @@ function Craft.dropLoad(p, arg)
     end
 end
 
--- runs when the queue reaches it: everything should be in the backpack now
+-- in reach of the workstation the way the game checks it
+local function inBenchRange(p, ctx)
+    local obj = ctx.station and ctx.station.obj
+    if not obj then return true end
+    local ok, v = pcall(function()
+        local lg = Craft.makeLogic(p, ctx.station.bench, obj)
+        return lg:isCharacterInRangeOfWorkbench()
+    end)
+    if ok and type(v) == "boolean" then return v end
+    return Craft.nearSq(p, obj:getSquare(), 1.6)
+end
+
+local function surfaceFor(p, ctx)
+    local s = Scan.surfaceNear(stationsOf(ctx.job), p:getX(), p:getY())
+    local surf = s and s.obj or nil
+    if not surf then
+        local okF, f = pcall(function() return ISEntityUI.FindCraftSurface(p, 2) end)
+        if okF then surf = f end
+    end
+    return surf
+end
+
+-- the craft runs in three short steps, each queued after the last one's walking / carrying:
+--   place : stand where the craft happens (on the pile, else next to the workstation / table)
+--   pick  : take the pile back into the bag (like the game's crafting window does) + wear things
+--   craft : the craft itself
+-- Walks are queued directly (never the game's walkAdj, which clears actions added in the same step).
 local function deferredCraftInner(p, ctx)
+    local job = ctx.job
     local inv = p:getInventory()
-    for _, id in ipairs(ctx.wear or {}) do
-        local it = inv:getItemWithIDRecursiv(id)
-        if it and not p:isEquippedClothing(it) then
-            if it:getContainer() ~= inv then
-                ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, it:getContainer(), inv))
+    local surface = (not ctx.station) and Craft.isSurface(ctx.recipe)
+    if not ctx.placed then
+        ctx.placed = true
+        local target = nil
+        if ctx.spot then
+            if not Craft.nearSq(p, ctx.spot, 0.6) then target = ctx.spot end
+        elseif ctx.station then
+            if not inBenchRange(p, ctx) then
+                target = Craft.adjacentStand(p, ctx.station.obj:getSquare())
+                if not target then return fail(job, "Msg_CantReach") end
             end
-            ISTimedActionQueue.add(ISWearClothing:new(p, it))
+        elseif surface then
+            ctx.surf = surfaceFor(p, ctx)
+            if not ctx.surf then return fail(job, "Msg_NoSurface") end
+            if not Craft.nearSq(p, ctx.surf:getSquare(), 1.6) then
+                target = Craft.adjacentStand(p, ctx.surf:getSquare())
+                if not target then return fail(job, "Msg_CantReach") end
+            end
         end
-    end
-    -- loads were put down at the spot: craft standing there so the floor items are in reach
-    if ctx.spot and not ctx.atSpot then
-        ctx.atSpot = true
-        ISTimedActionQueue.add(ISWalkToTimedAction:new(p, ctx.spot))
-        ISTimedActionQueue.queueActions(p, Craft.deferredCraft, ctx)
-        return
-    end
-    -- a bench recipe: walk next to it first, the craft is queued after the walk
-    if ctx.station and not ctx.walked then
-        ctx.walked = true
-        local okW = pcall(function() ISEntityUI.WalkToEntity(p, ctx.station.obj, 1) end)
-        if okW then
+        if target then
+            ISTimedActionQueue.add(ISWalkToTimedAction:new(p, target))
             ISTimedActionQueue.queueActions(p, Craft.deferredCraft, ctx)
             return
         end
     end
-    local logic = Craft.makeLogic(p, ctx.station and ctx.station.bench or nil, ctx.station and ctx.station.obj or nil)
-    local surface = (not ctx.station) and Craft.isSurface(ctx.recipe)
-    if surface then
-        -- surface recipes: the nearest table in the zone, else whatever is next to us.
-        -- HandcraftStartMultiple walks to it; the game only allows the craft within 3 tiles of it.
-        local st = stationsOf(ctx.job)
-        local s = Scan.surfaceNear(st, p:getX(), p:getY())
-        local surf = s and s.obj or nil
-        if not surf then
-            local okF, f = pcall(function() return ISEntityUI.FindCraftSurface(p, 2) end)
-            if okF then surf = f end
+    if not ctx.picked then
+        ctx.picked = true
+        local added = false
+        pcall(function() getPlayerLoot(p:getPlayerNum()):refreshBackpacks() end)
+        if #(ctx.dropped or {}) > 0 then
+            local floorC = ISInventoryPage.GetFloorContainer(p:getPlayerNum())
+            local free = Craft.freeCapacity(p)
+            for _, id in ipairs(ctx.dropped) do
+                local it = floorC:getItemWithID(id)
+                if it and it:getUnequippedWeight() <= free then
+                    free = free - it:getUnequippedWeight()
+                    ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, floorC, inv))
+                    added = true
+                end
+            end
         end
-        if not surf then return fail(ctx.job, "Msg_NoSurface") end
+        Craft.pile = nil
+        for _, id in ipairs(ctx.wear or {}) do
+            local it = inv:getItemWithIDRecursiv(id)
+            if it and not p:isEquippedClothing(it) then
+                if it:getContainer() ~= inv then
+                    ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, it:getContainer(), inv))
+                end
+                ISTimedActionQueue.add(ISWearClothing:new(p, it))
+                added = true
+            end
+        end
+        if added then
+            ISTimedActionQueue.queueActions(p, Craft.deferredCraft, ctx)
+            return
+        end
+    end
+    -- craft: the pile spot is next to the workstation; when it was not (no free tile there) walk now
+    if ctx.station and not ctx.walked and not inBenchRange(p, ctx) then
+        ctx.walked = true
+        local target = Craft.adjacentStand(p, ctx.station.obj:getSquare())
+        if not target then return fail(job, "Msg_CantReach") end
+        ISTimedActionQueue.add(ISWalkToTimedAction:new(p, target))
+        ISTimedActionQueue.queueActions(p, Craft.deferredCraft, ctx)
+        return
+    end
+    local logic = Craft.makeLogic(p, ctx.station and ctx.station.bench or nil, ctx.station and ctx.station.obj or nil)
+    if surface then
+        local surf = ctx.surf or surfaceFor(p, ctx)
+        if not surf then return fail(job, "Msg_NoSurface") end
         logic:setIsoObject(surf)
     end
-    if Craft.tooDark(ctx.recipe, p) then return fail(ctx.job, "Msg_TooDark") end
-    if ctx.station then
-        local okB, took = Craft.claimBench(p, ctx.station.obj)
-        if not okB then return fail(ctx.job, "Msg_BenchBusy") end
-        ctx.job.benchObj = took and ctx.station.obj or nil
-    end
-    -- the loot panel lists the floor around us: refresh it so items just put down are counted
+    if Craft.tooDark(ctx.recipe, p) then return fail(job, "Msg_TooDark") end
     pcall(function() getPlayerLoot(p:getPlayerNum()):refreshBackpacks() end)
     logic:setContainers(ISInventoryPaneContextMenu.getContainers(p))
     Craft.setRecipe(logic, ctx.recipe)
     local okCan, can = pcall(function()
         if surface then return logic:areAllInputItemsSatisfied() end
-        return logic:canPerformCurrentRecipe() or (ctx.station ~= nil and logic:areAllInputItemsSatisfied())
+        return logic:canPerformCurrentRecipe()
     end)
     if not (okCan and can) then
-        return fail(ctx.job, "Msg_CantCraft")
+        return fail(job, "Msg_CantCraft")
+    end
+    if ctx.station then
+        local okB, took = Craft.claimBench(p, ctx.station.obj)
+        if not okB then return fail(job, "Msg_BenchBusy") end
+        job.benchObj = took and ctx.station.obj or nil
     end
     local actions = ISEntityUI.HandcraftStartMultiple(p, logic, false, 1, false)
     if not actions or #actions == 0 then
-        return fail(ctx.job, "Msg_CantCraft")
+        return fail(job, "Msg_CantCraft")
     end
     for _, a in ipairs(actions) do ISTimedActionQueue.add(a) end
     ISTimedActionQueue.queueActions(p, Craft.afterCraft, ctx)
@@ -914,7 +1141,22 @@ function Craft.afterCraft(p, ctx)
         job.left = job.left - 1
         job.refilled = false
         job.retried = false
+        job.madeRoom = false
+        job.pileTried = false
         if job.onProgress then pcall(job.onProgress, job.total - job.left, job.total) end
+        -- carrying too much: put what was made away before going on
+        if Craft.overloaded(p) and Craft.stashOutputs(job, Craft.afterStash, job) then return end
+        Craft.afterStash(p, job)
+    end)
+    if not ok then
+        CHelp.log("after craft failed: " .. tostring(err))
+        fail(job, "Msg_CantCraft")
+    end
+end
+
+function Craft.afterStash(p, job)
+    if job.dead then return end
+    local ok, err = pcall(function()
         if job.left > 0 then
             if job.stopCheck and job.stopCheck() then
                 Craft.returnTools(job)
@@ -937,9 +1179,72 @@ function Craft.afterCraft(p, ctx)
         end
     end)
     if not ok then
-        CHelp.log("after craft failed: " .. tostring(err))
+        CHelp.log("after stash failed: " .. tostring(err))
         fail(job, "Msg_CantCraft")
     end
+end
+
+-- what this job made that is still in the bag (never things the player had before it started)
+function Craft.madeItems(job)
+    local out, w = {}, 0
+    local p = job.p
+    pcall(function()
+        local items = p:getInventory():getItems()
+        for i = 0, items:size() - 1 do
+            local it = items:get(i)
+            if job.outTypes[it:getFullType()] and not job.startIds[it:getID()]
+                and not p:isEquippedClothing(it) and not it:isEquipped() and not it:isFavorite() then
+                out[#out + 1] = it
+                w = w + it:getUnequippedWeight()
+            end
+        end
+    end)
+    return out, w
+end
+
+-- put what the job made into the nearest zone box with room, else on the floor here.
+-- Returns true when something was queued (fn(p, arg) runs after it).
+function Craft.stashOutputs(job, fn, arg)
+    local p = job.p
+    local made, total = Craft.madeItems(job)
+    if #made == 0 then return false end
+    local inv = p:getInventory()
+    local best, bd = nil, nil
+    local entries = job.entriesFn and job.entriesFn() or {}
+    for _, e in ipairs(entries) do
+        if not e.veh and e.c then
+            local okR, room = pcall(function() return e.c:hasRoomFor(p, total) end)
+            if okR and room then
+                local stand = standFor(p, e.c)
+                if stand then
+                    local dx, dy = stand:getX() - p:getX(), stand:getY() - p:getY()
+                    local d = dx * dx + dy * dy
+                    if not bd or d < bd then best, bd = { c = e.c, stand = stand }, d end
+                end
+            end
+        end
+    end
+    if best then
+        ISTimedActionQueue.add(ISWalkToTimedAction:new(p, best.stand))
+        for _, it in ipairs(made) do
+            ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, it:getContainer(), best.c))
+        end
+        if not job.toldStash then
+            job.toldStash = true
+            UI.toast(t("Msg_StashBox", Scan.boxName(best.c)), true)
+        end
+    else
+        local floorC = ISInventoryPage.GetFloorContainer(p:getPlayerNum())
+        for _, it in ipairs(made) do
+            ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, it, it:getContainer(), floorC))
+        end
+        if not job.toldStash then
+            job.toldStash = true
+            UI.toast(t("Msg_StashFloor"), true)
+        end
+    end
+    ISTimedActionQueue.queueActions(p, fn, arg)
+    return true
 end
 
 -- walk to the boxes holding these items (nearest first), take them, then fn(p, arg) runs from
@@ -974,7 +1279,7 @@ function Craft.fetchThen(p, items, fn, arg, skipBusy)
         local bi, bd = 1, nil
         for i, g in ipairs(order) do
             local sq = g.stand
-            local d = sq and ((sq:getX() - px) * (sq:getX() - px) + (sq:getY() - py) * (sq:getY() - py)) or 0
+            local d = sq and ((sq:getX() - px) * (sq:getX() - px) + (sq:getY() - py) * (sq:getY() - py)) or -1
             if not bd or d < bd then bi, bd = i, d end
         end
         local g = table.remove(order, bi)
@@ -991,12 +1296,11 @@ function Craft.fetchThen(p, items, fn, arg, skipBusy)
 end
 
 -- tools that were borrowed from boxes go back where they came from
-function Craft.returnTools(job)
-    if not CHelp.sv("ReturnToolsAfterCraft") then job.returns = {} return end
-    local p = job.p
+function Craft.returnToolList(p, list)
+    if not CHelp.sv("ReturnToolsAfterCraft") then return end
     local inv = p:getInventory()
     local byBox, order, seen = {}, {}, {}
-    for _, r in ipairs(job.returns) do
+    for _, r in ipairs(list or {}) do
         local it = (not seen[r.id]) and inv:getItemWithIDRecursiv(r.id) or nil
         if it and it:getContainer() ~= r.c then
             seen[r.id] = true
@@ -1005,7 +1309,6 @@ function Craft.returnTools(job)
             g.items[#g.items + 1] = it
         end
     end
-    job.returns = {}
     for _, g in ipairs(order) do
         local stand = standFor(p, g.c)
         if stand ~= false then
@@ -1017,4 +1320,11 @@ function Craft.returnTools(job)
             end
         end
     end
+end
+
+function Craft.returnTools(job)
+    if job.keepTools then return end      -- the queue gives them back once it is done
+    local list = job.returns
+    job.returns = {}
+    Craft.returnToolList(job.p, list)
 end

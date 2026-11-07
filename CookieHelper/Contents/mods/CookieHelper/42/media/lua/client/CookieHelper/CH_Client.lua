@@ -156,7 +156,7 @@ end
 
 function C.zoneAt(sh, x, y, z, kind)
     for _, zn in ipairs(C.zonesOf(sh)) do
-        if (not kind or zn.kind == kind) and zn.z == z and CHelp.rectHas(zn, x, y) then return zn end
+        if (not kind or zn.kind == kind) and zn.z == z and CHelp.zoneHas(zn, x, y) then return zn end
     end
     return nil
 end
