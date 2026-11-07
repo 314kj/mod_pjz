@@ -215,7 +215,9 @@ end
 
 local function onEquip(character, item)
     if isServer() then return end
-    if not character or not item or not character:isLocalPlayer() then return end
+    -- A-Life NPCs fire OnEquipPrimary too and have no isLocalPlayer (7 Nov fix)
+    if not character or not item or not instanceof(character, "IsoPlayer") then return end
+    if not character:isLocalPlayer() then return end
     if instanceof(item, "HandWeapon") then requestFix(character, item) end
 end
 
