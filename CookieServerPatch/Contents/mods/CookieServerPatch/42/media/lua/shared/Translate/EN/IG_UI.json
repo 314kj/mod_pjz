@@ -8,5 +8,19 @@
   "IGUI_CSP_MythRepair_Full": "This weapon is already at full condition",
   "IGUI_CSP_MythRepair_NotFound": "Weapon not found in your inventory",
   "IGUI_CSP_MythRepair_NoWallet": "PhunMart wallet is not available",
-  "IGUI_CSP_MythRepair_Failed": "Repair failed, money returned"
+  "IGUI_CSP_MythRepair_Failed": "Repair failed, money returned",
+  "IGUI_CSP_VSkin": "Change skin",
+  "IGUI_CSP_VSkin_Next": "Next skin",
+  "IGUI_CSP_VSkin_Prev": "Previous skin",
+  "IGUI_CSP_VSkin_List": "Skins",
+  "IGUI_CSP_VSkin_Now": "(current)",
+  "IGUI_CSP_VSkin_Done": "Skin changed",
+  "IGUI_CSP_VSkin_Same": "This skin is already on the car",
+  "IGUI_CSP_VSkin_TooFar": "Get closer to the car",
+  "IGUI_CSP_VSkin_NoPerm": "This car is claimed. Only its owner (and people the claim lets in) can change the skin",
+  "IGUI_CSP_VSkin_Unclaimed": "Claim this car first",
+  "IGUI_CSP_VSkin_OneSkin": "This car has only one skin",
+  "IGUI_CSP_VSkin_NoCar": "Car not found",
+  "IGUI_CSP_VSkin_Wait": "Wait a moment",
+  "IGUI_CSP_VSkin_Failed": "Could not change the skin"
 }
