@@ -1,16 +1,20 @@
 -- CookieServerPatch: change a vehicle's skin without debug mode.
 --
--- Players:
---   * outside: right-click the car -> "Change skin (n/N)" -> Next / Previous /
---     pick one from the list (names come from the skin textures, so the
---     Cookie Car Skins packs show e.g. "Miku", "HelloKitty").
+-- How to use:
+--   * outside: right-click the car body -> "Change skin (n/N)" -> Next /
+--     Previous / pick one from the list (names come from the skin textures, so
+--     the Cookie Car Skins packs show e.g. "Miku", "HelloKitty").
 --   * inside: V (vehicle radial menu) -> "Next skin" / "Previous skin".
 --     Right-click while seated also shows the menu when the game opens one.
--- Only cars whose script has 2 or more skins get the option.
+-- Only cars whose script has 2 or more skins get the option (most trailers
+-- and burnt wrecks have one skin, so they show nothing).
 --
 -- Who may change a skin (the server decides; the menu shows the same answer):
---   * admins (role with ManipulateVehicle or admin powers): any car, any range
---   * everyone else: in the car or within MAX_DIST tiles of it, and
+--   * ADMIN_ONLY = true (default): admins only (role with ManipulateVehicle
+--     or admin powers), any car, any range. Other players do not see the
+--     option at all, and the server refuses the command if sent by hand.
+--   * ADMIN_ONLY = false: admins as above, and everyone else in the car or
+--     within MAX_DIST tiles of it, when
 --       - car claimed with Another Vehicle Claim System: whoever AVCS lets
 --         use the car (owner; faction / safehouse members when AVCS allows)
 --       - unclaimed car: allowed while ALLOW_UNCLAIMED is true
@@ -27,7 +31,8 @@ local TAG = "[CookieServerPatch] vehicle-skin"
 local MODULE = "CSPVehicleSkin"
 
 -- settings ------------------------------------------------------------------
-local ALLOW_UNCLAIMED = true -- false: unclaimed cars only by admins (claim it first)
+local ADMIN_ONLY = true      -- true: only admins can change skins (8 Nov: Pie)
+local ALLOW_UNCLAIMED = true -- (ADMIN_ONLY = false only) false: unclaimed cars only by admins
 local MAX_DIST = 8           -- tiles from the car's centre (long trucks / trailers)
 local COOLDOWN_MS = 1000     -- per player, checked on the server
 local PAGE = 20              -- skins per sub menu in the list
@@ -112,6 +117,7 @@ function CSPVehicleSkin.canChange(p, v)
     if not p or not v then return false, "NoCar" end
     if skinCount(v) < 2 then return false, "OneSkin" end
     if isAdmin(p) then return true end
+    if ADMIN_ONLY then return false, "AdminOnly" end
     if not isNear(p, v) then return false, "TooFar" end
     return claimAllows(p, v)
 end
@@ -328,11 +334,12 @@ if not isServer() then
         if not p or not v or not context then return end
         local n = skinCount(v)
         if n < 2 then return end
+        local ok, key = CSPVehicleSkin.canChange(p, v)
+        if not ok and key == "AdminOnly" then return end -- players do not see it
         local cur = skinIndex(v)
         local title = getText("IGUI_CSP_VSkin") .. " (" .. tostring(cur + 1) .. "/" .. tostring(n) .. ")"
         local opt = context:addOption(title, nil, nil)
         if not opt then return end
-        local ok, key = CSPVehicleSkin.canChange(p, v)
         if not ok then
             opt.notAvailable = true
             if ISWorldObjectContextMenu and ISWorldObjectContextMenu.addToolTip then
@@ -434,7 +441,9 @@ end
 
 print(TAG .. " on (" .. (isServer() and "server" or (isClient() and "client" or "single player"))
     .. ", AVCS " .. ((type(AVCS) == "table" and type(AVCS.checkPermission) == "function") and "yes" or "no")
-    .. ", unclaimed cars " .. (ALLOW_UNCLAIMED and "allowed" or "admins only")
-    .. ", range " .. MAX_DIST .. " tiles)")
+    .. (ADMIN_ONLY and ", admins only"
+        or (", unclaimed cars " .. (ALLOW_UNCLAIMED and "allowed" or "admins only")
+            .. ", range " .. MAX_DIST .. " tiles"))
+    .. ")")
 
 return CSPVehicleSkin

@@ -22,5 +22,6 @@
   "IGUI_CSP_VSkin_OneSkin": "รถคันนี้มีสกินเดียว",
   "IGUI_CSP_VSkin_NoCar": "หารถไม่เจอ",
   "IGUI_CSP_VSkin_Wait": "รอสักครู่",
-  "IGUI_CSP_VSkin_Failed": "เปลี่ยนสกินไม่สำเร็จ"
+  "IGUI_CSP_VSkin_Failed": "เปลี่ยนสกินไม่สำเร็จ",
+  "IGUI_CSP_VSkin_AdminOnly": "เฉพาะแอดมินเปลี่ยนสกินรถได้"
 }
