@@ -1,7 +1,0 @@
-name=Cookie - Server Patches
-id=CookieServerPatch
-description=Small fixes for the CookieCheetah server: Building Clipboard staff check, PhunMart hides Rabbit/nangongyiyi/Bundle Up items, Lifestyle and More Traits error guards, erosion command sent once per square, build-menu ground floors made plain (less lag), stock screen shader (undo Kentucky Cannabis colour change), Guns of Marz generic Picatinny Rail becomes a directional rail (Up first) so scopes can be fitted.
-loadModAfter=\BuildingClipboardB42,\phunmart2,\KentuckyCannabis
-versionMin=42.0.0
-tiledef=csp_nofloor 7395
-pack=CSPNoFloor2x

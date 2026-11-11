@@ -1,0 +1,139 @@
+VERSION = 1,
+
+option CookieMastery.Enabled
+{
+    type = boolean, default = true,
+    page = CookieMastery, translation = CookieMastery_Enabled,
+}
+
+option CookieMastery.BarPoints
+{
+    type = integer, min = 100, max = 100000, default = 1000,
+    page = CookieMastery, translation = CookieMastery_BarPoints,
+}
+
+option CookieMastery.LevelBase
+{
+    type = integer, min = 100, max = 1000000, default = 1000,
+    page = CookieMastery, translation = CookieMastery_LevelBase,
+}
+
+option CookieMastery.LevelGrowth
+{
+    type = integer, min = 100, max = 400, default = 150,
+    page = CookieMastery, translation = CookieMastery_LevelGrowth,
+}
+
+option CookieMastery.ReportSeconds
+{
+    type = integer, min = 3, max = 120, default = 10,
+    page = CookieMastery, translation = CookieMastery_ReportSeconds,
+}
+
+option CookieMastery.CapPerMinute
+{
+    type = integer, min = 100, max = 1000000, default = 3000,
+    page = CookieMastery, translation = CookieMastery_CapPerMinute,
+}
+
+option CookieMastery.DeathKeep
+{
+    type = integer, min = 0, max = 100, default = 0,
+    page = CookieMastery, translation = CookieMastery_DeathKeep,
+}
+
+option CookieMastery.MentorRadius
+{
+    type = integer, min = 2, max = 50, default = 10,
+    page = CookieMastery, translation = CookieMastery_MentorRadius,
+}
+
+option CookieMastery.MentorBonus
+{
+    type = integer, min = 0, max = 300, default = 25,
+    page = CookieMastery, translation = CookieMastery_MentorBonus,
+}
+
+option CookieMastery.MentorWindow
+{
+    type = integer, min = 5, max = 600, default = 30,
+    page = CookieMastery, translation = CookieMastery_MentorWindow,
+}
+
+option CookieMastery.ApprenticeBonus
+{
+    type = integer, min = 0, max = 300, default = 25,
+    page = CookieMastery, translation = CookieMastery_ApprenticeBonus,
+}
+
+option CookieMastery.ApprenticeLevelPoints
+{
+    type = integer, min = 0, max = 100000, default = 250,
+    page = CookieMastery, translation = CookieMastery_ApprenticeLevelPoints,
+}
+
+option CookieMastery.ApprenticeSwapDays
+{
+    type = integer, min = 0, max = 60, default = 7,
+    page = CookieMastery, translation = CookieMastery_ApprenticeSwapDays,
+}
+
+option CookieMastery.BookDays
+{
+    type = integer, min = 0, max = 60, default = 7,
+    page = CookieMastery, translation = CookieMastery_BookDays,
+}
+
+option CookieMastery.BookBonus
+{
+    type = integer, min = 0, max = 300, default = 50,
+    page = CookieMastery, translation = CookieMastery_BookBonus,
+}
+
+option CookieMastery.BookHours
+{
+    type = integer, min = 1, max = 720, default = 6,
+    page = CookieMastery, translation = CookieMastery_BookHours,
+}
+
+option CookieMastery.LegacyBookHours
+{
+    type = integer, min = 1, max = 720, default = 24,
+    page = CookieMastery, translation = CookieMastery_LegacyBookHours,
+}
+
+option CookieMastery.BuildHpBase
+{
+    type = integer, min = 0, max = 500, default = 30,
+    page = CookieMastery, translation = CookieMastery_BuildHpBase,
+}
+
+option CookieMastery.BuildHpPerLevel
+{
+    type = integer, min = 0, max = 100, default = 5,
+    page = CookieMastery, translation = CookieMastery_BuildHpPerLevel,
+}
+
+option CookieMastery.RepairPlanksPerFull
+{
+    type = integer, min = 0, max = 50, default = 2,
+    page = CookieMastery, translation = CookieMastery_RepairPlanksPerFull,
+}
+
+option CookieMastery.RepairNailsPerFull
+{
+    type = integer, min = 0, max = 100, default = 4,
+    page = CookieMastery, translation = CookieMastery_RepairNailsPerFull,
+}
+
+option CookieMastery.LiveBoard
+{
+    type = boolean, default = true,
+    page = CookieMastery, translation = CookieMastery_LiveBoard,
+}
+
+option CookieMastery.Announce
+{
+    type = boolean, default = true,
+    page = CookieMastery, translation = CookieMastery_Announce,
+}

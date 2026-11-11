@@ -1,0 +1,670 @@
+/************************************************************
+* CookieServerPatch override of LTW_Recipes.txt (LTW 3.1.x, 42.20)
+* Same path as the LTW file, CookieServerPatch loads after LTW,
+* so this whole file replaces the original.
+*
+* Change: the 9 Forge_* and 11 Make* recipes also need
+* CSP.LTWForgeSeal (no loot, no shop, admin only), so nobody can
+* craft LTW weapons even with every recipe known. Forge keeps the
+* seal, Make uses it up (1 seal = 1 weapon if it is ever given out).
+* Repair (RepairLTWSheet / RepairLTWScrap) and opening the sealed
+* cases are unchanged. When LTW updates its recipe file, rebuild
+* this file from the new one.
+************************************************************/
+
+/************************************************************
+* LTW Mod - Crafting Recipes
+* Author: AkyroHunter
+* Version: 1.0.0
+* Created: 2026
+*
+* All crafting recipes for Legendary Tactical Weapons mod.
+************************************************************/
+
+module Base
+{
+
+/****** FORGE: LEGENDARY TACTICAL SWORD BLADE ******/
+
+    craftRecipe Forge_LegendaryTacticalSwordBlade
+    {
+        time = 900,
+        SkillRequired = Blacksmith:8,
+        NeedToBeLearn = true,
+        timedAction = HammerMetalStanding,
+        xpAward = Blacksmith:100,
+        AutoLearnAll = Blacksmith:9;LongBlade:5,
+        Tags = PrimitiveForge,
+        category = Legendaries,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal] mode:keep,
+            item 8 tags[base:charcoal],
+            item 1 [Base.SteelBar;Base.Katana;Base.Katana_Blade;Base.SwordBlade;Base.SwordBlade_NoTang;Base.MacheteBlade;Base.MacheteBlade_NoTang],
+            item 1 tags[base:ballpeenhammer] mode:keep flags[Prop1;MayDegradeLight],
+            item 1 tags[base:tongs] mode:keep flags[Prop2;MayDegradeLight],
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalSwordBlade flags[IsBlunt],
+        }
+    }
+
+/****** LEGENDARY TACTICAL SWORD ******/
+
+    craftRecipe MakeLegendaryTacticalSword
+    {
+        time = 2000,
+        category = Legendaries,
+        tags = AnySurfaceCraft,
+        SkillRequired = Blacksmith:8;Maintenance:4;MetalWelding:2,
+        NeedToBeLearn = True,
+        timedAction = Making,
+        xpAward = Maintenance:200;Blacksmith:200,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal],
+            item 1 [LTW.LegendaryTacticalSwordBlade],
+            item 1 [Base.SmallSheetMetal],
+            item 1 [Base.SmallHandle],
+            item 3 [Base.LeatherStrips;Base.LeatherStripsDirty;Base.DenimStrips;Base.DenimStripsDirty],
+            item 2 [Base.BlowTorch],
+            item 1 [Base.Epoxy],
+            item 1 tags[Hammer;ClubHammer;Mallet] mode:keep,
+            item 1 tags[WeldingMask] mode:keep,
+            item 1 tags[File] mode:keep,
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalSword,
+        }
+    }
+
+/****** FORGE: LEGENDARY TACTICAL AXE HEAD ******/
+
+    craftRecipe Forge_LegendaryTacticalAxeHead
+    {
+        time = 600,
+        SkillRequired = Blacksmith:6,
+        NeedToBeLearn = true,
+        timedAction = HammerMetalStanding,
+        xpAward = Blacksmith:70,
+        AutoLearnAll = Blacksmith:7,
+        Tags = PrimitiveForge,
+        category = Legendaries,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal] mode:keep,
+            item 5 tags[base:charcoal],
+            item 1 tags[base:piercedblock],
+            item 1 tags[base:ballpeenhammer] mode:keep flags[Prop1;MayDegradeLight],
+            item 1 tags[base:tongs] mode:keep flags[Prop2;MayDegradeLight],
+            item 1 tags[base:metalworkingpunch] mode:keep flags[MayDegradeLight],
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalAxeHead flags[IsBlunt],
+        }
+    }
+
+/****** LEGENDARY TACTICAL TOMAHAWK ******/
+
+    craftRecipe MakeLegendaryTacticalTomahawk
+    {
+        time = 1200,
+        category = Legendaries,
+        tags = AnySurfaceCraft,
+        SkillRequired = Blacksmith:6;Maintenance:3;MetalWelding:2,
+        NeedToBeLearn = True,
+        timedAction = Making,
+        xpAward = Maintenance:120;Blacksmith:140,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal],
+            item 1 [LTW.LegendaryTacticalAxeHead],
+            item 1 [Base.SmallHandle],
+            item 2 [Base.LeatherStrips;Base.LeatherStripsDirty;Base.DenimStrips;Base.DenimStripsDirty],
+            item 1 [Base.BlowTorch],
+            item 1 [Base.Epoxy],
+            item 1 tags[Hammer;ClubHammer;Mallet] mode:keep,
+            item 1 tags[WeldingMask] mode:keep,
+            item 1 tags[File] mode:keep,
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalTomahawk,
+        }
+    }
+
+/****** FORGE: LEGENDARY TACTICAL DOUBLE AXE HEAD ******/
+
+    craftRecipe Forge_LegendaryTacticalDoubleAxeHead
+    {
+        time = 600,
+        SkillRequired = Blacksmith:7,
+        NeedToBeLearn = true,
+        timedAction = HammerMetalStanding,
+        xpAward = Blacksmith:90,
+        AutoLearnAll = Blacksmith:8,
+        Tags = PrimitiveForge,
+        category = Legendaries,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal] mode:keep,
+            item 5 tags[base:charcoal],
+            item 1 [Base.PiercedSteelBlock],
+            item 1 tags[base:ballpeenhammer] mode:keep flags[Prop1;MayDegradeLight],
+            item 1 tags[base:tongs] mode:keep flags[Prop2;MayDegradeLight],
+            item 1 tags[base:metalworkingpunch] mode:keep flags[MayDegradeLight],
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalDoubleAxeHead flags[IsBlunt],
+        }
+    }
+
+/****** LEGENDARY TACTICAL AXE ******/
+
+    craftRecipe MakeLegendaryTacticalAxe
+    {
+        time = 1600,
+        category = Legendaries,
+        tags = AnySurfaceCraft,
+        SkillRequired = Blacksmith:7;Maintenance:4;MetalWelding:2,
+        NeedToBeLearn = True,
+        timedAction = Making,
+        xpAward = Maintenance:160;Blacksmith:180,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal],
+            item 2 [LTW.LegendaryTacticalDoubleAxeHead],
+            item 1 [Base.LongHandle;Base.Handle],
+            item 3 [Base.LeatherStrips;Base.LeatherStripsDirty;Base.DenimStrips;Base.DenimStripsDirty],
+            item 2 [Base.BlowTorch],
+            item 1 [Base.Epoxy],
+            item 1 tags[Hammer;ClubHammer;Mallet] mode:keep,
+            item 1 tags[WeldingMask] mode:keep,
+            item 1 tags[File] mode:keep,
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalAxe,
+        }
+    }
+
+/****** FORGE: LEGENDARY TACTICAL BAR ******/
+
+    craftRecipe Forge_LegendaryTacticalBar
+    {
+        time = 500,
+        SkillRequired = Blacksmith:6,
+        NeedToBeLearn = true,
+        AutoLearnAll = Blacksmith:7,
+        timedAction = HammerMetalStanding,
+        Tags = PrimitiveForge,
+        category = Legendaries,
+        xpAward = Blacksmith:10,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal] mode:keep,
+            item 4 tags[base:charcoal],
+            item 4 [Base.SteelChunk;Base.SteelBarQuarter;2:Base.SteelBarHalf] flags[IsExclusive],
+            item 1 tags[base:hammer;base:clubhammer] mode:keep flags[Prop1;MayDegradeLight],
+            item 1 tags[base:tongs] mode:keep flags[Prop2;MayDegradeLight],
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalBar,
+        }
+    }
+
+/****** LEGENDARY TACTICAL CROWBAR ******/
+
+    craftRecipe MakeLegendaryTacticalCrowbar
+    {
+        time = 1400,
+        category = Legendaries,
+        tags = AnySurfaceCraft,
+        SkillRequired = Blacksmith:6;Maintenance:4;MetalWelding:2,
+        NeedToBeLearn = True,
+        timedAction = Making,
+        xpAward = Maintenance:150;Blacksmith:170,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal],
+            item 1 [LTW.LegendaryTacticalBar],
+            item 1 [Base.SmallSheetMetal],
+            item 2 [Base.LeatherStrips;Base.LeatherStripsDirty;Base.DenimStrips;Base.DenimStripsDirty],
+            item 2 [Base.BlowTorch],
+            item 1 [Base.Epoxy],
+            item 1 tags[Hammer;ClubHammer;Mallet] mode:keep,
+            item 1 tags[WeldingMask] mode:keep,
+            item 1 tags[File] mode:keep,
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalCrowbar,
+        }
+    }
+
+    /****** FORGE: LEGENDARY TACTICAL BAT HEAD ******/
+
+        craftRecipe Forge_LegendaryTacticalBatHead
+        {
+            time = 500,
+            SkillRequired = Blacksmith:6,
+            NeedToBeLearn = true,
+            AutoLearnAll = Blacksmith:7,
+            timedAction = HammerMetalStanding,
+            xpAward = Blacksmith:75,
+            Tags = PrimitiveForge,
+            category = Legendaries,
+            inputs
+            {
+                item 1 [CSP.LTWForgeSeal] mode:keep,
+                item 4 tags[base:charcoal],
+                item 1 tags[base:piercedchunk],
+                item 5 tags[base:metalpiece],
+                item 1 tags[base:ballpeenhammer] mode:keep flags[Prop1;MayDegradeLight],
+                item 1 tags[base:tongs] mode:keep flags[Prop2;MayDegradeLight],
+                item 1 tags[base:metalworkingpunch] mode:keep flags[MayDegradeLight],
+            }
+            outputs
+            {
+                item 1 LTW.LegendaryTacticalBatHead,
+            }
+        }
+
+/****** LEGENDARY TACTICAL BAT ******/
+
+    craftRecipe MakeLegendaryTacticalBat
+    {
+        time = 1300,
+        category = Legendaries,
+        tags = AnySurfaceCraft,
+        SkillRequired = Blacksmith:6;Maintenance:3;MetalWelding:2,
+        NeedToBeLearn = True,
+        timedAction = Making,
+        xpAward = Maintenance:140;Blacksmith:160,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal],
+            item 1 [LTW.LegendaryTacticalBatHead],
+            item 1 [Base.LongHandle;Base.Handle],
+            item 2 [Base.LeatherStrips;Base.LeatherStripsDirty;Base.DenimStrips;Base.DenimStripsDirty],
+            item 1 [Base.BlowTorch],
+            item 1 [Base.Epoxy],
+            item 1 tags[Hammer;ClubHammer;Mallet] mode:keep,
+            item 1 tags[WeldingMask] mode:keep,
+            item 1 tags[File] mode:keep,
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalBat,
+        }
+    }
+
+/****** FORGE: LEGENDARY TACTICAL HAMMER HEAD ******/
+
+    craftRecipe Forge_LegendaryTacticalHammerHead
+    {
+        time = 500,
+        SkillRequired = Blacksmith:6,
+        NeedToBeLearn = true,
+        timedAction = HammerMetalStanding,
+        xpAward = Blacksmith:45,
+        AutoLearnAll = Blacksmith:7,
+        Tags = PrimitiveForge,
+        category = Legendaries,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal] mode:keep,
+            item 4 tags[base:charcoal],
+            item 1 [Base.PiercedSteelChunk],
+            item 1 tags[base:smithinghammer] mode:keep flags[Prop1;MayDegradeLight],
+            item 1 tags[base:tongs] mode:keep flags[Prop2;MayDegradeLight],
+            item 1 tags[base:metalworkingpunch] mode:keep flags[MayDegradeLight],
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalHammerHead,
+        }
+    }
+
+/****** LEGENDARY TACTICAL HAMMER ******/
+
+    craftRecipe MakeLegendaryTacticalHammer
+    {
+        time = 1200,
+        category = Legendaries,
+        tags = AnySurfaceCraft,
+        SkillRequired = Blacksmith:6;Maintenance:3;MetalWelding:2,
+        NeedToBeLearn = True,
+        timedAction = Making,
+        xpAward = Maintenance:130;Blacksmith:150,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal],
+            item 1 [LTW.LegendaryTacticalHammerHead],
+            item 1 [Base.SmallHandle],
+            item 2 [Base.LeatherStrips;Base.LeatherStripsDirty;Base.DenimStrips;Base.DenimStripsDirty],
+            item 1 [Base.BlowTorch],
+            item 1 [Base.Epoxy],
+            item 1 tags[Hammer;ClubHammer;Mallet] mode:keep,
+            item 1 tags[WeldingMask] mode:keep,
+            item 1 tags[File] mode:keep,
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalHammer,
+        }
+    }
+
+/****** FORGE: LEGENDARY TACTICAL KNIFE BLADE ******/
+
+    craftRecipe Forge_LegendaryTacticalKnifeBlade
+    {
+        time = 500,
+        SkillRequired = Blacksmith:5,
+        NeedToBeLearn = true,
+        timedAction = HammerMetalStanding,
+        xpAward = Blacksmith:50,
+        AutoLearnAll = Blacksmith:6;SmallBlade:5,
+        Tags = PrimitiveForge,
+        category = Legendaries,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal] mode:keep,
+            item 4 tags[base:charcoal],
+            item 1 [Base.SteelBarHalf;Base.MeatCleaverBlade;Base.HuntingKnifeBlade],
+            item 1 tags[base:ballpeenhammer] mode:keep flags[Prop1;MayDegradeLight],
+            item 1 tags[base:metalworkingpliers;base:tongs] mode:keep flags[Prop2;MayDegradeLight],
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalKnifeBlade flags[IsBlunt],
+        }
+    }
+
+/****** LEGENDARY TACTICAL KNIFE ******/
+
+    craftRecipe MakeLegendaryTacticalKnife
+    {
+        time = 1000,
+        category = Legendaries,
+        tags = AnySurfaceCraft,
+        SkillRequired = Blacksmith:5;Maintenance:3;MetalWelding:2,
+        NeedToBeLearn = True,
+        timedAction = Making,
+        xpAward = Maintenance:120;Blacksmith:140,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal],
+            item 1 [LTW.LegendaryTacticalKnifeBlade],
+            item 1 [Base.SmallHandle],
+            item 1 [Base.LeatherStrips;Base.LeatherStripsDirty;Base.DenimStrips;Base.DenimStripsDirty],
+            item 1 [Base.BlowTorch],
+            item 1 [Base.Epoxy],
+            item 1 tags[Hammer;ClubHammer;Mallet] mode:keep,
+            item 1 tags[WeldingMask] mode:keep,
+            item 1 tags[File] mode:keep,
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalKnife,
+        }
+    }
+
+/****** FORGE: LEGENDARY TACTICAL SLEDGEHAMMER HEAD ******/
+
+    craftRecipe Forge_LegendaryTacticalSledgehammerHead
+    {
+        time = 1000,
+        SkillRequired = Blacksmith:7,
+        NeedToBeLearn = true,
+        timedAction = HammerMetalStanding,
+        xpAward = Blacksmith:90,
+        AutoLearnAll = Blacksmith:8,
+        Tags = PrimitiveForge,
+        category = Legendaries,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal] mode:keep,
+            item 9 tags[base:charcoal],
+            item 1 [Base.PiercedSteelIngot],
+            item 1 tags[base:ballpeenhammer] mode:keep flags[Prop1;MayDegradeLight],
+            item 1 tags[base:tongs] mode:keep flags[Prop2;MayDegradeLight],
+            item 1 tags[base:metalworkingpunch] mode:keep flags[MayDegradeLight],
+            item 1 tags[base:metalworkingchisel] mode:keep flags[MayDegradeLight],
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalSledgehammerHead,
+        }
+    }
+
+/****** LEGENDARY TACTICAL SLEDGEHAMMER ******/
+
+    craftRecipe MakeLegendaryTacticalSledgehammer
+    {
+        time = 1500,
+        category = Legendaries,
+        tags = AnySurfaceCraft,
+        SkillRequired = Blacksmith:7;Maintenance:4;MetalWelding:2,
+        NeedToBeLearn = True,
+        timedAction = Making,
+        xpAward = Maintenance:180;Blacksmith:200,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal],
+            item 1 [LTW.LegendaryTacticalSledgehammerHead],
+            item 1 [Base.LongHandle;Base.Handle],
+            item 3 [Base.LeatherStrips;Base.LeatherStripsDirty;Base.DenimStrips;Base.DenimStripsDirty],
+            item 2 [Base.BlowTorch],
+            item 1 [Base.Epoxy],
+            item 1 tags[Hammer;ClubHammer;Mallet] mode:keep,
+            item 1 tags[WeldingMask] mode:keep,
+            item 1 tags[File] mode:keep,
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalSledgehammer,
+        }
+    }
+
+/****** LEGENDARY TACTICAL SPEAR HEAD ******/
+
+    craftRecipe Forge_LegendaryTacticalSpearHead
+    {
+        time = 500,
+        SkillRequired = Blacksmith:7,
+        NeedToBeLearn = true,
+        timedAction = HammerMetalStanding,
+        xpAward = Blacksmith:50,
+        AutoLearnAll = Blacksmith:8;Spear:5,
+        Tags = PrimitiveForge,
+        category = Legendaries,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal] mode:keep,
+            item 4 tags[base:charcoal],
+            item 1 [Base.SteelBarHalf],
+            item 1 tags[base:ballpeenhammer] mode:keep flags[Prop1;MayDegradeLight],
+            item 1 tags[base:metalworkingpliers;base:tongs] mode:keep flags[Prop2;MayDegradeLight],
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalSpearHead flags[IsBlunt],
+        }
+    }
+
+ /****** LEGENDARY TACTICAL SPEAR ******/
+
+    craftRecipe MakeLegendaryTacticalSpear
+    {
+        time = 1700,
+        category = Legendaries,
+        tags = AnySurfaceCraft,
+        SkillRequired = Blacksmith:7;Maintenance:4;MetalWelding:2,
+        NeedToBeLearn = True,
+        timedAction = Making,
+        xpAward = Maintenance:170;Blacksmith:190,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal],
+            item 1 [LTW.LegendaryTacticalSpearHead],
+            item 1 [Base.LongHandle;Base.Handle],
+            item 3 [Base.LeatherStrips;Base.LeatherStripsDirty;Base.DenimStrips;Base.DenimStripsDirty],
+            item 2 [Base.BlowTorch],
+            item 1 [Base.Epoxy],
+            item 1 tags[Hammer;ClubHammer;Mallet] mode:keep,
+            item 1 tags[WeldingMask] mode:keep,
+            item 1 tags[File] mode:keep,
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalSpear,
+        }
+    }
+
+/****** LEGENDARY SWORD SHEATH ******/
+
+    craftRecipe MakeLegendarySwordSheath
+    {
+        time = 500,
+        timedAction = Making,
+        category = Legendaries,
+        SkillRequired = Maintenance:2;Tailoring:2;Carving:2,
+        NeedToBeLearn = True,
+        Tags = InHandCraft,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal],
+            item 1 [Base.Belt2],
+            item 3 [Base.LeatherStrips;Base.LeatherStripsDirty],
+            item 3 [Base.Thread],
+            item 3 [Base.RippedSheets],
+            item 1 [Base.Plank],
+            item 1 [Base.GardenSaw;Base.Saw] mode:keep flags[MayDegradeLight],
+            item 1 tags[Scissors] mode:keep flags[MayDegradeLight;IsNotDull],
+            item 1 tags[SewingNeedle] mode:keep flags[MayDegradeLight],
+        }
+        outputs
+        {
+            item 1 LTW.LegendarySwordSheathBack,
+        }
+    }
+
+/****** LEGENDARY KNIFE SHEATH ******/
+
+    craftRecipe MakeLegendaryKnifeSheath
+    {
+        time = 500,
+        timedAction = Making,
+        category = Legendaries,
+        SkillRequired = Maintenance:2;Tailoring:2;Carving:2,
+        NeedToBeLearn = True,
+        Tags = InHandCraft,
+        inputs
+        {
+            item 1 [CSP.LTWForgeSeal],
+            item 1 [Base.Belt2],
+            item 3 [Base.LeatherStrips;Base.LeatherStripsDirty],
+            item 3 [Base.Thread],
+            item 3 [Base.RippedSheets],
+            item 1 [Base.Plank],
+            item 1 [Base.GardenSaw;Base.Saw] mode:keep flags[MayDegradeLight],
+            item 1 tags[Scissors] mode:keep flags[MayDegradeLight;IsNotDull],
+            item 1 tags[SewingNeedle] mode:keep flags[MayDegradeLight],
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryKnifeSheathBack,
+        }
+    }
+
+/****** LTW WEAPON REPAIR ******/
+
+    craftRecipe RepairLTWSheet
+    {
+        time = 180,
+        AllowBatchCraft = false,
+        Tags = InHandCraft,
+        category = Repair,
+        timedAction = CraftWeapon1H,
+        SkillRequired = Maintenance:1;MetalWelding:2,
+        xpAward = Maintenance:15,
+        OnCreate = RecipeCodeOnCreate.genericBetterFixing,
+        Tooltip = Tooltip_Recipe_CanFailAndDamage,
+        inputs
+        {
+            item 1 tags[ltw:repair_sheet] mode:keep flags[Prop2;IsDamaged],
+            item 2 [Base.BlowTorch] flags[Prop1],
+            item 1 [Base.SheetMetal] mode:destroy,
+        }
+        outputs
+        {
+        }
+        Icon = LTWRepair,
+    }
+
+    craftRecipe RepairLTWScrap
+    {
+        time = 180,
+        AllowBatchCraft = false,
+        Tags = InHandCraft,
+        category = Repair,
+        timedAction = CraftWeapon1H,
+        SkillRequired = Maintenance:1;MetalWelding:2,
+        xpAward = Maintenance:5,
+        OnCreate = RecipeCodeOnCreate.genericFixing,
+        Tooltip = Tooltip_Recipe_CanFailAndDamage,
+        inputs
+        {
+            item 1 tags[ltw:repair_scrap] mode:keep flags[Prop2;IsDamaged],
+            item 2 [Base.BlowTorch] flags[Prop1],
+            item 3 [Base.ScrapMetal] mode:destroy,
+        }
+        outputs
+        {
+        }
+        Icon = LTWRepair,
+    }
+
+/****** OPEN LEGENDARY TACTICAL CASES ******/
+/* The outputs only list the empty case: LTW_Cases.lua adds the weapon and its sheath. */
+
+    craftRecipe OpenLegendaryTacticalSwordCase
+    {
+        timedAction = UnPackBox_Small,
+        time = 50,
+        Tags = InHandCraft;Packing;CanBeDoneInDark,
+        category = Legendaries,
+        OnCreate = LTW_Cases.OnOpenSword,
+        inputs
+        {
+            item 1 [LTW.LegendaryTacticalSwordCaseSealed] flags[Prop2;AllowFavorite;InheritFavorite],
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalSwordCase,
+        }
+    }
+
+    craftRecipe OpenLegendaryTacticalKnifeCase
+    {
+        timedAction = UnPackBox_Small,
+        time = 50,
+        Tags = InHandCraft;Packing;CanBeDoneInDark,
+        category = Legendaries,
+        OnCreate = LTW_Cases.OnOpenKnife,
+        inputs
+        {
+            item 1 [LTW.LegendaryTacticalKnifeCaseSealed] flags[Prop2;AllowFavorite;InheritFavorite],
+        }
+        outputs
+        {
+            item 1 LTW.LegendaryTacticalKnifeCase,
+        }
+    }
+}

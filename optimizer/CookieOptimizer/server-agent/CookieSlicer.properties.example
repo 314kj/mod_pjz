@@ -1,0 +1,33 @@
+# Copy to CookieSlicer.properties next to CookieSlicer.jar only if you want to change something.
+# Without the file these defaults are used. Times are in milliseconds.
+# Changes are picked up while the server runs (within 5 s), except enabled and revision.
+
+# a game tick plus the waiting square work should end within this
+target_tick_ms=80
+# waiting square work per tick: at least ...
+min_drain_ms=5
+# ... plus this for every 1000 squares waiting ...
+extra_ms_per_1000_waiting=1
+# ... but never more than this
+max_drain_ms=60
+# per tick, chunks a player is downloading are finished first, up to this
+send_flush_ms=25
+# a cell that unloads: drop what still waits for it (default) or run it first (run)
+unload=drop
+# run everything that waits before the world is saved
+run_before_save=false
+# status line in CookieSlicer.log every N seconds
+log_every_s=60
+# game revision it was tested on (any = skip the check)
+revision=3d39148846
+# while this file exists next to the jar, everything runs the game's own way (checked every 5 s)
+off_file=CookieSlicer.off
+# file whose first word is on / off (checked every 5 s; missing = on) - slicer-on.bat / slicer-off.bat write it
+mode_file=CookieSlicer.mode
+# same, in the game's Lua folder (Zomboid\Lua) - the in-game admin commands !onslice / !offslice write it
+# (of the two mode files, the one changed last counts)
+game_mode_file=CookieSlicer_mode.txt
+# state + last minute's numbers, next to the jar and in Zomboid\Lua (slicer-status.bat and !slice read it)
+status_file=CookieSlicer_status.txt
+# false = do nothing at all (same as removing -javaagent)
+enabled=true

@@ -1,0 +1,331 @@
+VERSION = 1,
+
+option CookieMission.ResetHour
+{
+    type = integer, min = 0, max = 23, default = 6,
+    page = CookieMission, translation = CookieMission_ResetHour,
+}
+
+option CookieMission.UtcOffset
+{
+    type = integer, min = -12, max = 14, default = 7,
+    page = CookieMission, translation = CookieMission_UtcOffset,
+}
+
+option CookieMission.Cooldown
+{
+    type = integer, min = 0, max = 240, default = 3,
+    page = CookieMission, translation = CookieMission_Cooldown,
+}
+
+option CookieMission.ReturnDelay
+{
+    type = integer, min = 3, max = 300, default = 20,
+    page = CookieMission, translation = CookieMission_ReturnDelay,
+}
+
+option CookieMission.MinPresence
+{
+    type = integer, min = 0, max = 1800, default = 60,
+    page = CookieMission, translation = CookieMission_MinPresence,
+}
+
+option CookieMission.LateJoinMax
+{
+    type = integer, min = 10, max = 100, default = 85,
+    page = CookieMission, translation = CookieMission_LateJoinMax,
+}
+
+option CookieMission.LeaveDistance
+{
+    type = integer, min = 15, max = 400, default = 60,
+    page = CookieMission, translation = CookieMission_LeaveDistance,
+}
+
+option CookieMission.LeaveSeconds
+{
+    type = integer, min = 5, max = 300, default = 20,
+    page = CookieMission, translation = CookieMission_LeaveSeconds,
+}
+
+option CookieMission.Grace
+{
+    type = integer, min = 0, max = 120, default = 20,
+    page = CookieMission, translation = CookieMission_Grace,
+}
+
+option CookieMission.EmptyAbort
+{
+    type = integer, min = 15, max = 900, default = 90,
+    page = CookieMission, translation = CookieMission_EmptyAbort,
+}
+
+option CookieMission.CleanupZombies
+{
+    type = boolean, default = true,
+    page = CookieMission, translation = CookieMission_CleanupZombies,
+}
+
+option CookieMission.PinChance
+{
+    type = integer, min = 0, max = 100, default = 40,
+    page = CookieMission, translation = CookieMission_PinChance,
+}
+
+option CookieMission.TypeKill
+{
+    type = boolean, default = true,
+    page = CookieMission, translation = CookieMission_TypeKill,
+}
+
+option CookieMission.TypeGang
+{
+    type = boolean, default = true,
+    page = CookieMission, translation = CookieMission_TypeGang,
+}
+
+option CookieMission.TypeFind
+{
+    type = boolean, default = true,
+    page = CookieMission, translation = CookieMission_TypeFind,
+}
+
+option CookieMission.TypeSurvive
+{
+    type = boolean, default = true,
+    page = CookieMission, translation = CookieMission_TypeSurvive,
+}
+
+option CookieMission.TypeWire
+{
+    type = boolean, default = true,
+    page = CookieMission, translation = CookieMission_TypeWire,
+}
+
+option CookieMission.TypeSafe
+{
+    type = boolean, default = true,
+    page = CookieMission, translation = CookieMission_TypeSafe,
+}
+
+option CookieMission.TypePipe
+{
+    type = boolean, default = true,
+    page = CookieMission, translation = CookieMission_TypePipe,
+}
+
+option CookieMission.TypeBoard
+{
+    type = boolean, default = true,
+    page = CookieMission, translation = CookieMission_TypeBoard,
+}
+
+option CookieMission.TypeTrap
+{
+    type = boolean, default = true,
+    page = CookieMission, translation = CookieMission_TypeTrap,
+}
+
+option CookieMission.GameTime
+{
+    type = integer, min = 25, max = 400, default = 100,
+    page = CookieMission, translation = CookieMission_GameTime,
+}
+
+option CookieMission.FailZombies
+{
+    type = integer, min = 0, max = 30, default = 4,
+    page = CookieMission, translation = CookieMission_FailZombies,
+}
+
+option CookieMission.GangOutfits
+{
+    type = string, default = PrivateMilitia;Biker;Punk;Survivalist;ArmyCamoGreen,
+    page = CookieMission, translation = CookieMission_GangOutfits,
+}
+
+option CookieMission.ExcludeTowns
+{
+    type = string, default = ,
+    page = CookieMission, translation = CookieMission_ExcludeTowns,
+}
+
+option CookieMission.EasyCap
+{
+    type = integer, min = 1, max = 32, default = 4,
+    page = CookieMission, translation = CookieMission_EasyCap,
+}
+
+option CookieMission.EasyTime
+{
+    type = integer, min = 3, max = 240, default = 15,
+    page = CookieMission, translation = CookieMission_EasyTime,
+}
+
+option CookieMission.EasyKills
+{
+    type = integer, min = 1, max = 5000, default = 60,
+    page = CookieMission, translation = CookieMission_EasyKills,
+}
+
+option CookieMission.EasyGang
+{
+    type = integer, min = 1, max = 2000, default = 25,
+    page = CookieMission, translation = CookieMission_EasyGang,
+}
+
+option CookieMission.EasyCaches
+{
+    type = integer, min = 1, max = 20, default = 3,
+    page = CookieMission, translation = CookieMission_EasyCaches,
+}
+
+option CookieMission.EasySurvive
+{
+    type = integer, min = 1, max = 120, default = 5,
+    page = CookieMission, translation = CookieMission_EasySurvive,
+}
+
+option CookieMission.EasyTasks
+{
+    type = integer, min = 1, max = 12, default = 3,
+    page = CookieMission, translation = CookieMission_EasyTasks,
+}
+
+option CookieMission.EasyAlive
+{
+    type = integer, min = 5, max = 400, default = 35,
+    page = CookieMission, translation = CookieMission_EasyAlive,
+}
+
+option CookieMission.EasyRate
+{
+    type = integer, min = 5, max = 600, default = 40,
+    page = CookieMission, translation = CookieMission_EasyRate,
+}
+
+option CookieMission.EasyCure
+{
+    type = integer, min = 0, max = 100, default = 0,
+    page = CookieMission, translation = CookieMission_EasyCure,
+}
+
+option CookieMission.MediumCap
+{
+    type = integer, min = 1, max = 32, default = 6,
+    page = CookieMission, translation = CookieMission_MediumCap,
+}
+
+option CookieMission.MediumTime
+{
+    type = integer, min = 3, max = 240, default = 20,
+    page = CookieMission, translation = CookieMission_MediumTime,
+}
+
+option CookieMission.MediumKills
+{
+    type = integer, min = 1, max = 5000, default = 150,
+    page = CookieMission, translation = CookieMission_MediumKills,
+}
+
+option CookieMission.MediumGang
+{
+    type = integer, min = 1, max = 2000, default = 50,
+    page = CookieMission, translation = CookieMission_MediumGang,
+}
+
+option CookieMission.MediumCaches
+{
+    type = integer, min = 1, max = 20, default = 5,
+    page = CookieMission, translation = CookieMission_MediumCaches,
+}
+
+option CookieMission.MediumSurvive
+{
+    type = integer, min = 1, max = 120, default = 8,
+    page = CookieMission, translation = CookieMission_MediumSurvive,
+}
+
+option CookieMission.MediumTasks
+{
+    type = integer, min = 1, max = 12, default = 5,
+    page = CookieMission, translation = CookieMission_MediumTasks,
+}
+
+option CookieMission.MediumAlive
+{
+    type = integer, min = 5, max = 400, default = 70,
+    page = CookieMission, translation = CookieMission_MediumAlive,
+}
+
+option CookieMission.MediumRate
+{
+    type = integer, min = 5, max = 600, default = 80,
+    page = CookieMission, translation = CookieMission_MediumRate,
+}
+
+option CookieMission.MediumCure
+{
+    type = integer, min = 0, max = 100, default = 0,
+    page = CookieMission, translation = CookieMission_MediumCure,
+}
+
+option CookieMission.HardCap
+{
+    type = integer, min = 1, max = 32, default = 8,
+    page = CookieMission, translation = CookieMission_HardCap,
+}
+
+option CookieMission.HardTime
+{
+    type = integer, min = 3, max = 240, default = 25,
+    page = CookieMission, translation = CookieMission_HardTime,
+}
+
+option CookieMission.HardKills
+{
+    type = integer, min = 1, max = 5000, default = 300,
+    page = CookieMission, translation = CookieMission_HardKills,
+}
+
+option CookieMission.HardGang
+{
+    type = integer, min = 1, max = 2000, default = 90,
+    page = CookieMission, translation = CookieMission_HardGang,
+}
+
+option CookieMission.HardCaches
+{
+    type = integer, min = 1, max = 20, default = 7,
+    page = CookieMission, translation = CookieMission_HardCaches,
+}
+
+option CookieMission.HardSurvive
+{
+    type = integer, min = 1, max = 120, default = 12,
+    page = CookieMission, translation = CookieMission_HardSurvive,
+}
+
+option CookieMission.HardTasks
+{
+    type = integer, min = 1, max = 12, default = 7,
+    page = CookieMission, translation = CookieMission_HardTasks,
+}
+
+option CookieMission.HardAlive
+{
+    type = integer, min = 5, max = 400, default = 120,
+    page = CookieMission, translation = CookieMission_HardAlive,
+}
+
+option CookieMission.HardRate
+{
+    type = integer, min = 5, max = 600, default = 150,
+    page = CookieMission, translation = CookieMission_HardRate,
+}
+
+option CookieMission.HardCure
+{
+    type = integer, min = 0, max = 100, default = 100,
+    page = CookieMission, translation = CookieMission_HardCure,
+}

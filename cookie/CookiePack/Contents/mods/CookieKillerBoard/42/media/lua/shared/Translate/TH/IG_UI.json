@@ -1,0 +1,21 @@
+{
+  "IGUI_CKB_Title": "KILLER BOARD",
+  "IGUI_CKB_TabLife": "ชีวิตนี้",
+  "IGUI_CKB_TabAll": "ตลอดกาล",
+  "IGUI_CKB_SubLife": "รวม %1 · ตาย %2",
+  "IGUI_CKB_SubAll": "ชีวิตนี้ %1 · ตาย %2",
+  "IGUI_CKB_You": "คุณ · %1",
+  "IGUI_CKB_MeLife": "รวม %1 · ตาย %2 · ชีวิตที่ %3",
+  "IGUI_CKB_MeAll": "ชีวิตนี้ %1 · ตาย %2 · ชีวิตที่ %3",
+  "IGUI_CKB_Loading": "กำลังโหลด...",
+  "IGUI_CKB_Empty": "ยังไม่มีใครฆ่าซอมบี้",
+  "IGUI_CKB_Fist": "มือเปล่า",
+  "IGUI_CKB_Car": "รถชน",
+  "IGUI_CKB_Hidden": "(ซ่อนอยู่)",
+  "IGUI_CKB_AdmHide": "ซ่อน %1 จากบอร์ด",
+  "IGUI_CKB_AdmShow": "เอา %1 กลับขึ้นบอร์ด",
+  "IGUI_CKB_AdmReset": "ล้างยอดรวม/ตาย/อาวุธของ %1",
+  "IGUI_CKB_T_reset": "ล้างสถิติของ %1 แล้ว",
+  "IGUI_CKB_T_hidden": "ซ่อน %1 จากบอร์ดแล้ว",
+  "IGUI_CKB_T_shown": "เอา %1 กลับขึ้นบอร์ดแล้ว"
+}

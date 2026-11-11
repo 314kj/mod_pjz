@@ -1,0 +1,9 @@
+name=Cookie Killer Board
+id=CookieKillerBoard
+author=lookchinnoi (AKA)
+description=CookieCheetah zombie kill board. A floating skull button opens a small board: kills this life, kills of all lives, deaths, and the weapon each player kills the most with. Counted on the server from the game's own kill counter. Ranks 1-3 get gradient ribbons.
+poster=poster.png
+icon=icon.png
+require=\CookieMission
+versionMin=42.13.0
+modversion=1.0.1

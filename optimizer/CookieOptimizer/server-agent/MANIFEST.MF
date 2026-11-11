@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Premain-Class: cookie.slicer.Agent
+Main-Class: cookie.slicer.Agent
+Implementation-Title: Cookie Slicer (CookieCheetah server)
+Implementation-Version: 1

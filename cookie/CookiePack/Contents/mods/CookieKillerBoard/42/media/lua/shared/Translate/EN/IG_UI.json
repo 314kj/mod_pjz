@@ -1,0 +1,21 @@
+{
+  "IGUI_CKB_Title": "KILLER BOARD",
+  "IGUI_CKB_TabLife": "This life",
+  "IGUI_CKB_TabAll": "All time",
+  "IGUI_CKB_SubLife": "Total %1 · Deaths %2",
+  "IGUI_CKB_SubAll": "This life %1 · Deaths %2",
+  "IGUI_CKB_You": "You · %1",
+  "IGUI_CKB_MeLife": "Total %1 · Deaths %2 · Life #%3",
+  "IGUI_CKB_MeAll": "This life %1 · Deaths %2 · Life #%3",
+  "IGUI_CKB_Loading": "Loading...",
+  "IGUI_CKB_Empty": "No zombie kills yet",
+  "IGUI_CKB_Fist": "Bare hands",
+  "IGUI_CKB_Car": "Run over",
+  "IGUI_CKB_Hidden": "(hidden)",
+  "IGUI_CKB_AdmHide": "Hide %1 from the board",
+  "IGUI_CKB_AdmShow": "Put %1 back on the board",
+  "IGUI_CKB_AdmReset": "Clear total/deaths/weapons of %1",
+  "IGUI_CKB_T_reset": "Cleared the stats of %1",
+  "IGUI_CKB_T_hidden": "%1 is hidden from the board",
+  "IGUI_CKB_T_shown": "%1 is back on the board"
+}

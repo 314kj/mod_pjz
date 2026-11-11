@@ -1,0 +1,9 @@
+name=Cookie Mastery - Level 10+ Mastery
+id=CookieMastery
+author=lookchinnoi (AKA)
+description=CookieCheetah mastery mode of Cookie Mission: XP past level 10 fills a 10-level mastery track in one branch per life (3 sides x 3 branches x 4 tiers), shown as a skill tree. Never written to skill journals. Builder branch, mentor/apprentice, master books and a public Hall of Fame in this build.
+poster=poster.png
+icon=icon.png
+require=\CookieMission
+versionMin=42.13.0
+modversion=0.4.3

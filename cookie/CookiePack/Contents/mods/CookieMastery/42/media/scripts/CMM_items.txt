@@ -1,0 +1,16 @@
+module CookieMastery
+{
+    imports
+    {
+        Base
+    }
+
+    item MasterBook
+    {
+        DisplayCategory = Literature,
+        ItemType = base:normal,
+        DisplayName = Master Book,
+        Icon = CMM_MasterBook,
+        Weight = 0.5,
+    }
+}

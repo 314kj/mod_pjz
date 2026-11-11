@@ -1,0 +1,8 @@
+name=Cookie Mission - Daily Mission Board
+id=CookieMission
+author=lookchinnoi (AKA)
+description=CookieCheetah daily mission board: 3 cards a day (easy / medium / very hard) in real Knox County buildings. Accept to warp in, clear the horde, crush a gang, hunt supply caches, hold out, or play minigame jobs (fix wiring, crack safes, fix pipes, board windows, defuse traps) while the horde keeps coming, get weapons and medicine, warp home. In-game admin panel.
+poster=poster.png
+icon=icon.png
+versionMin=42.13.0
+modversion=1.1.4

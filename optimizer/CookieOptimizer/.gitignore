@@ -1,0 +1,12 @@
+# build output
+*.jar
+*.class
+out/
+# test results (they are written to the Zomboid Logs folder, but just in case)
+*.jfr
+cookie-ab/
+report_*.txt
+stdout_*.txt
+stderr_*.txt
+cookie-test-result.txt
+cookie-jointest-result.txt
