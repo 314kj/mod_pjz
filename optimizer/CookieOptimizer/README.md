@@ -21,7 +21,7 @@ tools/
   cookie-launch-test.ps1    เทสว่า env / agent / heap / GC ส่งเข้าเกมได้ไหม (ทำเสร็จแล้ว 10 พ.ย.)
   agent-test/               java agent ทดสอบ (เขียนรายงานอย่างเดียว) + build.ps1
 server-agent/               Cookie Slicer: java agent ของเซิฟ กระจายงาน Lua ตอนโหลด cell ไปหลาย tick (ดู README ในโฟลเดอร์)
-client-helper/              Cookie Slicer Helper: java agent ฝั่งผู้เล่น (ไม่บังคับ) วัด CPU/RAM + RAM เกมกดปุ่มเดียว, setup/ = ตัวติดตั้งแจกทาง Discord
+client-helper/              Cookie Slicer Helper: java agent ฝั่งผู้เล่น (ไม่บังคับ) วัด CPU/RAM, RAM เกมกดปุ่มเดียว, ประหยัด RAM ระดับ Java, บอกวิธีแก้ตอนเข้าเซิฟไม่ได้, setup/ = ตัวติดตั้งแจกทาง Discord
 docs/
   launch-test-2026-11-10.md ผล launch test
 ```

@@ -1,0 +1,111 @@
+package cookie.slicer.helper;
+
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Map;
+
+/**
+ * Less-RAM checks (helper 1.2.0).
+ *  R1  class names made readable and grouped by package
+ *  R2  a real class histogram of this Java -> top classes, groups, totals
+ *  R3  the window's requests: RAM savers off / on (ramsave.txt), "what uses RAM" (CookieSlicer_heap.txt)
+ *  R4  the pc file says whether this Java runs with the savers (run with and without them)
+ * Run: java [savers] -cp <test classes> cookie.slicer.helper.RamTest <out dir> <expect ramsave_now: 1|0>
+ */
+public final class RamTest {
+    static int fails;
+
+    static void check(boolean ok, String what) {
+        System.out.println((ok ? "  ok   " : "  FAIL ") + what);
+        if (!ok) fails++;
+    }
+
+    public static void main(String[] a) throws Exception {
+        File out = new File(a[0]);
+        String expectNow = a.length > 1 ? a[1] : null;
+        // ---------------------------------------------------------------- R1
+        System.out.println("R1 names and groups");
+        check("byte[]".equals(HeapReport.readable("[B")), "[B -> byte[]");
+        check("java.lang.Object[]".equals(HeapReport.readable("[Ljava.lang.Object;")), "[Ljava.lang.Object; -> java.lang.Object[]");
+        check("int[][]".equals(HeapReport.readable("[[I")), "[[I -> int[][]");
+        check("zombie.iso.IsoGridSquare".equals(HeapReport.readable("zombie.iso.IsoGridSquare")), "plain class kept");
+        check("byte[]".equals(HeapReport.group("byte[]")), "group byte[]");
+        check("java.lang.String".equals(HeapReport.group("java.lang.String")), "group java class kept");
+        check("zombie.iso.*".equals(HeapReport.group("zombie.iso.IsoGridSquare")), "group zombie.iso.*: " + HeapReport.group("zombie.iso.IsoGridSquare"));
+        check("zombie.iso.sprite.*".equals(HeapReport.group("zombie.iso.sprite.IsoSprite")), "group zombie.iso.sprite.*");
+        check("zombie.core.textures.*".equals(HeapReport.group("zombie.core.textures.Texture[]")), "group of an array of game objects");
+        check("org.lwjgl.*".equals(HeapReport.group("org.lwjgl.system.MemoryStack")), "group org.lwjgl.*");
+        check("zombie.*".equals(HeapReport.group("zombie.GameWindow")), "group zombie.*");
+
+        // ---------------------------------------------------------------- R2
+        System.out.println("R2 real histogram");
+        byte[][] keep = new byte[64][];
+        for (int i = 0; i < keep.length; i++) keep[i] = new byte[256 * 1024]; // 16 MB of byte[]
+        long t0 = System.currentTimeMillis();
+        String h = HeapReport.histogram();
+        long took = System.currentTimeMillis() - t0;
+        Map<String, String> m = HeapReport.summarize(h);
+        System.out.println("     histogram took " + took + " ms, total " + m.get("total_mb") + " MB, " + m.get("total_objects") + " objects");
+        System.out.println("     c1=" + m.get("c1") + "  g1=" + m.get("g1"));
+        check("40".equals(m.get("n")), "40 top classes (" + m.get("n") + ")");
+        check(Long.parseLong(m.get("total_mb")) >= 16, "total counts the 16 MB kept");
+        check(m.get("c1").endsWith("|byte[]"), "byte[] is the biggest here");
+        check(Integer.parseInt(m.get("gn")) > 3, "groups listed");
+        long sum = 0;
+        for (int i = 1; i <= 40; i++) {
+            String[] p = m.get("c" + i).split("\\|");
+            check(p.length == 3 && Long.parseLong(p[0]) > 0 && Long.parseLong(p[1]) > 0, "c" + i + " = bytes|count|name");
+            if (fails > 0) break;
+            sum += Long.parseLong(p[0]);
+        }
+        check(sum / Helper.MB <= Long.parseLong(m.get("total_mb")) + 1, "top 40 within the total");
+        if (keep[3].length == 0) System.out.println(); // keep alive
+
+        // ---------------------------------------------------------------- R3
+        System.out.println("R3 requests from the window");
+        File lua = new File(out, "ram/Lua"), state = new File(out, "ram/app");
+        lua.mkdirs();
+        state.mkdirs();
+        new File(state, Helper.RAMSAVE_FILE).delete();
+        new File(lua, HeapReport.FILE).delete();
+        Helper hp = new Helper(lua, state);
+        check(hp.savedRamSave(), "no ramsave.txt = savers on");
+        request(lua, "t=100\nramsave=0\n");
+        hp.handleRequest();
+        check(!hp.savedRamSave(), "ramsave=0 -> off for next start");
+        check(read(new File(state, Helper.RAMSAVE_FILE)).contains("ramsave=0"), "ramsave.txt says 0");
+        request(lua, "t=101\nramsave=1\nheap_report=1\n");
+        hp.handleRequest();
+        check(hp.savedRamSave(), "ramsave=1 -> on again");
+        File heap = new File(lua, HeapReport.FILE);
+        for (int i = 0; i < 100 && !heap.isFile(); i++) Thread.sleep(100);
+        check(heap.isFile(), "CookieSlicer_heap.txt written");
+        for (int i = 0; i < 50 && !"done".equals(HeapReport.state); i++) Thread.sleep(100);
+        Map<String, String> f = Helper.read(heap);
+        check("done".equals(HeapReport.state) && f.containsKey("c1") && f.containsKey("g1") && f.containsKey("t"), "file has t, c1.., g1..");
+        request(lua, "t=101\nramsave=0\n");
+        hp.handleRequest();
+        check(hp.savedRamSave(), "an old request (same t) is ignored");
+        check(!new File(state, Helper.HEAP_FILE).isFile(), "no heap_mb -> heap.txt untouched");
+
+        // ---------------------------------------------------------------- R4
+        System.out.println("R4 pc file");
+        Map<String, String> pc = hp.measure();
+        for (String k : new String[] {"heap_committed_mb", "nonheap_mb", "ramsave_now", "ramsave_next", "gc", "heap_report"}) {
+            check(pc.containsKey(k), k + "=" + pc.get(k));
+        }
+        if (expectNow != null) check(expectNow.equals(pc.get("ramsave_now")), "ramsave_now is " + expectNow + " for this Java");
+
+        System.out.println(fails == 0 ? "RamTest: all passed" : "RamTest: " + fails + " FAILED");
+        System.exit(fails == 0 ? 0 : 1);
+    }
+
+    static void request(File lua, String s) throws Exception {
+        Files.write(new File(lua, Helper.REQUEST_FILE).toPath(), s.getBytes(StandardCharsets.UTF_8));
+    }
+
+    static String read(File f) throws Exception {
+        return new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+    }
+}

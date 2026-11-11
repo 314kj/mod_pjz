@@ -33,20 +33,30 @@ import java.util.Map;
  * Screen looks (v1.1.0): one game call is pointed at ShaderHook when the game loads the
  * class (ShaderPatcher), so the look chosen in the mod is drawn right after the game's
  * own screen shader (PostDrawer). The choice comes from Zomboid/Lua/CookieSlicer_shader.txt.
+ * Join problems (v1.2.0): ConsoleWatch reads the game's log for the few problems that stop
+ * a join (CookieSlicer_diag.txt for the mod) and the loading screen shows what to do
+ * (LoadPatcher / LoadHook); GameJson reports what ProjectZomboid64.json holds (read only).
+ * Less RAM (v1.2.0): the start script adds Java's own memory savers (smaller object headers,
+ * one copy of repeated text, give unused RAM back to Windows after a minute) unless the
+ * player turned them off in the window (ramsave.txt next to the jar, written here); on
+ * request HeapReport lists what fills the game's memory (CookieSlicer_heap.txt).
  * Copyright (c) AKA / Cookie Cheetah. All rights reserved.
  */
 public final class Helper implements Runnable {
-    public static final String VERSION = "1.1.0";
+    public static final String VERSION = "1.2.0";
     static final long MB = 1024L * 1024L;
     static final String PC_FILE = "CookieSlicer_pc.txt";
     static final String REQUEST_FILE = "CookieSlicer_request.txt";
     static final String HEAP_FILE = "heap.txt";
+    static final String RAMSAVE_FILE = "ramsave.txt";
 
     final File luaDir;
     final File stateDir;
     private long lastRequestT = Long.MIN_VALUE;
     private String heapNote = null;
     private long heapNextMb = 0;
+    private String ramsaveNote = null;
+    private static String ramsaveNow, gcName;
 
     // previous sample, for deltas
     private long prevWall = 0, prevGcMs = -1;
@@ -54,6 +64,8 @@ public final class Helper implements Runnable {
     private final Map<Long, String> threadNames = new HashMap<>();
     private final long[] gcWindow = new long[30]; // last 30 samples x 2 s = 1 minute
     private int gcIdx = 0;
+    private Map<String, String> jsonInfo;
+    private int jsonAge;
 
     Helper(File luaDir, File stateDir) {
         this.luaDir = luaDir;
@@ -89,6 +101,16 @@ public final class Helper implements Runnable {
                 } catch (Throwable t) {
                     System.out.println("[CookieSlicerHelper] screen looks off (the game runs as usual): " + t);
                 }
+                try {
+                    inst.addTransformer(new LoadPatcher(), false);
+                } catch (Throwable t) {
+                    System.out.println("[CookieSlicerHelper] loading screen box off (the game runs as usual): " + t);
+                }
+            }
+            try {
+                ConsoleWatch.start(cache, lua);
+            } catch (Throwable t) {
+                System.out.println("[CookieSlicerHelper] log check off (the game runs as usual): " + t);
             }
             gpuNames();
             Thread t = new Thread(h, "CookieSlicer-Helper");
@@ -198,10 +220,26 @@ public final class Helper implements Runnable {
         long next = heapNextMb > 0 ? heapNextMb : savedHeapMb();
         if (next > 0 && Math.abs(next - maxMb) > 256) m.put("heap_next_mb", Long.toString(next));
         if (heapNote != null) m.put("heap_note", heapNote);
+        // what Windows sees the game keep for its memory (shrinks when the RAM savers are on)
+        m.put("heap_committed_mb", Long.toString(heap.getCommitted() / MB));
+        m.put("nonheap_mb", Long.toString(ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage().getCommitted() / MB));
+        m.put("ramsave_now", ramsaveNow());
+        m.put("ramsave_next", savedRamSave() ? "1" : "0");
+        if (ramsaveNote != null) m.put("ramsave_note", ramsaveNote);
+        m.put("gc", gcName());
+        HeapReport.status(m);
 
         threads(m, now);
         gc(m);
         ShaderState.status(m);
+        // the game's start settings: read once a minute (the file only changes when the game is closed)
+        if (jsonInfo == null || ++jsonAge >= 30) {
+            jsonInfo = new LinkedHashMap<>();
+            GameJson.report(new File(System.getProperty("user.dir", ".")), jsonInfo);
+            jsonAge = 0;
+        }
+        m.putAll(jsonInfo);
+        m.put("load_box", Integer.toString(LoadPatcher.hooked));
         if (!m.containsKey("gpu") && gpuGuess != null) m.put("gpu", gpuGuess); // before the game has drawn a frame
         if (!m.containsKey("vram_total_mb") && gpuGuessMb > 0) m.put("vram_total_mb", Long.toString(gpuGuessMb));
         prevWall = now;
@@ -336,7 +374,6 @@ public final class Helper implements Runnable {
         if (!req.isFile()) return;
         Map<String, String> r = read(req);
         long t = parse(r.get("t"), Long.MIN_VALUE);
-        long mb = parse(r.get("heap_mb"), -1);
         if (t != Long.MIN_VALUE && t <= lastRequestT) return;
         lastRequestT = t;
         try {
@@ -344,6 +381,13 @@ public final class Helper implements Runnable {
         } catch (IOException e) {
             req.delete();
         }
+        String rs = r.get("ramsave");
+        if (rs != null && !rs.isEmpty()) setRamSave(!"0".equals(rs.trim()));
+        if ("1".equals(r.get("heap_report"))) HeapReport.startAsync(new File(luaDir, HeapReport.FILE));
+        setHeap(parse(r.get("heap_mb"), -1));
+    }
+
+    void setHeap(long mb) {
         if (mb <= 0) return;
         long totalMb = -1;
         java.lang.management.OperatingSystemMXBean base = ManagementFactory.getOperatingSystemMXBean();
@@ -367,6 +411,60 @@ public final class Helper implements Runnable {
         } catch (IOException e) {
             heapNote = "failed: " + e.getMessage();
         }
+    }
+
+    // ================================================================ RAM savers (start script)
+
+    /** on/off for the next start: ramsave.txt next to the jar ("ramsave=0" = off; no file = on) */
+    void setRamSave(boolean on) {
+        if (stateDir == null) {
+            ramsaveNote = "failed: helper folder unknown";
+            return;
+        }
+        try {
+            Files.write(new File(stateDir, RAMSAVE_FILE).toPath(), ("ramsave=" + (on ? 1 : 0) + "\n").getBytes(StandardCharsets.UTF_8));
+            ramsaveNote = "ok";
+            System.out.println("[CookieSlicerHelper] RAM savers " + (on ? "on" : "off") + " from the next start");
+        } catch (IOException e) {
+            ramsaveNote = "failed: " + e.getMessage();
+        }
+    }
+
+    boolean savedRamSave() {
+        if (stateDir == null) return true;
+        File f = new File(stateDir, RAMSAVE_FILE);
+        return !f.isFile() || !"0".equals(read(f).get("ramsave"));
+    }
+
+    /** "1" when this game runs with the savers (the start script added them), "0" when not, "?" unknown */
+    static String ramsaveNow() {
+        if (ramsaveNow == null) {
+            try {
+                com.sun.management.HotSpotDiagnosticMXBean d = ManagementFactory.getPlatformMXBean(com.sun.management.HotSpotDiagnosticMXBean.class);
+                boolean coh = "true".equals(d.getVMOption("UseCompactObjectHeaders").getValue());
+                boolean dedup = "true".equals(d.getVMOption("UseStringDeduplication").getValue());
+                ramsaveNow = coh && dedup ? "1" : "0";
+            } catch (Throwable t) {
+                ramsaveNow = "?";
+            }
+        }
+        return ramsaveNow;
+    }
+
+    /** ZGC / G1 / ... (what cleans up the game's memory) */
+    static String gcName() {
+        if (gcName == null) {
+            String g = "?";
+            for (GarbageCollectorMXBean b : ManagementFactory.getGarbageCollectorMXBeans()) {
+                String n = b.getName();
+                if (n.startsWith("ZGC")) { g = "ZGC"; break; }
+                if (n.startsWith("G1")) { g = "G1"; break; }
+                if (n.startsWith("Shenandoah")) { g = "Shenandoah"; break; }
+                g = n.replace(' ', '_');
+            }
+            gcName = g;
+        }
+        return gcName;
     }
 
     /** RAM the start script will give the game next time (heap.txt), or 0 */

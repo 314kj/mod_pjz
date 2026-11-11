@@ -4,7 +4,9 @@
 -- Performance: "your PC now" (point at a number to see what it means and how yours
 -- looks) + what the chosen settings should save, and the settings (levels + switches).
 -- Sizes come from the game's fonts: big fonts when the window fits the screen, the
--- smaller set otherwise (1366x768).
+-- smaller set otherwise (1366x768). In game the window is see-through by default (the
+-- switch in its header makes it solid); on the main menu it hides while the server list
+-- or another menu screen is open (the "before you join" panel is CookieSlicer_Join.lua).
 -- Text comes from Translate/<language>/UI.json (Thai and English).
 -- Copyright (c) AKA / Cookie Cheetah. See workshop.txt for the license.
 if isServer() then return end
@@ -91,9 +93,16 @@ end
 -- ---------------------------------------------------------------- drawing helpers
 -- (self.dry = measure only: used once to pick the font size that fits the screen)
 
+-- see-through in game: the window's surfaces let the game show through, text and bars do not
+local SURFACE = { [C.bg] = true, [C.head] = true, [C.nav] = true, [C.card] = true, [C.btn] = true,
+                  [C.btnHover] = true, [C.track] = true, [C.trackOld] = true, [C.off] = true }
+local GLASS_SURFACE, GLASS_BG = 0.42, 0.18
+
 function CookieSlicerWindow:rect(x, y, w, h, c, a)
     if self.dry then return end
-    self:drawRect(x, y, w, h, a or 1, c[1], c[2], c[3])
+    a = a or 1
+    if self.glass and SURFACE[c] then a = a * GLASS_SURFACE end
+    self:drawRect(x, y, w, h, a, c[1], c[2], c[3])
 end
 
 function CookieSlicerWindow:frame(x, y, w, h, c, a, t)
@@ -164,6 +173,10 @@ local function wrap(s, font, maxW)
     for i, l in ipairs(lines) do lines[i] = fit(l, font, maxW) end
     return lines
 end
+
+-- for CookieSlicer_Join.lua (the panel next to the server list)
+CS.ui = { C = C, T = T, fh = fh, tw = tw, fit = fit, wrap = wrap, gb = gb, round = round, clamp = clamp,
+          keyName = keyName, verLess = verLess, FONTS_BIG = FONTS_BIG, FONTS_SMALL = FONTS_SMALL }
 
 -- a paragraph; returns the y below it
 function CookieSlicerWindow:para(s, x, y, w, c, font)
@@ -859,12 +872,107 @@ function CookieSlicerWindow:drawVersion(x, y0, w)
     else
         row(T("Ver_heap"), "--", C.dim)
     end
+    -- (row at a given y, for the RAM part below)
+    local function rowAt(yy, label, value, color, note)
+        y = yy
+        row(label, value, color, note)
+        return y
+    end
+    y = self:drawRam(cx, y, cw, labelW, rowAt)
     row(T("Ver_key"), T("Ver_keyV", keyName()))
     row(T("Ver_setup"), T("Ver_setupV"))
     row(T("Ver_file"), "Zomboid/Lua/CookieSlicer_client.txt")
     self:rect(cx, y, cw, 1, C.track)
     y = y + p
     self.lastH.version = y - y0
+    return y
+end
+
+-- ---------------------------------------------------------------- less RAM (version page)
+
+local function size(bytes)
+    local mb = (tonumber(bytes) or 0) / 1048576
+    if mb >= 1024 then return tostring(round1(mb / 1024)) .. " GB" end
+    return tostring(round(mb)) .. " MB"
+end
+
+-- CookieSlicer_heap.txt, read again only when the helper wrote a new one
+local function heapData(pc)
+    local t = tonumber(pc.heap_report_t)
+    if not t then return CS.heapData end
+    if not CS.heapData or CS.heapData.t ~= t then
+        local d = CS.readKV("CookieSlicer_heap.txt")
+        if d then
+            d.t = t
+            CS.heapData = d
+        end
+    end
+    return CS.heapData
+end
+
+-- RAM savers (on / off from the next start), what Windows sees, what uses the RAM
+function CookieSlicerWindow:drawRam(cx, y, cw, labelW, rowAt)
+    local F, gap = self.F, self.gap
+    local pc = CS.pc
+    if not CS.helperHas(CS.JOIN_HELPER_MIN) then
+        return rowAt(y, T("Ver_ramsave"), T(pc.fresh and "Ver_ramsaveOld" or "Ver_ramsaveNone"), C.dim)
+    end
+    -- savers: what this game runs with, and what the next start will use
+    local now = tostring(pc.ramsave_now) == "1"
+    local nextOn = tostring(pc.ramsave_next) ~= "0"
+    if CS.ramsaveAsked ~= nil then nextOn = CS.ramsaveAsked == 1 end -- until the helper has read it
+    local state
+    if nextOn then state = T(now and "Ver_ramsaveOn" or "Ver_ramsaveNext")
+    else state = T(now and "Ver_ramsaveOffNext" or "Ver_ramsaveOff") end
+    self:rect(cx, y, cw, 1, C.track)
+    y = y + gap
+    y = self:switchRow(cx, y, cw, T("Ver_ramsave") .. ": " .. state, nextOn, CookieSlicerWindow.onRamSave, not nextOn)
+    y = self:para(T("Ver_ramsaveNote"), cx + 4, y + 2, cw - 8, C.dim, F.small) + gap - 2
+    -- held for the game's data (Windows counts this) and really in use after the last clean-up
+    local held = tonumber(pc.heap_committed_mb)
+    local live = tonumber(pc.heap_live_mb)
+    if not live or live == 0 then live = tonumber(pc.heap_used_mb) end
+    if held and live then y = rowAt(y, T("Ver_ramWin"), T("Ver_ramWinV", gb(held), gb(live))) end
+
+    -- what uses the RAM (on request; the game stops for a moment)
+    self:rect(cx, y, cw, 1, C.track)
+    y = y + gap
+    local st = tostring(pc.heap_report or "idle")
+    local asked = CS.heapAskedT and (tonumber(pc.heap_report_t) or 0) < CS.heapAskedT and getTimestampMs() - CS.heapAskedT < 20000
+    local running = st == "running" or asked
+    self:text(fit(T("Ver_heapReport"), F.body, labelW), cx, y, C.dim, F.body)
+    local label = T(running and "Ver_heapRunning" or "Ver_heapBtn")
+    local bh = fh(F.body) + 10
+    local bx = cx + labelW + gap
+    self:button(bx, y - 4, math.min(cw - labelW - gap, tw(label, F.body) + 36), bh, label, F.body,
+        running and function() end or CookieSlicerWindow.onHeapReport, nil, "normal")
+    y = y + bh + gap - 2
+    if string.sub(st, 1, 6) == "failed" then
+        y = self:para(T("Ver_heapFailed", string.sub(st, 9)), bx, y, cw - labelW - gap, C.warn, F.small) + gap - 2
+        return y
+    end
+    local d = heapData(pc)
+    if not d then
+        self:text(T("Ver_heapNone"), bx, y, C.dim, F.small)
+        return y + fh(F.small) + gap
+    end
+    local objects = round1((tonumber(d.total_objects) or 0) / 1000000)
+    y = self:para(T("Ver_heapTotal", gb(tonumber(d.total_mb) or 0), tostring(objects)), bx, y, cw - labelW - gap, C.soft, F.small) + 4
+    -- the biggest groups, two columns
+    local colW = math.floor((cw - labelW - gap - gap) / 2)
+    local n = math.min(8, tonumber(d.gn) or 0)
+    local rows = math.ceil(n / 2)
+    for i = 1, n do
+        local bytes, name = string.match(tostring(d["g" .. i] or ""), "^(%d+)|(.+)$")
+        if bytes then
+            local col, r = math.floor((i - 1) / rows), (i - 1) % rows
+            local gx, gy = bx + col * (colW + gap), y + r * (fh(F.small) + 2)
+            local v = size(bytes)
+            self:text(fit(name, F.small, colW - tw(v, F.small) - 12), gx, gy, C.text, F.small)
+            self:textR(v, gx + colW, gy, C.mint, F.small)
+        end
+    end
+    y = y + rows * (fh(F.small) + 2) + gap
     return y
 end
 
@@ -963,6 +1071,7 @@ end
 
 function CookieSlicerWindow:drawTip(t)
     local F = self.F
+    self.glass = false -- explanations stay solid (easy to read)
     local title = T("TipT_" .. t.id, levelWord((CS.verdict())))
     local lines = {}
     for line in string.gmatch(T("TipB_" .. t.id) .. "\n", "(.-)\n") do lines[#lines + 1] = line end
@@ -998,6 +1107,8 @@ end
 -- ---------------------------------------------------------------- frame
 
 function CookieSlicerWindow:render()
+    self.glass = not self.dry and getPlayer() ~= nil and tonumber(CS.settings.glass) == 1 and not self.compare
+    self.backgroundColor.a = self.glass and GLASS_BG or 0.97
     ISPanel.render(self)
     self.hits, self.tips = {}, {}
     if self.compare then
@@ -1017,7 +1128,16 @@ function CookieSlicerWindow:render()
     local cl = T("Close", keyName())
     local bw, bh = tw(cl, F.body) + 36, fh(F.body) + 12
     self:button(W - pad - bw, math.floor((hh - bh) / 2), bw, bh, cl, F.body, CookieSlicerWindow.onClose, nil, "ghost")
-    self:textR("v" .. CS.VERSION, W - pad - bw - 16, sy, C.faint, F.small)
+    local vx = W - pad - bw - 16
+    if getPlayer() ~= nil then
+        -- see-through / solid (in game only)
+        local gl = T("Glass", T(tonumber(CS.settings.glass) == 1 and "Glass_on" or "Glass_off"))
+        local gw = tw(gl, F.small) + 24
+        local gy = math.floor((hh - (fh(F.small) + 10)) / 2)
+        self:button(vx - gw, gy, gw, fh(F.small) + 10, gl, F.small, CookieSlicerWindow.onGlass, nil, "ghost")
+        vx = vx - gw - 16
+    end
+    self:textR("v" .. CS.VERSION, vx, sy, C.faint, F.small)
 
     -- body
     local top = hh + 2 + pad
@@ -1074,6 +1194,19 @@ function CookieSlicerWindow:onClose()
     self:setVisible(false)
     self:removeFromUIManager()
     CookieSlicerWindow.instance = nil
+end
+
+function CookieSlicerWindow:onGlass()
+    CS.settings.glass = tonumber(CS.settings.glass) == 1 and 0 or 1
+    CS.saveSettings()
+end
+
+function CookieSlicerWindow:onRamSave(on)
+    CS.requestRamSave(on)
+end
+
+function CookieSlicerWindow:onHeapReport()
+    CS.requestHeapReport()
 end
 
 function CookieSlicerWindow:onPage(id)
@@ -1355,11 +1488,23 @@ local function mainMenuShowing()
     return ms.bottomPanel == nil or ms.bottomPanel:isVisible()
 end
 
+-- the window and the button stay on the main menu itself: while the server list (or any
+-- other menu screen) is open they hide, and come back with the main menu
 local function onFETick()
+    local menu = mainMenuShowing()
+    local w = CookieSlicerWindow.instance
+    if w and not getPlayer() then
+        if not menu and not w.subHidden then
+            w.subHidden = true
+            w:setVisible(false)
+        elseif menu and w.subHidden then
+            w.subHidden = false
+            w:setVisible(true)
+            w:bringToTop()
+        end
+    end
     local btn = CookieSlicerButton.instance
-    if not btn then return end
-    local show = mainMenuShowing() or CookieSlicerWindow.instance ~= nil
-    if btn:isVisible() ~= show then btn:setVisible(show) end
+    if btn and btn:isVisible() ~= menu then btn:setVisible(menu) end
 end
 
 -- ================================================================ in game: key

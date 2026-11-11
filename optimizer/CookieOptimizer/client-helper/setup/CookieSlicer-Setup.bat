@@ -16,9 +16,15 @@ goto :eof
 #       stay after it). Steam must be closed for that: it closes and opens again by itself.
 #     - turns the Cookie Slicer mod on for the MAIN MENU (Zomboid\mods\default.txt), so
 #       its button is there before joining (on a server the server's mod list counts)
-# [2] Uninstall - removes the helper, our part of the launch option and the main-menu line.
+#     - checks the game's start settings (ProjectZomboid64.json in the game folder) and
+#       repairs what stops the game from starting or joining: PZ Optimization left in it
+#       (its jar / AOT cache break after every game update) and game RAM that does not fit
+#       this PC. The file as it was is kept as ProjectZomboid64.json.cookieslicer-backup.
+# [2] Uninstall - removes the helper, our part of the launch option and the main-menu line;
+#     ProjectZomboid64.json goes back to the backup if only its RAM was changed (PZ
+#     Optimization leftovers are not put back: they stop the game).
 # [3] Check.
-# No game file is changed. It never starts or closes the game.
+# Only ProjectZomboid64.json is changed (backup first). It never starts or closes the game.
 # Log: %TEMP%\CookieSlicer-setup.log
 
 $ErrorActionPreference = 'Stop'
@@ -222,6 +228,112 @@ function Get-CurrentHeapMB($libs) {
     return 3072
 }
 
+# ---------------------------------------------------------------- ProjectZomboid64.json
+
+function Find-GameJson($libs) {
+    foreach ($l in $libs) {
+        $j = Join-Path $l 'steamapps\common\ProjectZomboid\ProjectZomboid64.json'
+        if (Test-Path -LiteralPath $j) { return $j }
+    }
+    return $null
+}
+
+$BadArg = '(?i)AOTCache|SharedArchiveFile|AOTMode|pzopt'
+
+# what the file holds: Issues (broken, pzopt, aot), XmxMB, other Java agents
+function Read-GameJson([string]$path) {
+    $text = [System.IO.File]::ReadAllText($path)
+    $r = @{ Text = $text; Obj = $null; Issues = @(); XmxMB = 0; Agents = @() }
+    try { $r.Obj = $text | ConvertFrom-Json } catch { $r.Issues += 'broken'; return $r }
+    if (-not $r.Obj.mainClass -or -not $r.Obj.classpath -or -not $r.Obj.vmArgs) { $r.Issues += 'broken'; return $r }
+    if (@($r.Obj.classpath | Where-Object { $_ -match 'pzopt' }).Count -gt 0) { $r.Issues += 'pzopt' }
+    $all = @($r.Obj.vmArgs)
+    if ($r.Obj.windows) { foreach ($p in $r.Obj.windows.PSObject.Properties) { if ($p.Value.vmArgs) { $all += @($p.Value.vmArgs) } } }
+    if (@($all | Where-Object { $_ -match $BadArg }).Count -gt 0) { $r.Issues += 'aot' }
+    foreach ($a in $all) {
+        if ($a -match '^-javaagent:(.+)$' -and $a -notmatch 'CookieSlicer') { $r.Agents += (Split-Path -Leaf ($Matches[1].Trim('"'))) }
+    }
+    foreach ($a in @($r.Obj.vmArgs)) {
+        $m = [regex]::Match($a, '^-Xmx(\d+)([kKmMgG]?)$')
+        if ($m.Success) {
+            $v = [double]$m.Groups[1].Value
+            switch ($m.Groups[2].Value.ToLower()) { 'g' { $v *= 1024 } 'k' { $v /= 1024 } '' { $v /= 1MB } }
+            $r.XmxMB = [int]$v
+        }
+    }
+    return $r
+}
+
+# JSON in the game's own layout (tabs, one value per line); works in Windows PowerShell 5.1
+function ConvertTo-GameJson($v, [string]$ind) {
+    if ($null -eq $v) { return 'null' }
+    if ($v -is [string]) { return '"' + $v.Replace('\', '\\').Replace('"', '\"') + '"' }
+    if ($v -is [bool]) { if ($v) { return 'true' } else { return 'false' } }
+    if ($v -is [ValueType]) { return ([System.Convert]::ToString($v, [System.Globalization.CultureInfo]::InvariantCulture)) }
+    $in = $ind + "`t"
+    if ($v -is [System.Collections.IEnumerable]) {
+        $items = @(); foreach ($x in $v) { $items += ($in + (ConvertTo-GameJson $x $in)) }
+        if ($items.Count -eq 0) { return '[]' }
+        return "[`n" + ($items -join ",`n") + "`n" + $ind + ']'
+    }
+    $props = @(); foreach ($p in $v.PSObject.Properties) { $props += ($in + '"' + $p.Name + '": ' + (ConvertTo-GameJson $p.Value $in)) }
+    if ($props.Count -eq 0) { return '{}' }
+    return "{`n" + ($props -join ",`n") + "`n" + $ind + '}'
+}
+
+# removes PZ Optimization leftovers, sets -Xmx when it does not fit this PC; backup first.
+# Returns what was changed (empty = nothing to do).
+function Repair-GameJson([string]$path, $info, [int]$wantMB, [int]$totalMB) {
+    $o = $info.Obj; $changes = @()
+    $cp = @($o.classpath | Where-Object { $_ -notmatch 'pzopt' })
+    if ($cp.Count -ne @($o.classpath).Count) { $o.classpath = $cp; $changes += 'pzopt' }
+    $va = @($o.vmArgs | Where-Object { $_ -notmatch $BadArg })
+    if ($va.Count -ne @($o.vmArgs).Count) { $changes += 'aot' }
+    if ($o.windows) {
+        foreach ($p in $o.windows.PSObject.Properties) {
+            if ($p.Value.vmArgs) {
+                $w = @($p.Value.vmArgs | Where-Object { $_ -notmatch $BadArg })
+                if ($w.Count -ne @($p.Value.vmArgs).Count) { $p.Value.vmArgs = $w; if ($changes -notcontains 'aot') { $changes += 'aot' } }
+            }
+        }
+    }
+    $cur = $info.XmxMB
+    if ($wantMB -gt 0 -and ($cur -lt $wantMB -or $cur -gt ($totalMB - 2048))) {
+        $x = '-Xmx' + $wantMB + 'm'
+        $i = -1; for ($k = 0; $k -lt $va.Count; $k++) { if ($va[$k] -match '^-Xmx') { $i = $k } }
+        if ($i -ge 0) { $va[$i] = $x } else { $va += $x }
+        $changes += 'xmx'
+    }
+    if ($changes.Count -eq 0) { return @() }
+    $o.vmArgs = $va
+    $backup = "$path.cookieslicer-backup"
+    if (-not (Test-Path -LiteralPath $backup)) { [System.IO.File]::WriteAllText($backup, $info.Text, $Utf8) }
+    $new = (ConvertTo-GameJson $o '') + "`n"
+    if ($info.Text -match "`r`n") { $new = $new.Replace("`n", "`r`n") } # keep the file's own line ends
+    [System.IO.File]::WriteAllText($path, $new, $Utf8)
+    try { $null = [System.IO.File]::ReadAllText($path) | ConvertFrom-Json }
+    catch { [System.IO.File]::WriteAllText($path, $info.Text, $Utf8); throw 'could not repair ProjectZomboid64.json (left as it was)' }
+    # what was changed since the backup (all runs together): uninstall puts the backup
+    # back only when that was nothing but the RAM
+    $jc = Join-Path $AppDir 'json-changes.txt'
+    $all = @($changes)
+    if (Test-Path -LiteralPath $jc) {
+        $prev = [regex]::Match([System.IO.File]::ReadAllText($jc), 'changes=([a-z,]+)')
+        if ($prev.Success) { foreach ($x in $prev.Groups[1].Value.Split(',')) { if ($x -and $all -notcontains $x) { $all += $x } } }
+    }
+    $note = "changes=" + ($all -join ',') + "`nxmx_before=" + $cur + "`nfile=" + $path + "`n"
+    New-Item -ItemType Directory -Force -Path $AppDir | Out-Null
+    [System.IO.File]::WriteAllText($jc, $note, $Utf8)
+    return $changes
+}
+
+function Say-GameJson($info) {
+    if ($info.Issues -contains 'broken') { Say 'ProjectZomboid64.json: BROKEN - Steam > Project Zomboid > Properties > Installed Files > Verify integrity' Yellow; return }
+    if ($info.Issues -contains 'pzopt' -or $info.Issues -contains 'aot') { Say 'ProjectZomboid64.json: PZ Optimization left in it (press 1 to repair)' Yellow }
+    else { Say ('ProjectZomboid64.json: ok, game RAM ' + [math]::Round($info.XmxMB / 1024, 1) + ' GB') Green }
+    if ($info.Agents.Count -gt 0) { Say ('ProjectZomboid64.json: other start tools: ' + ($info.Agents -join ', ') + ' (left as they are)') Yellow }
+}
+
 try {
     Say ''
     Say '  Cookie Slicer Helper - Setup' Magenta
@@ -272,6 +384,28 @@ try {
             Say ("[ok] Game RAM already fine: " + [math]::Round($cur / 1024, 1) + " GB (PC has " + [math]::Round($ram.Total / 1024) + " GB)") Green
         }
 
+        $gj = Find-GameJson $libs
+        if ($gj) {
+            $info = Read-GameJson $gj
+            Say ("game json: " + $gj + " | issues: " + ($info.Issues -join ',') + " | Xmx " + $info.XmxMB + " | agents: " + ($info.Agents -join ',')) DarkGray
+            if ($info.Issues -contains 'broken') {
+                Say 'ProjectZomboid64.json is broken: Steam > Project Zomboid > Properties > Installed Files > Verify integrity, then press 1 again' Yellow
+            } else {
+                try {
+                    $want = $ram.Rec; if ($cur -gt $want -and $cur -le ($ram.Total - 2048)) { $want = $cur }
+                    $done = @(Repair-GameJson $gj $info $want $ram.Total)
+                    if ($done -contains 'pzopt' -or $done -contains 'aot') { Say '[ok] ProjectZomboid64.json: PZ Optimization leftovers removed (backup kept)' Green }
+                    if ($done -contains 'xmx') { Say ('[ok] ProjectZomboid64.json: game RAM ' + [math]::Round($info.XmxMB / 1024, 1) + ' GB -> ' + [math]::Round($want / 1024, 1) + ' GB') Green }
+                    if ($done.Count -eq 0) { Say '[ok] ProjectZomboid64.json is fine' Green }
+                } catch {
+                    Say ('ProjectZomboid64.json not changed: ' + $_.Exception.Message) Yellow
+                }
+                if ($info.Agents.Count -gt 0) { Say ('Other start tools in ProjectZomboid64.json (left as they are): ' + ($info.Agents -join ', ')) Yellow }
+            }
+        } else {
+            Say 'ProjectZomboid64.json not found (game folder unknown) - skipped' DarkGray
+        }
+
         $menu = $false
         foreach ($z in @((Join-Path $env:USERPROFILE 'Zomboid')) + $cacheDirs) { if ($z -and (Set-MenuMod $z $true)) { $menu = $true } }
         if ($menu) { Say '[ok] Cookie Slicer button on the main menu' Green }
@@ -305,7 +439,21 @@ try {
         $cacheDirs = @()
         if ($now) { foreach ($m in [regex]::Matches($now, '-cachedir=("([^"]+)"|(\S+))')) { $cacheDirs += ($m.Groups[2].Value + $m.Groups[3].Value) } }
         foreach ($z in @((Join-Path $env:USERPROFILE 'Zomboid')) + $cacheDirs) { if ($z) { $null = Set-MenuMod $z $false } }
-        foreach ($n in $JarName, 'heap.txt') {
+        $jc = Join-Path $AppDir 'json-changes.txt'
+        if (Test-Path -LiteralPath $jc) {
+            $c = [System.IO.File]::ReadAllText($jc)
+            $file = [regex]::Match($c, 'file=(.+)').Groups[1].Value.Trim()
+            $bk = "$file.cookieslicer-backup"
+            if ($c -match 'changes=xmx\s' -and (Test-Path -LiteralPath $bk) -and (Test-Path -LiteralPath $file)) {
+                Copy-Item -LiteralPath $bk -Destination $file -Force
+                Remove-Item -LiteralPath $bk -Force
+                Say '[ok] ProjectZomboid64.json back as it was' Green
+            } elseif (Test-Path -LiteralPath $bk) {
+                Say ('ProjectZomboid64.json kept repaired (the old one had PZ Optimization in it): ' + $bk) DarkGray
+            }
+            Remove-Item -LiteralPath $jc -Force
+        }
+        foreach ($n in $JarName, 'heap.txt', 'ramsave.txt') {
             $f = Join-Path $AppDir $n
             if (Test-Path -LiteralPath $f) { Remove-Item -LiteralPath $f -Force }
         }
@@ -323,6 +471,8 @@ try {
         if ($null -eq $now) { Say 'Steam launch option: could not read' Yellow }
         elseif ($now -match 'CookieSlicer') { Say 'Steam launch option: set' Green }
         else { Say 'Steam launch option: NOT set (press 1)' Yellow }
+        $gj = Find-GameJson $libs
+        if ($gj) { Say-GameJson (Read-GameJson $gj) } else { Say 'ProjectZomboid64.json: not found' Yellow }
     }
 } catch {
     Say ''

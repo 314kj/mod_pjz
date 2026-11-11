@@ -1,7 +1,8 @@
 # Cookie Slicer - game start script, used as the game's Steam launch option:
 #   powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "<this file>" %command%
 # Steam passes the game's exe and its options. This adds the Cookie Slicer Helper (when
-# its jar is next to this file) and the game RAM chosen in the Slicer window (heap.txt),
+# its jar is next to this file), the game RAM chosen in the Slicer window (heap.txt) and
+# Java's own RAM savers (unless turned off in the window: ramsave.txt says ramsave=0),
 # then starts the game and waits for it. Any missing piece: the game starts as usual.
 # No game file is changed. Copyright (c) AKA / Cookie Cheetah.
 $exe = $args[0]
@@ -38,14 +39,27 @@ try {
         foreach ($a in $rest) { if ("$a" -like '-cachedir=*') { $opt += ';cachedir=' + ("$a".Substring(10).Trim('"')) } }
         $env:JAVA_TOOL_OPTIONS = '"-javaagent:' + $jar + '=' + $opt + '"'
     }
+    $jo = @()
+    $mb = 0
     $hf = Join-Path $here 'heap.txt'
     if (Test-Path -LiteralPath $hf) {
         $m = [regex]::Match([System.IO.File]::ReadAllText($hf), 'heap_mb=(\d+)')
         if ($m.Success) {
-            $mb = [int]$m.Groups[1].Value
-            if ($mb -ge 2048 -and $mb -le 32768) { $env:_JAVA_OPTIONS = "-Xmx$($mb)m" }
+            $v = [int]$m.Groups[1].Value
+            if ($v -ge 2048 -and $v -le 32768) { $mb = $v; $jo += "-Xmx$($mb)m" }
         }
     }
+    # RAM savers (Java 25, the game's own Java): smaller object headers, one copy of
+    # repeated text, keep the memory under 4/5 of the RAM above when it can and give
+    # what is not used back to Windows after a minute. A flag this Java does not know is skipped.
+    $save = $true
+    $sf = Join-Path $here 'ramsave.txt'
+    if ((Test-Path -LiteralPath $sf) -and ([System.IO.File]::ReadAllText($sf) -match 'ramsave=0')) { $save = $false }
+    if ($save) {
+        $jo += '-XX:+IgnoreUnrecognizedVMOptions', '-XX:+UseCompactObjectHeaders', '-XX:+UseStringDeduplication', '-XX:ZUncommitDelay=60'
+        if ($mb -gt 0) { $jo += "-XX:SoftMaxHeapSize=$([math]::Floor($mb * 4 / 5))m" }
+    }
+    if ($jo.Count -gt 0) { $env:_JAVA_OPTIONS = ($jo -join ' ') }
 } catch { }
 & $exe @rest
 exit $LASTEXITCODE

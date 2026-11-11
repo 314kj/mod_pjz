@@ -1,7 +1,28 @@
 # Cookie Slicer Helper — java agent ฝั่งผู้เล่น (ไม่บังคับ)
 
 ตัวช่วยของม็อด **Cookie Slicer** ให้หน้าต่าง Slicer ในเกมเห็นสิ่งที่ Lua มองไม่เห็น + ปรับ RAM เกมแบบกดปุ่มเดียว
-**ไม่แก้โค้ดเกมเลย** (ไม่มี class patch) แค่วัดแล้วเขียนไฟล์
+ไม่แก้ไฟล์เกมบนดิสก์ (ยกเว้น Setup กด 1 ซ่อม ProjectZomboid64.json แบบมี backup) · แก้คลาสเกมในหน่วยความจำแค่ 2 จุด
+(shader 1.1.0, กล่องหน้าโหลด 1.2.0) ถ้าเกมอัปเดตแล้วหาจุดไม่เจอ = ปล่อยโค้ดเกมเดิม
+
+## 1.2.0 (11 พ.ย.)
+
+- **ประหยัด RAM ระดับ Java** (`run.ps1` / `run.sh`, ไม่แตะไฟล์เกม): `_JAVA_OPTIONS` = `-Xmx` จาก heap.txt +
+  `-XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompactObjectHeaders -XX:+UseStringDeduplication -XX:ZUncommitDelay=60 -XX:SoftMaxHeapSize=<4/5 ของ Xmx>m`
+  (หัว object 12→8 byte, String ซ้ำเก็บชุดเดียว, ZGC พยายามอยู่ใต้ 4/5 (ไม่ต่ำกว่านี้: ถ้าข้อมูลจริงเกินเพดานนุ่ม ZGC จะเก็บกวาดถี่ = กิน CPU) และคืน RAM ที่ไม่ใช้ให้ Windows ใน 60 วิ; flag ที่ Java ไม่รู้จัก = ข้าม)
+  ปิดได้จากหน้าต่าง (Version Slicer) → helper เขียน `ramsave.txt` (`ramsave=0`) มีผลตอนเปิดเกมครั้งหน้า
+  เทสกับ JDK 25: ZGC + compact headers เปิดพร้อมกันได้ · LWJGL/JOML ใช้ Unsafe แบบคำนวณ offset (ไม่ hard-code) = ใช้กับ compact headers ได้
+- **อะไรกิน RAM**: ปุ่มในหน้าต่าง → `HeapReport` เรียก DiagnosticCommand `gcClassHistogram` (เกมหยุด 1–3 วิ) → `Zomboid/Lua/CookieSlicer_heap.txt`
+  (40 คลาสใหญ่สุด `c<i>=bytes|count|class` + 15 กลุ่ม package `g<i>=bytes|group`) → ให้ผู้เล่นส่งไฟล์มา แล้วค่อย patch ส่วนที่กินจริง
+- ไฟล์ pc เพิ่ม: `heap_committed_mb` (ที่ Windows เห็น), `nonheap_mb`, `ramsave_now` / `ramsave_next`, `gc`, `heap_report` / `heap_report_t`,
+  `json_file` / `json_xmx_mb` / `json_issue` (pzopt, aot, agent:<ชื่อ>, broken), `load_box`
+- **เข้าเซิฟไม่ได้**: `ConsoleWatch` อ่าน `console.txt` ทุก 1 วิ (อ่านอย่างเดียว) จับ ram / pzopt / workshop / modmissing / map / files /
+  version / banned / already / access / full / ping / net / luamod → `Zomboid/Lua/CookieSlicer_diag.txt` (ของรอบก่อน = `_diag_prev.txt`)
+  · "ConnectToServerState: Start" = เริ่มรอบใหม่
+- **กล่องวิธีแก้บนจอโหลด**: `LoadPatcher` ชี้ `Core.EndFrameUI()` 4 จุดใน `GameLoadingState.render` ไปที่ `LoadHook` → ขึ้นกล่อง
+  เมื่อเกมขึ้น error / โดนเตะ / log มีปัญหาที่ทำให้เข้าไม่ได้ / โหลดเกิน 3 นาที · ข้อความจาก Translate ของม็อด (`UI_CookieSlicer_Fix_*`)
+- **Setup กด 1** เช็ค + ซ่อม `ProjectZomboid64.json`: ลบของ PZ Optimization (classpath pzopt, AOTCache / SharedArchiveFile),
+  -Xmx ที่เกิน RAM เครื่อง; backup `ProjectZomboid64.json.cookieslicer-backup` ครั้งแรกครั้งเดียว, รักษา tab/CRLF เดิม
+  · กด 2 คืน backup เฉพาะถ้าแก้แค่ RAM (ถ้าเคยมี PZ Optimization ไม่คืน เพราะเกมจะพังอีก) · กด 3 บอกสถานะไฟล์
 
 ## ทำอะไร
 
@@ -43,9 +64,14 @@
 ## Build / test
 
 ```
-sh build.sh          # JDK 21+, ไม่ต้องใช้คลาสเกม
-sh test/run.sh       # helper ที่รันจริง + คำขอ RAM (heap.txt) + ค่าที่ห้าม + cache dir
+PZ_COMPILE_JAR=... sh build.sh      # JDK 21+, คอมไพล์กับสำเนา projectzomboid.jar (ดู build.sh)
+PZ_JAR=... JAVA25=... CONSOLE_TXT=... sh test/run.sh
+#   HelperTest, JoinTest (log -> ปัญหา, ไฟล์ diag, json, patch หน้าโหลดกับคลาสเกมจริง), RamTest (histogram, สวิตช์, ไฟล์ pc), ShaderTest
 ```
+ทดสอบ 11 พ.ย. (1.2.0): Java ผ่านหมด (JoinTest กับ console.txt จริงของ Pie = ไม่มีปัญหาค้าง, RamTest ทั้งมี/ไม่มี flag)
+· run.ps1 ใน pwsh 7 + JVM 25 จริง: flag ครบ, ramsave=0 ปิดได้, heap ผิดช่วง = ไม่ใส่ -Xmx · json ของ Setup เทส 5 ชุดใน pwsh 7
+(สะอาด = ไม่แตะ, 16 GB บนเครื่อง 16 GB → 8 GB, PZ Optimization → ลบ + uninstall ไม่คืน, ไฟล์เสีย, agent อื่น) · UI Lua เทสใน lupa (TH/EN)
+ยังไม่ได้ลองกับเกมจริง
 ทดสอบ 10 พ.ย.: เทส Java ผ่านหมด · โหลดเป็น `-javaagent` บน JDK 25 ได้ (เขียนไฟล์ทุก 2 วิ, ไม่ใช่เกม = ไม่ทำอะไร)
 · run.ps1 / run.sh เทสกับ JVM 25: agent โหลดได้ (path มีช่องว่าง), -Xmx จาก heap.txt, argument เดิมครบ, ไม่มี jar = เปิดปกติ
 · Setup.bat (ส่วน PowerShell) เทสใน pwsh 7 กับ Steam ปลอม: อ่าน launch options เดิม (มี \" และ \\) ต่อท้ายถูก, อัปเดตไม่ถามซ้ำ, ถอดแล้วคืนค่าเดิม · .sh เทสกับ Steam ปลอม

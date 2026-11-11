@@ -5,14 +5,19 @@
 --   CookieSlicer_client.txt   this player's choices (look, brightness, button place)
 --   CookieSlicer_pc.txt       written by the Cookie Slicer Helper (optional) every 2 s:
 --                             CPU / RAM numbers the game's Lua cannot see
---   CookieSlicer_request.txt  what the player asked the helper to do (more RAM next start)
+--   CookieSlicer_request.txt  what the player asked the helper to do (more RAM next start,
+--                             RAM savers on / off, list what uses the game's RAM)
+--   CookieSlicer_diag.txt     written by the helper (1.2.0+): problems in the game's log
+--                             that stop a join (_prev: the game start before this one)
+--   CookieSlicer_heap.txt     written by the helper on request: what fills the game's RAM
 if isServer() then return end
 
 CookieSlicer = CookieSlicer or {}
 local CS = CookieSlicer
-CS.VERSION = "1.1.0"
-CS.HELPER_LATEST = "1.1.0" -- the helper shipped in this mod's helper/ folder
+CS.VERSION = "1.2.0"
+CS.HELPER_LATEST = "1.2.0" -- the helper shipped in this mod's helper/ folder
 CS.SHADER_HELPER_MIN = "1.1.0" -- first helper that draws the shader
+CS.JOIN_HELPER_MIN = "1.2.0" -- first helper that reads the game's log and has the RAM savers
 
 local SETTINGS_FILE = "CookieSlicer_client.txt"
 local HELPER_FILE = "CookieSlicer_pc.txt"
@@ -20,8 +25,8 @@ local REQUEST_FILE = "CookieSlicer_request.txt"
 
 -- ---------------------------------------------------------------- settings
 
-CS.settings = { look = "natural", bright = 0, bx = -1, by = -1, seen = 0, keyhint = 0, page = "perf" }
-local NUMBERS = { bright = true, bx = true, by = true, seen = true, keyhint = true }
+CS.settings = { look = "natural", bright = 0, bx = -1, by = -1, seen = 0, keyhint = 0, page = "perf", glass = 1, jopen = 0 }
+local NUMBERS = { bright = true, bx = true, by = true, seen = true, keyhint = true, glass = true, jopen = true }
 
 local function parseLine(line)
     local k, v = string.match(line or "", "^%s*([%w_]+)%s*=%s*(.-)%s*$")
@@ -55,7 +60,7 @@ function CS.saveSettings()
     pcall(function()
         local w = getFileWriter(SETTINGS_FILE, true, false)
         if not w then return end
-        for _, k in ipairs({ "look", "bright", "bx", "by", "seen", "keyhint", "page" }) do
+        for _, k in ipairs({ "look", "bright", "bx", "by", "seen", "keyhint", "page", "glass", "jopen" }) do
             w:write(k .. "=" .. tostring(CS.settings[k]) .. "\n")
         end
         for k, v in pairs(CS.settings) do
@@ -184,16 +189,62 @@ function CS.setUiFps30()
     end)
 end
 
--- ask the helper for more RAM from the next game start (it edits the game's
--- start settings, keeps a backup, and writes the result back in its file)
-function CS.requestHeap(mb)
+-- requests to the helper (read every 2 s): asks made within a few seconds of each other
+-- go in one file, so a second click does not overwrite the first before it is read
+local pending, pendingT = {}, 0
+function CS.request(kv)
+    local now = getTimestampMs()
+    if now - pendingT > 6000 then pending = {} end
+    for k, v in pairs(kv) do pending[k] = v end
+    pendingT = now
     pcall(function()
         local w = getFileWriter(REQUEST_FILE, true, false)
         if not w then return end
-        w:write("heap_mb=" .. tostring(math.floor(mb)) .. "\n")
-        w:write("t=" .. tostring(getTimestampMs()) .. "\n")
+        for k, v in pairs(pending) do w:write(k .. "=" .. tostring(v) .. "\n") end
+        w:write("t=" .. tostring(now) .. "\n")
         w:close()
     end)
+end
+
+-- more RAM from the next game start (the helper writes heap.txt for the start script)
+function CS.requestHeap(mb)
+    CS.request({ heap_mb = math.floor(mb) })
+end
+
+-- Java's RAM savers on / off from the next game start (ramsave.txt for the start script)
+function CS.requestRamSave(on)
+    CS.request({ ramsave = on and 1 or 0 })
+    CS.ramsaveAsked = on and 1 or 0
+end
+
+-- list what fills the game's RAM now (the game stops for a moment)
+function CS.requestHeapReport()
+    CS.request({ heap_report = 1 })
+    CS.heapAskedT = getTimestampMs()
+end
+
+-- a key=value file in Zomboid/Lua, or nil
+function CS.readKV(file)
+    local data
+    pcall(function()
+        local r = getFileReader(file, false)
+        if not r then return end
+        data = {}
+        local line = r:readLine()
+        while line do
+            local k, v = parseLine(line)
+            if k then data[k] = v end
+            line = r:readLine()
+        end
+        r:close()
+    end)
+    return data
+end
+
+-- helper 1.2.0+ (a version check: older helpers do not write these files)
+function CS.helperHas(minVersion)
+    local pc = CS.pc
+    return pc.fresh and pc.helper ~= nil and not CS.verLess(tostring(pc.helper), minVersion)
 end
 
 -- ---------------------------------------------------------------- tick

@@ -8,7 +8,7 @@ set -e
 cd "$(dirname "$0")"
 : "${PZ_COMPILE_JAR:?set PZ_COMPILE_JAR (a copy of projectzomboid.jar made readable for javac 21)}"
 rm -rf build && mkdir -p build/classes/cookie/slicer/helper
-javac --release 21 -Xlint:all -Xlint:-options -cp "$PZ_COMPILE_JAR" -d build/classes $(find src -name '*.java')
+javac --release 21 -encoding UTF-8 -Xlint:all -Xlint:-options -cp "$PZ_COMPILE_JAR" -d build/classes $(find src -name '*.java')
 # the shader files ride along in the jar (used when the mod's copy cannot be found)
 SH=../../CookieSlicer/Contents/mods/CookieSlicer/42/media/shaders
 cp "$SH/cookie_post.vert" "$SH/cookie_post.frag" build/classes/cookie/slicer/helper/

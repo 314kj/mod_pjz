@@ -1,4 +1,4 @@
 Manifest-Version: 1.0
 Premain-Class: cookie.slicer.helper.Helper
 Implementation-Title: Cookie Slicer Helper (Cookie Cheetah players)
-Implementation-Version: 1.1.0
+Implementation-Version: 1.2.0
