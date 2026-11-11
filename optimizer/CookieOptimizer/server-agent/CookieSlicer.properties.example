@@ -31,3 +31,6 @@ game_mode_file=CookieSlicer_mode.txt
 status_file=CookieSlicer_status.txt
 # false = do nothing at all (same as removing -javaagent)
 enabled=true
+# v5: find an entity's place in the game's entity lists at once instead of searching each list
+# (cell unload while driving); false = the game's own search
+fast_entity_remove=true
