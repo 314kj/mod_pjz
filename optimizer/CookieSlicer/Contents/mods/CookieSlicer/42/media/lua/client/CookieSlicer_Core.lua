@@ -14,10 +14,11 @@ if isServer() then return end
 
 CookieSlicer = CookieSlicer or {}
 local CS = CookieSlicer
-CS.VERSION = "1.2.0"
-CS.HELPER_LATEST = "1.2.0" -- the helper shipped in this mod's helper/ folder
+CS.VERSION = "1.2.1"
+CS.HELPER_LATEST = "1.2.1" -- the helper shipped in this mod's helper/ folder
 CS.SHADER_HELPER_MIN = "1.1.0" -- first helper that draws the shader
 CS.JOIN_HELPER_MIN = "1.2.0" -- first helper that reads the game's log and has the RAM savers
+CS.RAM_HELPER_MIN = "1.2.1" -- first helper that suggests game RAM from real use and keeps the heap near it
 
 local SETTINGS_FILE = "CookieSlicer_client.txt"
 local HELPER_FILE = "CookieSlicer_pc.txt"

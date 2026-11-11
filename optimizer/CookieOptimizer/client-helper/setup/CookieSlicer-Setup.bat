@@ -198,13 +198,27 @@ function Close-Steam {
     throw 'Steam did not close (a download running?). Close Steam yourself, then run this again.'
 }
 
-# RAM that fits this PC: half of it, 4-16 GB, at least 4 GB left (never under 3 GB)
+# Game RAM (same rule as the helper, 1.2.1): what the game used at most in the last
+# sessions (heapstats.txt, written by the helper) x 1.5 + 1.5 GB, at least 6 GB; 8 GB
+# before there is any data. Safe = the most this PC can spare: 6 GB left for the rest on
+# PCs with 16 GB or more (at most 16 GB for the game), 4 GB left on smaller ones, >= 3 GB.
+function Get-RamPlan([double]$total, [double]$peak) {
+    if ($total -ge 16384) { $safe = [math]::Min(16384, [math]::Floor(($total - 6144) / 1024) * 1024) }
+    else { $safe = [math]::Max(3072, [math]::Floor(($total - 4096) / 1024) * 1024) }
+    if ($peak -gt 0) { $need = [math]::Max(6144, [math]::Ceiling(($peak * 1.5 + 1536) / 1024) * 1024) } else { $need = 8192 }
+    $rec = [math]::Max(3072, [math]::Min($safe, $need))
+    return @{ Total = [int]$total; Rec = [int]$rec; Safe = [int]$safe }
+}
+
 function Get-RecommendMB {
     $total = [math]::Floor((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1MB)
-    $rec = [math]::Round($total * 0.5 / 1024) * 1024
-    $rec = [math]::Max(4096, [math]::Min(16384, $rec))
-    if ($total - $rec -lt 4096) { $rec = [math]::Max(3072, [math]::Floor(($total - 4096) / 1024) * 1024) }
-    return @{ Total = $total; Rec = [int]$rec }
+    $peak = 0
+    $sf = Join-Path $AppDir 'heapstats.txt'
+    if (Test-Path -LiteralPath $sf) {
+        $m = [regex]::Match([System.IO.File]::ReadAllText($sf), 'peaks=([\d,]+)')
+        if ($m.Success) { foreach ($x in $m.Groups[1].Value.Split(',')) { if ($x -and [int]$x -gt $peak) { $peak = [int]$x } } }
+    }
+    return Get-RamPlan $total $peak
 }
 
 # -Xmx the game starts with now (MB): heap.txt, else the game's own json, else 3072
@@ -377,11 +391,15 @@ try {
 
         $ram = Get-RecommendMB
         $cur = Get-CurrentHeapMB $libs
-        if ($ram.Rec -gt $cur) {
+        if ($cur -gt $ram.Safe) {
+            # more than this PC can spare: the PC runs out of RAM -> stalls, checksum kicks
+            [System.IO.File]::WriteAllText((Join-Path $AppDir 'heap.txt'), "heap_mb=$($ram.Rec)`n", $Utf8)
+            Say ("[ok] Game RAM: " + [math]::Round($cur / 1024, 1) + " GB is more than this PC can spare -> " + ($ram.Rec / 1024) + " GB (PC has " + [math]::Round($ram.Total / 1024) + " GB)") Green
+        } elseif ($ram.Rec -gt $cur) {
             [System.IO.File]::WriteAllText((Join-Path $AppDir 'heap.txt'), "heap_mb=$($ram.Rec)`n", $Utf8)
             Say ("[ok] Game RAM: " + [math]::Round($cur / 1024, 1) + " GB -> " + ($ram.Rec / 1024) + " GB (PC has " + [math]::Round($ram.Total / 1024) + " GB)") Green
         } else {
-            Say ("[ok] Game RAM already fine: " + [math]::Round($cur / 1024, 1) + " GB (PC has " + [math]::Round($ram.Total / 1024) + " GB)") Green
+            Say ("[ok] Game RAM kept: " + [math]::Round($cur / 1024, 1) + " GB (suggested " + ($ram.Rec / 1024) + " GB, change it in the Cookie Slicer window > Version Slicer)") Green
         }
 
         $gj = Find-GameJson $libs

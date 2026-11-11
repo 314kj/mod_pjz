@@ -19,8 +19,8 @@ public final class HelperTest {
         System.out.println("H2 recommended RAM for the game");
         check(Helper.recommendHeapMb(8 * 1024) == 4096, "8 GB PC -> 4 GB");
         check(Helper.recommendHeapMb(16 * 1024) == 8192, "16 GB PC -> 8 GB");
-        check(Helper.recommendHeapMb(32 * 1024) == 16384, "32 GB PC -> 16 GB");
-        check(Helper.recommendHeapMb(64 * 1024) == 16384, "64 GB PC -> 16 GB (max)");
+        check(Helper.recommendHeapMb(32 * 1024) == 8192, "32 GB PC -> 8 GB (no data yet)");
+        check(Helper.recommendHeapMb(64 * 1024) == 8192, "64 GB PC -> 8 GB (no data yet)");
         check(Helper.recommendHeapMb(6 * 1024) == 3072, "6 GB PC -> 3 GB (4 GB left would be too much)");
 
         System.out.println("H3 a running helper: numbers + the RAM request");

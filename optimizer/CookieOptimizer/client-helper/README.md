@@ -4,6 +4,25 @@
 ไม่แก้ไฟล์เกมบนดิสก์ (ยกเว้น Setup กด 1 ซ่อม ProjectZomboid64.json แบบมี backup) · แก้คลาสเกมในหน่วยความจำแค่ 2 จุด
 (shader 1.1.0, กล่องหน้าโหลด 1.2.0) ถ้าเกมอัปเดตแล้วหาจุดไม่เจอ = ปล่อยโค้ดเกมเดิม
 
+## 1.2.1 (11 พ.ย. ค่ำ)
+
+ปัญหา (Pie 19:00): ตั้ง RAM เกม 16 GB → เกมใช้จริง ~5 GB แต่ Java จองไว้ 12–16 GB (Task Manager ช่อง Memory โชว์น้อยกว่าจริง
+เพราะ ZGC จองเป็น section, ช่อง Working set ในแท็บ Details ตรงกว่า) · ผู้เล่นส่วนมากมี RAM ว่าง < 10 GB → RAM เครื่องหมด → ค้าง / checksum เตะ
+
+- **`RamTune`** (ทุก 2 วิ, เฉพาะ ZGC + เปิดตัวประหยัด RAM): ตั้ง `SoftMaxHeapSize` ระหว่างเกมรัน (flag นี้ manageable บน JDK 25)
+  = ใช้จริงหลังเก็บกวาด × 1.5 + 1 GB (≤ 4 คอร์: × 1.8 + 1.5 GB) ไม่ต่ำกว่า 4 GB (หรือครึ่งเพดาน) ไม่เกิน 85% ของเพดาน
+  · ขึ้นทันที, ลงทีละ ≤ 2 GB ห่างกัน ≥ 30 วิ และไม่ลงตอน CPU ทั้งเครื่อง > 85% (เก็บกวาดถี่ = กิน CPU)
+  · RAM เครื่องว่าง < 2 GB → บีบทันที (ใช้จริง × 1.15 + 0.5 GB) ค้าง 1 นาทีและจนว่าง ≥ 3 GB (ไม่แกว่ง) → ไฟล์ pc `ram_guard=1`
+  · `-Xmx` ยังเป็นเพดานจริง: เกมต้องการมากกว่าก็โตเกินเพดานนุ่มได้ทันที ไม่ OOM
+  · ไฟล์ pc: `ramtune` (off / on / err: …), `soft_max_mb`
+- **RAM แนะนำจากการใช้จริง**: helper จำค่าใช้จริงสูงสุดของ 5 รอบเล่นล่าสุดใน `heapstats.txt` (`peaks=`)
+  → `heap_recommend_mb` = สูงสุด × 1.5 + 1.5 GB (ปัดขึ้นเป็น GB, ≥ 6 GB; ยังไม่มีข้อมูล = 8 GB) ไม่เกิน `heap_safe_mb`
+  · `heap_safe_mb` = RAM เครื่อง ≥ 16 GB: min(16 GB, RAM − 6 GB) · น้อยกว่า: RAM − 4 GB (≥ 3 GB) · ไฟล์ pc เพิ่ม `heap_peak_mb`
+- **หน้าต่าง (Version Slicer)**: เลือก RAM เกมเองได้ [-] N GB [+] (ทีละ 1 GB, 3 GB ถึง RAM เครื่อง − 2 GB) + ปุ่ม "ใช้ค่าแนะนำ"
+  + บอกว่าค่าแนะนำมาจากอะไร + เตือนถ้าเกินที่เครื่องไหว / น้อยกว่าที่เกมเคยใช้ · แถบ RAM เกม 2 ชั้น (เข้ม = ใช้จริง, จาง = Java จองไว้)
+- **แผงก่อนเข้าเซิฟ**: RAM เกมเกิน `heap_safe_mb` → เตือน + ปุ่ม "ลดเหลือ N GB" · `ram_guard=1` → บอกว่าตัวช่วยกำลังคืน RAM + ปิดโปรแกรมอื่น
+- **Setup กด 1**: ถ้า RAM เกมที่เลือกไว้เกินที่เครื่องไหว → ลดเป็นค่าแนะนำ (อ่าน `heapstats.txt`) · ไม่งั้นเก็บค่าเดิม แล้วบอกค่าแนะนำ
+
 ## 1.2.0 (11 พ.ย.)
 
 - **ประหยัด RAM ระดับ Java** (`run.ps1` / `run.sh`, ไม่แตะไฟล์เกม): `_JAVA_OPTIONS` = `-Xmx` จาก heap.txt +
@@ -34,7 +53,7 @@
 | `main_thread` + `busiest_thread` | เธรดของเกมที่ใช้ CPU มากสุด (% ของ 1 คอร์) = ตัวที่ทำให้ FPS ตัน |
 | `ram_total_mb` / `ram_free_mb` | RAM เครื่อง / RAM ว่าง |
 | `heap_used_mb` / `heap_live_mb` / `heap_max_mb` | RAM เกมตอนนี้ / หลังเก็บกวาดครั้งล่าสุด / เพดาน (-Xmx) |
-| `heap_recommend_mb` | ครึ่งหนึ่งของ RAM เครื่อง (4–16 GB, เหลือให้ Windows ≥ 4 GB) |
+| `heap_recommend_mb` / `heap_safe_mb` / `heap_peak_mb` | RAM เกมที่แนะนำ (จากการใช้จริง, 1.2.1) / ที่เครื่องไหว / ใช้จริงสูงสุด 5 รอบล่าสุด |
 | `gc_ms_per_min` | เวลาที่เกมหยุดเก็บกวาด RAM ต่อนาที |
 
 ผู้เล่นกดปุ่ม "ให้ RAM เกม N GB" ในหน้าต่าง → ม็อดเขียน `CookieSlicer_request.txt` → helper เขียน `heap.txt`
@@ -68,6 +87,8 @@ PZ_COMPILE_JAR=... sh build.sh      # JDK 21+, คอมไพล์กับส
 PZ_JAR=... JAVA25=... CONSOLE_TXT=... sh test/run.sh
 #   HelperTest, JoinTest (log -> ปัญหา, ไฟล์ diag, json, patch หน้าโหลดกับคลาสเกมจริง), RamTest (histogram, สวิตช์, ไฟล์ pc), ShaderTest
 ```
+ทดสอบ 11 พ.ย. (1.2.1): Java ผ่านหมด (RamTest R5/R6: เพดานนุ่มตั้งได้จริงบน JDK 25, บีบตอน RAM เครื่องหมด, ไม่แกว่ง, ค่าแนะนำ/peaks)
+· Setup `Get-RamPlan` 8 กรณีใน pwsh 7 · UI Lua ใน lupa TH/EN (ตัวเลือก RAM, ปุ่มลด, เตือน, แถบ 2 ชั้น) · ยังไม่ได้ลองกับเกมจริง
 ทดสอบ 11 พ.ย. (1.2.0): Java ผ่านหมด (JoinTest กับ console.txt จริงของ Pie = ไม่มีปัญหาค้าง, RamTest ทั้งมี/ไม่มี flag)
 · run.ps1 ใน pwsh 7 + JVM 25 จริง: flag ครบ, ramsave=0 ปิดได้, heap ผิดช่วง = ไม่ใส่ -Xmx · json ของ Setup เทส 5 ชุดใน pwsh 7
 (สะอาด = ไม่แตะ, 16 GB บนเครื่อง 16 GB → 8 GB, PZ Optimization → ลบ + uninstall ไม่คืน, ไฟล์เสีย, agent อื่น) · UI Lua เทสใน lupa (TH/EN)

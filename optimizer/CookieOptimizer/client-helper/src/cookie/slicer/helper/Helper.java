@@ -15,7 +15,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,15 +42,18 @@ import java.util.Map;
  * one copy of repeated text, give unused RAM back to Windows after a minute) unless the
  * player turned them off in the window (ramsave.txt next to the jar, written here); on
  * request HeapReport lists what fills the game's memory (CookieSlicer_heap.txt).
+ * 1.2.1: RamTune moves ZGC's soft ceiling with what the game really uses (live x 1.5 + 1 GB)
+ * instead of 4/5 of the game RAM, so the game holds ~8 GB instead of 12-16 GB.
  * Copyright (c) AKA / Cookie Cheetah. All rights reserved.
  */
 public final class Helper implements Runnable {
-    public static final String VERSION = "1.2.0";
+    public static final String VERSION = "1.2.1";
     static final long MB = 1024L * 1024L;
     static final String PC_FILE = "CookieSlicer_pc.txt";
     static final String REQUEST_FILE = "CookieSlicer_request.txt";
     static final String HEAP_FILE = "heap.txt";
     static final String RAMSAVE_FILE = "ramsave.txt";
+    static final String STATS_FILE = "heapstats.txt"; // most RAM the game used in recent sessions
 
     final File luaDir;
     final File stateDir;
@@ -56,6 +61,8 @@ public final class Helper implements Runnable {
     private String heapNote = null;
     private long heapNextMb = 0;
     private String ramsaveNote = null;
+    private long peakLive = 0, peakWritten = 0;
+    private List<Long> pastPeaks;
     private static String ramsaveNow, gcName;
 
     // previous sample, for deltas
@@ -215,7 +222,12 @@ public final class Helper implements Runnable {
         m.put("heap_max_mb", Long.toString(maxMb));
         long live = liveHeapMb();
         if (live >= 0) m.put("heap_live_mb", Long.toString(live));
-        if (totalMb > 0) m.put("heap_recommend_mb", Long.toString(recommendHeapMb(totalMb)));
+        long peak = notePeak(live);
+        if (peak > 0) m.put("heap_peak_mb", Long.toString(peak));
+        if (totalMb > 0) {
+            m.put("heap_recommend_mb", Long.toString(recommendHeapMb(totalMb, peak)));
+            m.put("heap_safe_mb", Long.toString(safeHeapMb(totalMb)));
+        }
         // chosen in the Slicer window and not in use yet (the game must start again)
         long next = heapNextMb > 0 ? heapNextMb : savedHeapMb();
         if (next > 0 && Math.abs(next - maxMb) > 256) m.put("heap_next_mb", Long.toString(next));
@@ -228,6 +240,12 @@ public final class Helper implements Runnable {
         if (ramsaveNote != null) m.put("ramsave_note", ramsaveNote);
         m.put("gc", gcName());
         HeapReport.status(m);
+        // keep the heap near what the game really uses (1.2.1)
+        long cpu = -1;
+        try { cpu = Long.parseLong(m.getOrDefault("cpu_total", "-1")); } catch (NumberFormatException ignored) { }
+        long free = -1;
+        try { free = Long.parseLong(m.getOrDefault("ram_free_mb", "-1")); } catch (NumberFormatException ignored) { }
+        RamTune.tick(m, live, maxMb, rt.availableProcessors(), cpu, free, gcName(), ramsaveNow());
 
         threads(m, now);
         gc(m);
@@ -261,14 +279,55 @@ public final class Helper implements Runnable {
     }
 
     /**
-     * Half the PC's RAM, at least 4 GB, at most 16 GB, and always 4 GB left for
-     * Windows and the rest (never below 3 GB). Rounded to whole GB.
+     * Game RAM to suggest (1.2.1): what the game used at most in the last sessions x 1.5
+     * + 1.5 GB, at least 6 GB, rounded up to whole GB; 8 GB before there is any data.
+     * Never more than safeHeapMb (room left for Windows, Discord, a browser).
      */
+    static long recommendHeapMb(long totalMb, long peakMb) {
+        long need = peakMb > 0 ? Math.max(6144, (peakMb * 3 / 2 + 1536 + 1023) / 1024 * 1024) : 8192;
+        return Math.max(3072, Math.min(safeHeapMb(totalMb), need));
+    }
+
     static long recommendHeapMb(long totalMb) {
-        long rec = Math.round(totalMb * 0.5 / 1024.0) * 1024;
-        rec = Math.max(4096, Math.min(16384, rec));
-        if (totalMb - rec < 4096) rec = Math.max(3072, (totalMb - 4096) / 1024 * 1024);
-        return rec;
+        return recommendHeapMb(totalMb, 0);
+    }
+
+    /**
+     * The most game RAM this PC can give without running short: 6 GB left for the rest
+     * on PCs with 16 GB or more (at most 16 GB for the game), 4 GB left on smaller ones,
+     * never below 3 GB.
+     */
+    static long safeHeapMb(long totalMb) {
+        if (totalMb >= 16384) return Math.min(16384, (totalMb - 6144) / 1024 * 1024);
+        return Math.max(3072, (totalMb - 4096) / 1024 * 1024);
+    }
+
+    /** the most live data seen this session and the last ones (heapstats.txt), saved when it grows */
+    long notePeak(long liveMb) {
+        if (pastPeaks == null) {
+            pastPeaks = new ArrayList<>();
+            if (stateDir != null) {
+                String v = read(new File(stateDir, STATS_FILE)).get("peaks");
+                if (v != null) for (String x : v.split(",")) {
+                    try { long p = Long.parseLong(x.trim()); if (p > 0) pastPeaks.add(p); } catch (NumberFormatException ignored) { }
+                    if (pastPeaks.size() >= 4) break;
+                }
+            }
+        }
+        if (liveMb > peakLive) peakLive = liveMb;
+        if (stateDir != null && peakLive - peakWritten >= 256) {
+            StringBuilder sb = new StringBuilder("peaks=").append(peakLive);
+            for (long p : pastPeaks) sb.append(',').append(p);
+            try {
+                Files.write(new File(stateDir, STATS_FILE).toPath(), (sb + "\n").getBytes(StandardCharsets.UTF_8));
+                peakWritten = peakLive;
+            } catch (IOException ignored) {
+                // a hint only
+            }
+        }
+        long max = peakLive;
+        for (long p : pastPeaks) max = Math.max(max, p);
+        return max;
     }
 
     private void threads(Map<String, String> m, long now) {

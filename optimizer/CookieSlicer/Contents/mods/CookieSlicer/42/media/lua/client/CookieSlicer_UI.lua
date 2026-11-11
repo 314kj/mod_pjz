@@ -267,6 +267,8 @@ local function metrics()
     if used and max and max > 0 then
         m[1].value = T("V_ram", gb(used), gb(max))
         m[1].frac = used / max
+        local held = tonumber(pc.heap_committed_mb)
+        if held and held > used then m[1].frac2 = held / max end -- held by Java (what Task Manager counts)
         m[1].color = m[1].frac > 0.85 and C.warn or C.mint
     end
     local free, total = tonumber(pc.ram_free_mb), tonumber(pc.ram_total_mb)
@@ -340,6 +342,9 @@ function CookieSlicerWindow:drawLive(x, y0, w)
         self:info(mx + tw(it.label, F.body) + 6, my, F.body)
         self:textR(it.value, mx + half, my, it.vc or C.text, F.body)
         self:rect(mx, my + fh(F.body) + 6, half, 10, C.track)
+        if it.frac2 then
+            self:rect(mx, my + fh(F.body) + 6, math.floor(half * clamp(it.frac2, 0, 1)), 10, it.color, 0.3)
+        end
         if it.frac then
             self:rect(mx, my + fh(F.body) + 6, math.floor(half * clamp(it.frac, 0, 1)), 10, it.color)
         end
@@ -867,7 +872,9 @@ function CookieSlicerWindow:drawVersion(x, y0, w)
         row(T("Ver_helper"), T("Ver_helperNone"), C.dim)
     end
     local max, nxt = tonumber(pc.heap_max_mb), tonumber(pc.heap_next_mb)
-    if pc.fresh and max then
+    if CS.helperHas(CS.RAM_HELPER_MIN) and max then
+        y = self:drawHeapPick(cx, y, cw, labelW)
+    elseif pc.fresh and max then
         row(T("Ver_heap"), nxt and T("Ver_heapNext", gb(max), gb(nxt)) or T("Ver_heapV", gb(max)))
     else
         row(T("Ver_heap"), "--", C.dim)
@@ -886,6 +893,68 @@ function CookieSlicerWindow:drawVersion(x, y0, w)
     y = y + p
     self.lastH.version = y - y0
     return y
+end
+
+-- ---------------------------------------------------------------- game RAM chooser (helper 1.2.1+)
+
+local function heapLimit()
+    local total = tonumber(CS.pc.ram_total_mb) or 16384
+    return math.min(32768, math.max(3072, total - 2048)) -- what the helper accepts
+end
+
+function CookieSlicerWindow:onHeapStep(d)
+    local pc = CS.pc
+    local cur = CS.heapPick or tonumber(pc.heap_next_mb) or tonumber(pc.heap_max_mb) or 8192
+    local v = clamp(math.floor((cur + d) / 1024 + 0.5) * 1024, 3072, heapLimit())
+    CS.heapPick = v
+    CS.requestHeap(v)
+end
+
+function CookieSlicerWindow:onHeapSet(v)
+    CS.heapPick = v
+    CS.requestHeap(v)
+end
+
+-- game RAM for the next start: - / + by 1 GB, "use the suggestion", what the suggestion is
+-- based on, and a warning when the choice is above what the PC can spare or below what
+-- the game has used
+function CookieSlicerWindow:drawHeapPick(cx, y, cw, labelW)
+    local F, gap = self.F, self.gap
+    local pc = CS.pc
+    local max = tonumber(pc.heap_max_mb)
+    local rec, safe, peak = tonumber(pc.heap_recommend_mb), tonumber(pc.heap_safe_mb), tonumber(pc.heap_peak_mb)
+    local pick = CS.heapPick or tonumber(pc.heap_next_mb) or max
+    self:rect(cx, y, cw, 1, C.track)
+    y = y + gap
+    self:text(fit(T("Ver_heap"), F.body, labelW), cx, y, C.dim, F.body)
+    local vx, vw = cx + labelW + gap, cw - labelW - gap
+    local bh = fh(F.body) + 10
+    local bw = bh + 6
+    local warn = (safe and pick > safe) or (peak and pick < peak * 1.2)
+    self:button(vx, y - 4, bw, bh, "-", F.body, CookieSlicerWindow.onHeapStep, -1024, "normal")
+    local val = T("Ver_heapPick", gb(pick))
+    local valW = tw(T("Ver_heapPick", "32"), F.body) + 24
+    self:textC(val, vx + bw + valW / 2, y, warn and C.warn or C.mint, F.body)
+    self:button(vx + bw + valW, y - 4, bw, bh, "+", F.body, CookieSlicerWindow.onHeapStep, 1024, "normal")
+    if rec then
+        local rl = T("Ver_heapUseRec", gb(rec))
+        local rx = vx + 2 * bw + valW + gap
+        self:button(rx, y - 4, math.min(vx + vw - rx, tw(rl, F.small) + 24), bh, rl, F.small,
+            CookieSlicerWindow.onHeapSet, rec, pick == rec and "ghost" or "primary")
+    end
+    y = y + bh + 4
+    local now = pick ~= max and T("Ver_heapNow", gb(max), gb(pick)) or T("Ver_heapNowSame", gb(max))
+    y = self:para(now, vx, y, vw, C.text, F.small) + 2
+    if rec and safe then
+        local adv = peak and T("Ver_heapAdvice", gb(rec), gb(peak), gb(safe)) or T("Ver_heapAdviceNew", gb(rec), gb(safe))
+        y = self:para(adv, vx, y, vw, C.dim, F.small) + 2
+    end
+    if safe and pick > safe then
+        y = self:para(T("Ver_heapTooHigh", gb(safe)), vx, y, vw, C.warn, F.small) + 2
+    elseif peak and pick < peak * 1.2 then
+        y = self:para(T("Ver_heapTooLow", gb(peak)), vx, y, vw, C.warn, F.small) + 2
+    end
+    return y + gap - 2
 end
 
 -- ---------------------------------------------------------------- less RAM (version page)
@@ -932,7 +1001,10 @@ function CookieSlicerWindow:drawRam(cx, y, cw, labelW, rowAt)
     local held = tonumber(pc.heap_committed_mb)
     local live = tonumber(pc.heap_live_mb)
     if not live or live == 0 then live = tonumber(pc.heap_used_mb) end
-    if held and live then y = rowAt(y, T("Ver_ramWin"), T("Ver_ramWinV", gb(held), gb(live))) end
+    local soft = tonumber(pc.soft_max_mb)
+    if held and live then
+        y = rowAt(y, T("Ver_ramWin"), soft and T("Ver_ramWinV2", gb(held), gb(live), gb(soft)) or T("Ver_ramWinV", gb(held), gb(live)))
+    end
 
     -- what uses the RAM (on request; the game stops for a moment)
     self:rect(cx, y, cw, 1, C.track)

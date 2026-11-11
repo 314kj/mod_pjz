@@ -180,13 +180,19 @@ function CS.joinCheck()
     if pc.fresh then
         -- game RAM
         local max, rec, nxt = tonumber(pc.heap_max_mb), tonumber(pc.heap_recommend_mb), tonumber(pc.heap_next_mb)
+        local safe, peak = tonumber(pc.heap_safe_mb), tonumber(pc.heap_peak_mb)
         if max and rec then
             local r = { label = T("J_ram"), value = T("J_ramV", gb(max), gb(rec)) }
+            local short = (peak and max < peak * 1.3) or (not peak and max < rec - 256)
             if nxt then
                 r.level, r.value = "ok", T("Ver_heapNext", gb(max), gb(nxt))
-            elseif max < rec - 256 then
+            elseif safe and max > safe + 256 then
+                -- more than the PC can spare: the PC runs out of RAM -> stalls, checksum kicks
+                r.level, r.value = "warn", T("J_ramHigh", gb(max), gb(safe))
+                r.btn = { label = T("J_ramBtnLower", gb(rec)), fn = function() CS.heapPick = rec; CS.requestHeap(rec) end }
+            elseif short and rec > max then
                 r.level = "warn"
-                r.btn = { label = T("J_ramBtn", gb(rec)), fn = function() CS.requestHeap(rec) end }
+                r.btn = { label = T("J_ramBtn", gb(rec)), fn = function() CS.heapPick = rec; CS.requestHeap(rec) end }
             else
                 r.level = "ok"
             end
@@ -196,8 +202,15 @@ function CS.joinCheck()
         local free, total = tonumber(pc.ram_free_mb), tonumber(pc.ram_total_mb)
         if free and total then
             local low = free < 1500
-            rows[#rows + 1] = { level = low and "warn" or "ok", label = T("J_pcram"), value = T("J_pcramV", gb(free), gb(total)),
-                                steps = low and { T("J_pcramLow") } or nil }
+            local steps = low and { T("J_pcramLow") } or nil
+            if tostring(pc.ram_guard) == "1" then
+                -- "what the helper does | what the player can do": one step each
+                local s = T("J_ramGuard")
+                local i = string.find(s, " | ", 1, true)
+                steps = i and { string.sub(s, 1, i - 1), string.sub(s, i + 3) } or { s }
+            end
+            rows[#rows + 1] = { level = (low or steps) and "warn" or "ok", label = T("J_pcram"), value = T("J_pcramV", gb(free), gb(total)),
+                                steps = steps }
         end
         -- ProjectZomboid64.json
         if has12 and pc.json_file and pc.json_file ~= "none" then
