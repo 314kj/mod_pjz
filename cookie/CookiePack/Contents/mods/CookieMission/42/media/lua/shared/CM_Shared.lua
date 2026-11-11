@@ -7,8 +7,8 @@
 
 CM = CM or {}
 CM.MOD = "CookieMission"
-CM.VERSION = "1.1.4"
-CM.BUILD = "cm-261108-wconf1"
+CM.VERSION = "1.1.5"
+CM.BUILD = "cm-261111-maps1"
 CM.CACHE_TYPE = "CookieMission.SupplyCache"
 
 -- ===================================================================== env
@@ -302,14 +302,36 @@ CM.TOWNS = {
     { n = "Valley Station", x1 = 12700, y1 = 4600,  x2 = 13700, y2 = 5600 },
     { n = "Louisville",     x1 = 12100, y1 = 1300,  x2 = 14300, y2 = 4000 },
     { n = "Fallas Lake",    x1 = 7100,  y1 = 8100,  x2 = 7450,  y2 = 8450 },
+    -- map mods added 11 Nov 2026 (boxes from their lotheaders); a town is only
+    -- used when its map folder is on the server's Map= line
+    { n = "Frogtown",       map = "Frogtown",        x1 = 3000,  y1 = 6910,  x2 = 3870,  y2 = 7490 },
+    { n = "Raccoon City",   map = "RaccoonCity",     x1 = 9900,  y1 = 9900,  x2 = 10500, y2 = 10500 },
+    { n = "Raven Creek",    map = "Raven Creek B42", x1 = 4220,  y1 = 15230, x2 = 5760,  y2 = 16900 },
+    { n = "Raven Creek",    map = "Raven Creek B42", x1 = 4860,  y1 = 17020, x2 = 5640,  y2 = 17700 },
+    { n = "Constown",       map = "Constown, KY",    x1 = 5110,  y1 = 10800, x2 = 6270,  y2 = 11350 },
+    { n = "AnruisiTown",    map = "AnruisiTown",     x1 = 12010, y1 = 11420, x2 = 12760, y2 = 11960 },
 }
+
+local lotDirs
+function CM.townOn(t)
+    if not t.map then return true end
+    if not lotDirs then
+        local dirs = getLotDirectories and getLotDirectories()
+        if not dirs or dirs:size() == 0 then return false end
+        lotDirs = {}
+        for i = 0, dirs:size() - 1 do lotDirs[dirs:get(i)] = true end
+    end
+    return lotDirs[t.map] == true
+end
 
 function CM.townAt(x, y)
     local best, bestD = nil, 500
     for i = 1, #CM.TOWNS do
         local t = CM.TOWNS[i]
-        local d = CM.rectDist(t, x, y)
-        if d < bestD then best = t.n; bestD = d end
+        if CM.townOn(t) then
+            local d = CM.rectDist(t, x, y)
+            if d < bestD then best = t.n; bestD = d end
+        end
     end
     return best or "Kentucky"
 end

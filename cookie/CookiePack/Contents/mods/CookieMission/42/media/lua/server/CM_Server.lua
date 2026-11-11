@@ -321,7 +321,7 @@ function CMS.scanSite(tier, avoid)
     local towns = {}
     local total = 0
     for _, t in ipairs(CM.TOWNS) do
-        if not townExcluded(t.n) then
+        if not townExcluded(t.n) and CM.townOn(t) then
             local w = math.floor(math.sqrt((t.x2 - t.x1) * (t.y2 - t.y1)))
             towns[#towns + 1] = { t = t, w = w }
             total = total + w
