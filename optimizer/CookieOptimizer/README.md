@@ -2,7 +2,7 @@
 
 ตัวจูน client + server ของเซิฟ CookieCheetah (Project Zomboid B42, dedicated) — ของเราเอง ไม่ใช่ dependency ของม็อดอื่น
 
-**สถานะ: ช่วงวัดผล / เครื่องมือทดสอบเท่านั้น** ยังไม่มีอะไรที่ผู้เล่นต้องติดตั้ง
+> โฟลเดอร์นี้คือโค้ดฝั่งพัฒนา (ตัวช่วยผู้เล่น, ฝั่งเซิฟ, เครื่องมือเทส) วิธีลงสำหรับผู้เล่น / เหตุผลที่ไม่เหมาะเอาไปใช้ที่อื่น / ลิขสิทธิ์ ดูที่ [optimizer/README.md](../README.md)
 
 ## หลักที่ใช้ทั้ง repo
 
@@ -13,7 +13,7 @@
 
 ## โครงสร้าง
 
-ม็อด Workshop ของ Cookie Slicer (หน้าต่างในเกม, โทนภาพ, คิวงานโหลดพื้นที่) อยู่ที่ `F:\github_mod\CookieSlicer`
+ม็อด Workshop ของ Cookie Slicer (หน้าต่างในเกม, โทนภาพ, คิวงานโหลดพื้นที่) อยู่ที่ [`optimizer/CookieSlicer`](../CookieSlicer)
 
 ```
 tools/
@@ -37,7 +37,7 @@ docs/
 คำสั่ง (PowerShell ธรรมดา ไม่ต้อง admin, เปิด Steam ไว้, ปิดเกมก่อน):
 
 ```powershell
-cd F:\github_mod\CookieOptimizer\tools
+cd F:\github_mod\optimizer\CookieOptimizer\tools
 powershell -ExecutionPolicy Bypass -File .\cookie-gc-ab.ps1 -CacheDir P:\Zomboid -HeapMB 8192
 ```
 
@@ -62,4 +62,4 @@ powershell -ExecutionPolicy Bypass -File .\cookie-gc-ab.ps1 -CacheDir P:\Zomboid
 
 ## License
 
-ยังไม่ได้เลือก → ตอนนี้ถือเป็น all rights reserved (เจ้าของ: CookieCheetah)
+© AKA / Cookie Cheetah สงวนลิขสิทธิ์ (all rights reserved) รายละเอียดที่ [optimizer/README.md](../README.md#ลิขสิทธิ์)

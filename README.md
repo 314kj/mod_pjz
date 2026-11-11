@@ -4,7 +4,7 @@
 
 | โฟลเดอร์ | มีอะไร |
 |---|---|
-| [`cookie/`](cookie) | ม็อดของเซิฟ Cookie Cheetah (Express, Mission, Pack, Server Patch, Watch, Car Skins) |
+| [`cookie/`](cookie) | ม็อดของเซิฟ Cookie Cheetah (Express, Helper, Mission, Quest, Pack, Server Patch, Watch, Car Skins) + `tools/` สคริปต์เช็คม็อดของแอดมิน |
 | [`optimizer/`](optimizer) | **Cookie Slicer**: ตัวช่วยให้เกมลื่น + Shader ([วิธีลงสำหรับผู้เล่น](optimizer)) และ Cookie Slicer ฝั่งเซิฟ |
 | [`other/`](other) | ม็อดอื่นๆ (AKA, HF และงานอื่น) |
 
