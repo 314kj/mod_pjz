@@ -21,6 +21,9 @@ final class Patcher implements ClassFileTransformer {
     static final String MAP = "zombie/network/ServerMap";
     static final String SERVER = "zombie/network/GameServer";
     static final String DOWNLOAD = "zombie/network/PlayerDownloadServer";
+    static final String BUCKET = "zombie/entity/EntityBucket";
+    static final String ENTITIES = "zombie/entity/EngineEntityManager";
+    static final String ARRAY = "zombie/entity/util/Array";
 
     private static final String EVENT = "(Ljava/lang/String;Ljava/lang/Object;)V";
 
@@ -53,6 +56,16 @@ final class Patcher implements ClassFileTransformer {
         add(DOWNLOAD, new ClassPatch.Redirect("update", "()V", ClassPatch.INVOKEVIRTUAL,
             CHUNK, "SaveLoadedChunk", "(Lzombie/network/ClientChunkRequest$Chunk;Ljava/util/zip/CRC32;)V", null, 1,
             "saveLoadedChunk", "(L" + CHUNK + ";Lzombie/network/ClientChunkRequest$Chunk;Ljava/util/zip/CRC32;)V"));
+        // v5: the game's entity lists (one per bucket + the entity manager's own): add / remove (see EntityIndex).
+        String entity = "(Lzombie/entity/GameEntity;)V";
+        add(BUCKET, new ClassPatch.Redirect("updateMembership", entity, ClassPatch.INVOKEVIRTUAL,
+            ARRAY, "add", "(Ljava/lang/Object;)V", null, 1, "entityListAdd", "(L" + ARRAY + ";Ljava/lang/Object;)V"));
+        add(BUCKET, new ClassPatch.Redirect("updateMembership", entity, ClassPatch.INVOKEVIRTUAL,
+            ARRAY, "removeValue", "(Ljava/lang/Object;Z)Z", null, 1, "entityListRemove", "(L" + ARRAY + ";Ljava/lang/Object;Z)Z"));
+        add(ENTITIES, new ClassPatch.Redirect("addEntityInternal", entity, ClassPatch.INVOKEVIRTUAL,
+            ARRAY, "add", "(Ljava/lang/Object;)V", null, 1, "entityListAdd", "(L" + ARRAY + ";Ljava/lang/Object;)V"));
+        add(ENTITIES, new ClassPatch.Redirect("removeEntityInternal", entity, ClassPatch.INVOKEVIRTUAL,
+            ARRAY, "removeValue", "(Ljava/lang/Object;Z)Z", null, 1, "entityListRemove", "(L" + ARRAY + ";Ljava/lang/Object;Z)Z"));
     }
 
     private void add(String cls, ClassPatch.Redirect r) {
@@ -92,6 +105,6 @@ final class Patcher implements ClassFileTransformer {
     }
 
     static String describe() {
-        return Arrays.toString(new String[] { CHUNK, CELL, MAP, SERVER, DOWNLOAD });
+        return Arrays.toString(new String[] { CHUNK, CELL, MAP, SERVER, DOWNLOAD, BUCKET, ENTITIES });
     }
 }

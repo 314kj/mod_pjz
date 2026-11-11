@@ -15,13 +15,15 @@ import java.util.zip.ZipEntry;
  * milliseconds and several cells are seconds, and the server sends nothing meanwhile
  * (black map, late zombies and cars). This agent lets those events wait and runs them
  * over the next ticks inside a time budget, nearest to players first. See Hooks.
+ * v5 also removes entities from the game's entity lists without searching each list from
+ * the start (cell unload while driving). See EntityIndex.
  *
  * Start: add  -javaagent:cookie\CookieSlicer.jar  to the server's java command line.
  * Check a game jar without starting anything:
  *   java -jar CookieSlicer.jar check path\to\projectzomboid.jar
  */
 public final class Agent {
-    static final String VERSION = "4";
+    static final String VERSION = "5";
 
     public static void premain(String args, Instrumentation inst) {
         try {

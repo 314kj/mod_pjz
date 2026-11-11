@@ -12,6 +12,7 @@ import zombie.Lua.LuaEventManager;
 import zombie.characters.IsoPlayer;
 import zombie.core.Core;
 import zombie.core.logger.ExceptionLogger;
+import zombie.entity.util.Array;
 import zombie.globalObjects.SGlobalObjects;
 import zombie.iso.IsoChunk;
 import zombie.iso.IsoGridSquare;
@@ -41,6 +42,8 @@ import zombie.network.ServerMap;
  * pathfinding, collision) is not touched and still happens in the same tick.
  * Any error in this code turns it off: everything waiting runs, and from then on the game's
  * own way is used.
+ * v5: entityListAdd / entityListRemove (the game's entity lists, see EntityIndex) follow the
+ * same on/off switch.
  */
 public final class Hooks {
     private static final int R_TICK = 0, R_SEND = 1, R_UNLOAD = 2, R_SAVE = 3, R_OFF = 4;
@@ -161,6 +164,7 @@ public final class Hooks {
             enabled = true;
             off = wantOff();
             sinceMs = System.currentTimeMillis();
+            entityUse();
             Log.line("ready (game revision " + rev + "): "
                 + (off ? "switched OFF by " + source + " - square events run the game's own way, tick times are logged"
                        : "ON - square events wait for their turn")
@@ -228,6 +232,7 @@ public final class Hooks {
         if (Config.reloadIfChanged()) {
             files();
             Log.line("settings reloaded: " + Config.summary());
+            entityUse();
         }
         boolean want = wantOff();
         if (want && !off) {
@@ -237,11 +242,13 @@ public final class Hooks {
             flushAll(R_OFF);
             Log.line("switched OFF by " + source + ": " + n
                 + " waiting squares ran now; from now on square events run the game's own way");
+            entityUse();
             writeStatus(null);
         } else if (!want && off) {
             off = false;
             sinceMs = System.currentTimeMillis();
             Log.line("switched ON by " + source + ": square events wait for their turn again");
+            entityUse();
             writeStatus(null);
         }
     }
@@ -536,6 +543,25 @@ public final class Hooks {
         chunk.SaveLoadedChunk(request, crc);
     }
 
+    // ================================================================ entity lists (v5)
+
+    /** EntityBucket.updateMembership / EngineEntityManager.addEntityInternal: list.add(entity) */
+    @SuppressWarnings("rawtypes")
+    public static void entityListAdd(Array list, Object entity) {
+        EntityIndex.add(list, entity);
+    }
+
+    /** EntityBucket.updateMembership / EngineEntityManager.removeEntityInternal: list.removeValue(entity, identity) */
+    @SuppressWarnings("rawtypes")
+    public static boolean entityListRemove(Array list, Object entity, boolean identity) {
+        return EntityIndex.remove(list, entity, identity);
+    }
+
+    /** fast entity-list removal while on (main thread) */
+    private static void entityUse() {
+        EntityIndex.setUse(enabled && !off && Config.fastEntities, mainThread);
+    }
+
     // ================================================================ errors and status
 
     private static void luaError(Throwable t) {
@@ -555,12 +581,14 @@ public final class Hooks {
             t.printStackTrace(new PrintWriter(sw));
             Log.line("error in CookieSlicer, turning it off (the server runs the game's own way from now on): " + sw);
             enabled = false;
+            EntityIndex.setUse(false, mainThread);
             notWorking = "turned itself off after an error, see CookieSlicer.log";
             cur = null;
             flushAll(R_OFF);
             writeStatus(null);
         } catch (Throwable ignored) {
             enabled = false;
+            EntityIndex.use = false;
         } finally {
             breaking = false;
         }
@@ -643,6 +671,7 @@ public final class Hooks {
             if (saveFlushNs > 0) s.append("; before-save work ").append(saveFlushNs / 1_000_000L).append(" ms");
             if (luaErrors > 0) s.append("; Lua errors ").append(luaErrors);
             if (off) s.append("; OFF (").append(source).append(")");
+            if (EntityIndex.use || EntityIndex.failed()) s.append("; ").append(EntityIndex.minute());
         } else {
             s.append("; game's own way");
         }
@@ -650,7 +679,9 @@ public final class Hooks {
             firstStatus = false;
             s.append("; chunks: ").append(State.of(Patcher.CHUNK))
                 .append(", cells: ").append(State.of(Patcher.CELL))
-                .append(", downloads: ").append(State.of(Patcher.DOWNLOAD));
+                .append(", downloads: ").append(State.of(Patcher.DOWNLOAD))
+                .append(", entity buckets: ").append(State.of(Patcher.BUCKET))
+                .append(", entity manager: ").append(State.of(Patcher.ENTITIES));
         }
         Log.line(s.toString());
         writeStatus("last " + Config.logEverySec + " s: players " + players + ", ticks " + ticks

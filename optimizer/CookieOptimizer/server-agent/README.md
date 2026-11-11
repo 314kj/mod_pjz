@@ -30,9 +30,26 @@
 **ผลข้างเคียงที่ต้องรู้:** งานของม็อดตอนช่องโหลด (A-Life จดของ, Outposts ปิดการทุบลังในฐาน, KC ฯลฯ) อาจช้าไป
 ไม่กี่ tick ถึงประมาณ 1–3 วิ ตอนขับเร็ว (ใกล้ผู้เล่นได้ก่อน) แทนที่เซิฟจะค้างทั้งเซิฟรอมัน
 
+## v5: ถอด entity ออกจากรายการแบบเร็ว (11 พ.ย.)
+
+JFR 11 พ.ย. 21:18–21:23 (ขับรถในเมืองใหม่): **cell unload = 20% ของเธรดหลัก** และ 98% ของเวลานั้นคือเกมไล่หา entity
+ในรายการทีละตัวตั้งแต่ต้น (`Array.removeValue` ใน `EntityBucket.updateMembership` 63% + `EngineEntityManager.removeEntityInternal` 35%)
+— แมพใหม่มี entity (ของคราฟต์ หญ้า NB ฯลฯ) หลายหมื่นตัว และทุก chunk ที่ unload ต้องถอดของตัวเองออกทีละตัว
+
+- รายการพวกนี้ **ไม่เรียงลำดับ** (เกมสร้างด้วย `ordered=false`): ตอนลบ เกมเอาตัวท้ายมาใส่ช่องที่ลบ
+- v5 จด "entity → ตำแหน่ง" ไว้ข้างๆ ทุกรายการ (อัปเดตทุกครั้งที่เพิ่ม/ลบ) ตอนลบหาตำแหน่งได้ทันที แล้วลบด้วย `removeIndex`
+  ของเกมเอง → **รายการออกมาเหมือนเกมทำเองทุกตัว ทุกลำดับ**
+- ก่อนใช้ตำแหน่งเช็คว่า entity อยู่ตรงนั้นจริง ไม่ตรง = ใช้การไล่หาของเกม แล้วสร้างสมุดจดใหม่ · เปลี่ยนจากเธรดอื่น / entity
+  ซ้ำในรายการ / รายการแบบเรียงลำดับ = ใช้วิธีของเกม · error = กลับเป็นวิธีของเกมทั้ง session
+- ตามสวิตช์เดิม (`!offslice` / bat / revision ไม่ตรง = วิธีของเกม) · ปิดเฉพาะส่วนนี้: `fast_entity_remove=false` ใน CookieSlicer.properties
+- แก้เพิ่ม 4 จุดใน 2 คลาส (`EntityBucket.updateMembership`: add + removeValue, `EngineEntityManager.addEntityInternal` / `removeEntityInternal`)
+- แลก: RAM ไม่กี่ MB (สมุดจด) + hash 1 ครั้งต่อการเพิ่ม · log ต่อนาทีมี `entity lists: removed N fast, M the game's own way, ...`
+- เทส: EntityTest (200,000 คำสั่งสุ่ม เทียบรายการทุกขั้น กับ Array ตัวจริงของเกม, ลบ 60,000 ตัว: ไล่หา ~200 ms → ~6 ms),
+  RealEntityTest (EntityBucket ตัวจริงของเกมที่ patch แล้ว vs ไม่ patch: ผลเหมือนกันทุกขั้น; คลาสผ่าน bytecode verifier ของ JDK 25)
+
 ## ปลอดภัยยังไง
 
-- แก้แค่ "ปลายทางของการเรียก method" 10 จุดใน 5 คลาส ขนาดเท่าเดิม (ไม่มีโค้ดเกมอยู่ในนี้ ไม่แก้ jar ของเกม แก้ในหน่วยความจำตอนโหลดคลาส)
+- แก้แค่ "ปลายทางของการเรียก method" 14 จุดใน 7 คลาส (v5) ขนาดเท่าเดิม (ไม่มีโค้ดเกมอยู่ในนี้ ไม่แก้ jar ของเกม แก้ในหน่วยความจำตอนโหลดคลาส)
 - ทุกจุดต้องเจอครบตามจำนวน ไม่งั้นคลาสนั้นไม่ถูกแก้เลย + log บอก; game revision ต้องเป็น `3d39148846` (42.22.2) ไม่งั้นทำงานแบบเกมเดิม
 - error ในโค้ดเรา → ปิดตัวเอง รันงานที่ค้างทั้งหมด แล้วกลับเป็นแบบเกมเดิม
 - `IntegrityReport` ไม่แตะ: log เซิฟจะขึ้น `version=42.22.2 3d39148846 agents=1` ตามจริง — การ join ใช้ `getVersionNumber()` ที่ไม่มีส่วนนี้ ผู้เล่นเข้าได้ปกติ
@@ -45,7 +62,7 @@
 3. (ครั้งเดียว) ใส่บรรทัดนี้ใน bat **ก่อน**บรรทัด java เพื่อให้เวอร์ชันใหม่ถูกสลับเข้าเองตอนเปิดเซิฟ:
    `if exist cookie\CookieSlicer.next.jar move /y cookie\CookieSlicer.next.jar cookie\CookieSlicer.jar >nul`
    ตอนเซิฟรันอยู่ห้ามเขียนทับ `CookieSlicer.jar` (JVM เปิดไฟล์ไว้) → ของใหม่วางเป็น `CookieSlicer.next.jar` แทน
-4. เปิดเซิฟตามปกติ → console มี `[CookieSlicer] v4 loaded`, `patched ...` 5 บรรทัด, `ready (game revision 3d39148846): ON ...` (หรือ `OFF` ถ้า mode = off)
+4. เปิดเซิฟตามปกติ → console มี `[CookieSlicer] v5 loaded`, `patched ...` 7 บรรทัด, `ready (game revision 3d39148846): ON ...` (หรือ `OFF` ถ้า mode = off)
 
 ถอด: ลบ `-javaagent:...` ออกจาก bat แล้วรีสตาร์ท
 

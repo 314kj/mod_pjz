@@ -41,6 +41,8 @@ final class Config {
     static String statusFile;
     /** "false" turns the whole thing off (the game's own way) without removing the agent. */
     static boolean enabled;
+    /** v5: fast removal from the game's entity lists (fast_entity_remove=false = the game's own search). */
+    static boolean fastEntities;
 
     static File dir;
     private static long stamp = Long.MIN_VALUE;
@@ -64,6 +66,7 @@ final class Config {
         gameModeFile = "CookieSlicer_mode.txt";
         statusFile = "CookieSlicer_status.txt";
         enabled = true;
+        fastEntities = true;
     }
 
     private static File file() {
@@ -129,6 +132,7 @@ final class Config {
         modeFile = p.getProperty("mode_file", modeFile).trim();
         gameModeFile = p.getProperty("game_mode_file", gameModeFile).trim();
         statusFile = p.getProperty("status_file", statusFile).trim();
+        fastEntities = !"false".equalsIgnoreCase(p.getProperty("fast_entity_remove", "true").trim());
     }
 
     /** name inside base, or name itself when it is a full path; null when there is nothing to use. */
@@ -143,7 +147,8 @@ final class Config {
         return "target tick " + toMs(targetTickNs) + " ms, square work per tick " + toMs(minDrainNs) + "-"
             + toMs(maxDrainNs) + " ms (+" + toMs(pressureNsPer1000) + " ms per 1000 waiting), before download up to "
             + toMs(sendFlushNs) + " ms, at unload " + (runBeforeUnload ? "run" : "drop") + " what waits"
-            + (runBeforeSave ? ", run everything before a save" : "");
+            + (runBeforeSave ? ", run everything before a save" : "")
+            + ", entity lists " + (fastEntities ? "fast removal" : "the game's own search");
     }
 
     private static long ms(double v) { return (long) (v * 1_000_000L); }
