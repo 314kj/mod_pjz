@@ -222,7 +222,11 @@ local function warn(job, why)
     if Q.policy == "stop" then
         Q.paused = true
         giveToolsBack()
+<<<<<<< HEAD:cookie/CookiePack/Contents/mods/CookieHelper/42/media/lua/client/CookieHelper/CH_Queue.lua
         UI.toast(why or t("Msg_QueueStopped", Craft.label(job.recipe)), false)
+=======
+        UI.toast(t("Msg_QueueStopped", Craft.label(job.recipe)), false)
+>>>>>>> origin/main:CookieHelper/Contents/mods/CookieHelper/42/media/lua/client/CookieHelper/CH_Queue.lua
         changed()
     else
         if why then UI.toast(why, false) end

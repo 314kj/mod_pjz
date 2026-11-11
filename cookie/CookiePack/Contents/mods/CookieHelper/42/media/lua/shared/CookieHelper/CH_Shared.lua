@@ -4,8 +4,13 @@
 -- runs on the client that asked for it, in small slices, and only while it is needed.
 
 CHelp = CHelp or {}
+<<<<<<< HEAD:cookie/CookiePack/Contents/mods/CookieHelper/42/media/lua/shared/CookieHelper/CH_Shared.lua
 CHelp.VERSION = "1.3.2"
 CHelp.BUILD = "chp-261108-v132"
+=======
+CHelp.VERSION = "1.3.0"
+CHelp.BUILD = "chp-261107-v13a"
+>>>>>>> origin/main:CookieHelper/Contents/mods/CookieHelper/42/media/lua/shared/CookieHelper/CH_Shared.lua
 CHelp.NET = "CookieHelper"
 
 CHelp.ROLE_DOCTOR = "doctor"

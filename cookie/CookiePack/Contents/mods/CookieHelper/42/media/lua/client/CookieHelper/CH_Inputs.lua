@@ -167,6 +167,7 @@ function In.apply(logic, r, p)
                     if a.rk ~= b.rk then return a.rk < b.rk end
                     return a.j < b.j
                 end)
+<<<<<<< HEAD:cookie/CookiePack/Contents/mods/CookieHelper/42/media/lua/client/CookieHelper/CH_Inputs.lua
                 -- each kind can have its own amount ([Base.Log;3:Base.LargeBranch] = 2 logs or 3 branches)
                 local partial = not Craft.inputCountMode(input)
                 local list = ArrayList.new()
@@ -193,6 +194,16 @@ function In.apply(logic, r, p)
                         local need = Craft.inputAmountFor(input, c.it:getFullType())
                         got = got + (partial and usesOf(c.it) or 1) / need
                     end
+=======
+                local need = Craft.inputAmount(input)
+                local partial = not Craft.inputCountMode(input)
+                local list = ArrayList.new()
+                local got = 0
+                for _, c in ipairs(cand) do
+                    if got >= need then break end
+                    list:add(c.it)
+                    got = got + (partial and usesOf(c.it) or 1)
+>>>>>>> origin/main:CookieHelper/Contents/mods/CookieHelper/42/media/lua/client/CookieHelper/CH_Inputs.lua
                 end
                 logic:setManualInputsFor(input, list)
             end

@@ -5,4 +5,8 @@ description=CookieCheetah safehouse helper: own up to 3 houses and join up to 5,
 poster=poster.png
 icon=icon.png
 versionMin=42.13.0
+<<<<<<< HEAD:cookie/CookiePack/Contents/mods/CookieHelper/42/mod.info
 modversion=1.3.2
+=======
+modversion=1.3.0
+>>>>>>> origin/main:CookieHelper/Contents/mods/CookieHelper/42/mod.info

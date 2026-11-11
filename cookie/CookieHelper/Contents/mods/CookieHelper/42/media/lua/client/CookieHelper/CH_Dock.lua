@@ -1,0 +1,4 @@
+-- Cookie Helper : the floating cookie button was removed in v1.2.
+-- Everything it offered lives in the right-click menu ("Cookie Helper") now.
+-- This file stays as an empty stub so an old copy left in a Workshop folder
+-- can't bring the button back.
