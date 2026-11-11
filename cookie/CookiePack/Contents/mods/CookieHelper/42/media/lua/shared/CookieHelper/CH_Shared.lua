@@ -4,8 +4,8 @@
 -- runs on the client that asked for it, in small slices, and only while it is needed.
 
 CHelp = CHelp or {}
-CHelp.VERSION = "1.3.2"
-CHelp.BUILD = "chp-261108-v132"
+CHelp.VERSION = "1.3.3"
+CHelp.BUILD = "chp-261111-v133"
 CHelp.NET = "CookieHelper"
 
 CHelp.ROLE_DOCTOR = "doctor"

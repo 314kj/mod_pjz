@@ -485,6 +485,8 @@
     "IGUI_CH_Why_NoTable": "needs a table in the zone or next to you",
     "IGUI_CH_Why_NotInReach": "something it needs is where nobody can reach it",
     "IGUI_CH_Why_NotLearned": "recipe not learned yet",
+    "IGUI_CH_Why_NotLearnedFrom": "recipe not learned yet · read %1 first",
+    "IGUI_CH_Why_Output": "this recipe makes an item that does not exist (a mod's recipe is broken)",
     "IGUI_CH_Why_Reach": "cannot get to %1 (way blocked)",
     "IGUI_CH_Why_ReachStation": "cannot get next to %1 (way blocked)",
     "IGUI_CH_Why_ReachTable": "cannot get next to the table (way blocked)",

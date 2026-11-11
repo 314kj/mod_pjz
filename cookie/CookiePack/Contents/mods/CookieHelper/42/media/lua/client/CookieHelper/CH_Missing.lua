@@ -120,9 +120,9 @@ local function analyse(ctx)
         req[#req + 1] = { name = dark and t("LightDark") or t("LightOk"), kind = dark and "bad" or "ok",
             lines = dark and { { s = t("LightHint"), c = K.text3 } } or nil }
     end
-    local learned = true
-    pcall(function() learned = (not r:needToBeLearn()) or r:hasPlayerLearned(p) end)
-    req[#req + 1] = { name = learned and t("Learned") or t("NotLearned"), kind = learned and "ok" or "bad" }
+    local learned = Craft.learned(r, p)
+    req[#req + 1] = { name = learned and t("Learned") or t("NotLearned"), kind = learned and "ok" or "bad",
+        lines = (not learned) and { { s = Craft.notLearnedText(r), c = K.text3 } } or nil }
     pcall(function()
         for i = 0, r:getRequiredSkillCount() - 1 do
             local rs = r:getRequiredSkill(i)

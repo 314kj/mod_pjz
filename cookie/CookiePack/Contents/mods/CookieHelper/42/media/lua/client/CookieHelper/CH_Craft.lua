@@ -306,6 +306,67 @@ function Craft.tooDark(r, p)
     return ok and v == true
 end
 
+-- learned the way the craft itself checks it. r:hasPlayerLearned(p) says yes for every recipe when the
+-- sandbox shows recipes not learned yet (SeeNotLearntRecipe), but the craft still needs the real thing
+function Craft.learned(r, p)
+    local ok, v = pcall(function()
+        if not r:needToBeLearn() then return true end
+        return p:isRecipeActuallyKnown(r)
+    end)
+    if ok then return v == true end
+    local ok2, v2 = pcall(function() return r:hasPlayerLearned(p) end)
+    return ok2 and v2 == true
+end
+
+-- skill levels the way the craft checks them: a skill book of this recipe in reach also counts
+function Craft.hasSkills(r, p, containers)
+    local ok, v = pcall(function() return r:characterHasRequiredSkills(p) end)
+    if ok and v then return true end
+    if not containers then return false end
+    local okB, b = pcall(function() return r:validateBenefitFromRecipeAtHand(p, containers) end)
+    return okB and b == true
+end
+
+-- the book or magazine that teaches r (translated name), nil when no item teaches it
+local teachers
+function Craft.teacherOf(r)
+    if not teachers then
+        teachers = {}
+        pcall(function()
+            local all = getScriptManager():getAllItems()
+            for i = 0, all:size() - 1 do
+                pcall(function()
+                    local it = all:get(i)
+                    local lr = it:getLearnedRecipes()
+                    if lr and lr:size() > 0 then
+                        local nm
+                        for j = 0, lr:size() - 1 do
+                            local rn = tostring(lr:get(j))
+                            if teachers[rn] == nil then
+                                nm = nm or Scan.itemName(it:getFullName())
+                                teachers[rn] = nm
+                            end
+                        end
+                    end
+                end)
+            end
+        end)
+    end
+    local nm
+    pcall(function()
+        nm = teachers[r:getName()]
+        if not nm and r:getMetaRecipe() then nm = teachers[r:getMetaRecipe()] end
+    end)
+    return nm
+end
+
+-- one line: not learned, and what to read when we know it
+function Craft.notLearnedText(r)
+    local book = Craft.teacherOf(r)
+    if book then return t("Why_NotLearnedFrom", book) end
+    return t("Why_NotLearned")
+end
+
 -- every input except the blowtorch is there and a torch can be refilled from a propane tank
 local function refillCovers(lg, r, p)
     if not usesBlowTorch(r) then return false end
@@ -352,8 +413,10 @@ end
 function Craft.statusOne(logic, r, p, stations, benchLogic)
     local st = { known = true, learned = true, skills = true, can = false, max = 0 }
     local ok = pcall(function()
-        st.learned = (not r:needToBeLearn()) or r:hasPlayerLearned(p)
-        st.skills = r:characterHasRequiredSkills(p)
+        st.learned = Craft.learned(r, p)
+        local cs
+        pcall(function() cs = logic:getContainers() end)
+        st.skills = Craft.hasSkills(r, p, cs)
         st.known = st.learned and st.skills
         st.needsBench = r:requiresSpecificWorkstation()
         local lg = logic
@@ -542,16 +605,16 @@ function Craft.whyNot(r, p, opts)
     opts = opts or {}
     local out = {}
     local function add(s) if s and s ~= "" then out[#out + 1] = s end end
-    pcall(function()
-        if r:needToBeLearn() and not r:hasPlayerLearned(p) then add(t("Why_NotLearned")) end
-    end)
-    pcall(function()
+    if not Craft.learned(r, p) then add(Craft.notLearnedText(r)) end
+    local cs
+    if opts.logic then pcall(function() cs = opts.logic:getContainers() end) end
+    if not Craft.hasSkills(r, p, cs) then pcall(function()
         for i = 0, r:getRequiredSkillCount() - 1 do
             local rs = r:getRequiredSkill(i)
             local have = p:getPerkLevel(rs:getPerk())
             if have < rs:getLevel() then add(t("Why_Skill", rs:getPerk():getName(), rs:getLevel(), have)) end
         end
-    end)
+    end) end
     local okB, needsBench = pcall(function() return r:requiresSpecificWorkstation() end)
     if okB and needsBench and not opts.station then add(t("Why_NoStation", Craft.stationTags(r))) end
     if opts.noTable then add(t("Why_NoTable")) end
@@ -591,6 +654,23 @@ function Craft.whyNot(r, p, opts)
             end
         end)
     end
+    if #out == 0 then
+        -- a recipe whose result item does not exist (a mod item renamed or missing) can never be made
+        pcall(function()
+            local outs = r:getOutputs()
+            for i = 0, outs:size() - 1 do
+                local o = outs:get(i)
+                if tostring(o:getResourceType()) == "Item" then
+                    local pr = o:getPossibleResultItems()
+                    if not pr or pr:size() == 0 then
+                        add(t("Why_Output"))
+                        CHelp.log("why " .. r:getName() .. ": output " .. (i + 1) .. " has no item (recipe script of a mod)")
+                        break
+                    end
+                end
+            end
+        end)
+    end
     if #out == 0 then add(t("Why_GameSaysNo")) end
     return out
 end
@@ -615,8 +695,8 @@ end
 
 local function recipeUsable(r, p, stations)
     local ok, res = pcall(function()
-        if r:needToBeLearn() and not r:hasPlayerLearned(p) then return false end
-        if not r:characterHasRequiredSkills(p) then return false end
+        if not Craft.learned(r, p) then return false end
+        if not Craft.hasSkills(r, p, nil) then return false end
         if r:requiresSpecificWorkstation() and not Scan.benchFor(stations, r) then return false end
         return true
     end)

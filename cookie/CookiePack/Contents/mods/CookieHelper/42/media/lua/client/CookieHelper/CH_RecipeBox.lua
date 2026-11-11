@@ -220,10 +220,9 @@ function P:compute()
     d.max = Craft.maxPlan(ctx, r, 50)
     d.learned = true
     d.skills = true
-    pcall(function()
-        d.learned = (not r:needToBeLearn()) or r:hasPlayerLearned(p)
-        d.skills = r:characterHasRequiredSkills(p)
-    end)
+    d.learned = Craft.learned(r, p)
+    if not d.learned then d.whyLearn = Craft.notLearnedText(r) end
+    d.skills = Craft.hasSkills(r, p, self.containers)
     d.skillText = ""
     pcall(function()
         local parts = {}
@@ -491,7 +490,7 @@ function P:prerender()
         T.rrect(self, self.qtyX, self.qtyY, 54, UI.BTN_H, 8, K.bar)
         T.textC(self, tostring(self.qty), self.qtyX + 27, self.qtyY + floor((UI.BTN_H - UI.HM) / 2), K.text, T.FM)
         local info, ic
-        if not d.learned then info, ic = t("St_NotLearned"), K.bad
+        if not d.learned then info, ic = d.whyLearn or t("St_NotLearned"), K.bad
         elseif d.needsBench and not d.station then info, ic = t("BenchMissing"), K.bad
         elseif d.noTable then info, ic = t("St_NeedTable"), K.bad
         elseif d.can then info, ic = t("EnoughGives", self.qty * d.outPer), K.acc

@@ -485,6 +485,8 @@
     "IGUI_CH_Why_NoTable": "ต้องมีโต๊ะในโซนหรือข้างตัว",
     "IGUI_CH_Why_NotInReach": "ของบางอย่างอยู่ในที่ที่หยิบไม่ถึง",
     "IGUI_CH_Why_NotLearned": "ยังไม่ได้เรียนสูตรนี้",
+    "IGUI_CH_Why_NotLearnedFrom": "ยังไม่ได้เรียนสูตรนี้ · อ่าน %1 ก่อน",
+    "IGUI_CH_Why_Output": "สูตรนี้ทำของที่ไม่มีอยู่จริง (สูตรของม็อดพัง)",
     "IGUI_CH_Why_Reach": "ไปที่ %1 ไม่ได้ (ทางถูกขวาง)",
     "IGUI_CH_Why_ReachStation": "เข้าใกล้ %1 ไม่ได้ (ทางถูกขวาง)",
     "IGUI_CH_Why_ReachTable": "เข้าใกล้โต๊ะไม่ได้ (ทางถูกขวาง)",
