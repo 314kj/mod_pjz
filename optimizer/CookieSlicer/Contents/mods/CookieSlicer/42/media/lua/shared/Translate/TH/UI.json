@@ -314,15 +314,17 @@
     "UI_CookieSlicer_Fix_joinfail_1": "อ่านข้อความที่เกมแจ้ง (ด้านบน) แล้วลองใหม่ในอีก 1 นาที",
     "UI_CookieSlicer_Fix_joinfail_2": "ยังเป็นอยู่: ส่ง Zomboid/console.txt ให้แอดมินใน Discord",
     "UI_CookieSlicer_Ver_heapPick": "%1 GB",
-    "UI_CookieSlicer_Ver_heapUseRec": "ใช้ค่าแนะนำ %1 GB",
     "UI_CookieSlicer_Ver_heapNowSame": "ตอนนี้เกมได้ %1 GB (ถ้าเปลี่ยน มีผลตอนเปิดเกมครั้งหน้า)",
     "UI_CookieSlicer_Ver_heapNow": "ตอนนี้ %1 GB | เปิดเกมครั้งหน้า %2 GB",
-    "UI_CookieSlicer_Ver_heapAdvice": "แนะนำ %1 GB: เกมเคยใช้จริงสูงสุด %2 GB (เผื่อ 1.5 เท่า) และเครื่องนี้ไม่ควรเกิน %3 GB",
+    "UI_CookieSlicer_Ver_heapAdvice": "แนะนำ %1 GB: เกมเคยใช้จริงสูงสุด %2 GB (เผื่อราว 1.5 เท่า) และเครื่องนี้ไม่ควรเกิน %3 GB",
     "UI_CookieSlicer_Ver_heapAdviceNew": "แนะนำ %1 GB (ยังไม่มีข้อมูลการใช้จริง) เครื่องนี้ไม่ควรเกิน %2 GB",
     "UI_CookieSlicer_Ver_heapTooHigh": "เกินที่เครื่องนี้ไหว (%1 GB): RAM เครื่องอาจหมดจนเกมค้างหรือโดนเตะ",
     "UI_CookieSlicer_Ver_heapTooLow": "น้อยกว่าที่เกมเคยใช้ (%1 GB): เกมอาจกระตุกหรือเด้ง",
     "UI_CookieSlicer_Ver_ramWinV2": "จองไว้ %1 GB | ใช้จริง %2 GB | ตัวช่วยคุมไว้ราว %3 GB",
     "UI_CookieSlicer_J_ramHigh": "%1 GB: เกินที่เครื่องนี้ไหว (%2 GB) RAM อาจหมดจนโดนเตะ",
     "UI_CookieSlicer_J_ramBtnLower": "ลดเหลือ %1 GB (มีผลตอนเปิดเกมครั้งหน้า)",
-    "UI_CookieSlicer_J_ramGuard": "RAM เครื่องใกล้หมด: ตัวช่วยกำลังคืน RAM ส่วนที่เกมไม่ได้ใช้ให้ Windows | ปิดเบราว์เซอร์ / โปรแกรมอื่นช่วยได้"
+    "UI_CookieSlicer_J_ramGuard": "RAM เครื่องใกล้หมด: ตัวช่วยกำลังคืน RAM ส่วนที่เกมไม่ได้ใช้ให้ Windows | ปิดเบราว์เซอร์ / โปรแกรมอื่นช่วยได้",
+    "UI_CookieSlicer_Ver_heapTagRec": "แนะนำ",
+    "UI_CookieSlicer_Ver_heapTagHigh": "เกินไป",
+    "UI_CookieSlicer_Ver_heapTagLow": "น้อยไป"
 }

@@ -152,9 +152,17 @@ public final class RamTest {
         // ---------------------------------------------------------------- R6
         System.out.println("R6 suggested game RAM from what the game used (1.2.1)");
         check(Helper.recommendHeapMb(16384, 0) == 8192, "16 GB PC, no data -> 8 GB");
-        check(Helper.recommendHeapMb(16384, 5000) == 9216, "16 GB PC, used 5 GB -> 9 GB");
+        check(Helper.recommendHeapMb(16384, 5000) == 10240, "16 GB PC, used 5 GB -> 10 GB (9 rounded up to a standard size)");
         check(Helper.recommendHeapMb(16384, 8000) == 10240, "16 GB PC, used 8 GB -> 10 GB (safe max, 6 GB left)");
-        check(Helper.recommendHeapMb(131072, 4700) == 9216, "128 GB PC, used 4.7 GB -> 9 GB (" + Helper.recommendHeapMb(131072, 4700) + ")");
+        check(Helper.recommendHeapMb(131072, 4700) == 10240, "128 GB PC, used 4.7 GB -> 10 GB (" + Helper.recommendHeapMb(131072, 4700) + ")");
+        check(Helper.recommendHeapMb(131072, 12000) == 16384, "128 GB PC, used 12 GB -> 16 GB (the biggest size)");
+        check(Helper.recommendHeapMb(20480, 8000) == 12288, "20 GB PC, used 8 GB -> 12 GB (16 is more than its 14 GB safe max)");
+        check(Helper.recommendHeapMb(16384, 3000) == 6144 && Helper.recommendHeapMb(131072, 3500) == 8192, "used 3 GB -> 6 GB, 3.5 GB -> 8 GB");
+        for (long v : new long[] {Helper.recommendHeapMb(8192, 0), Helper.recommendHeapMb(12288, 9000), Helper.recommendHeapMb(24576, 6000), Helper.recommendHeapMb(6144, 0)}) {
+            boolean std = false;
+            for (long gb : Helper.STANDARD_GB) std |= gb * 1024 == v;
+            check(std, v + " MB is a standard size");
+        }
         check(Helper.recommendHeapMb(131072, 2000) == 6144, "used little -> at least 6 GB");
         check(Helper.safeHeapMb(131072) == 16384 && Helper.safeHeapMb(16384) == 10240 && Helper.safeHeapMb(8192) == 4096, "safe max: 16 / 10 / 4 GB");
         File st = new File(out, "ram/app2");

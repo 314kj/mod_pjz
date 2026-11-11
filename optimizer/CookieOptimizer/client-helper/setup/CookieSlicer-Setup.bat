@@ -200,13 +200,21 @@ function Close-Steam {
 
 # Game RAM (same rule as the helper, 1.2.1): what the game used at most in the last
 # sessions (heapstats.txt, written by the helper) x 1.5 + 1.5 GB, at least 6 GB; 8 GB
-# before there is any data. Safe = the most this PC can spare: 6 GB left for the rest on
-# PCs with 16 GB or more (at most 16 GB for the game), 4 GB left on smaller ones, >= 3 GB.
+# before there is any data; rounded up to a standard size (3 4 6 8 10 12 16 GB, as in the
+# window). Safe = the most this PC can spare: 6 GB left for the rest on PCs with 16 GB or
+# more (at most 16 GB for the game), 4 GB left on smaller ones, >= 3 GB. A suggestion above
+# Safe becomes the biggest standard size within it.
 function Get-RamPlan([double]$total, [double]$peak) {
     if ($total -ge 16384) { $safe = [math]::Min(16384, [math]::Floor(($total - 6144) / 1024) * 1024) }
     else { $safe = [math]::Max(3072, [math]::Floor(($total - 4096) / 1024) * 1024) }
-    if ($peak -gt 0) { $need = [math]::Max(6144, [math]::Ceiling(($peak * 1.5 + 1536) / 1024) * 1024) } else { $need = 8192 }
-    $rec = [math]::Max(3072, [math]::Min($safe, $need))
+    if ($peak -gt 0) { $need = [math]::Max(6144, [math]::Floor($peak * 1.5) + 1536) } else { $need = 8192 }
+    $up = -1; $within = 3072
+    foreach ($gb in 3, 4, 6, 8, 10, 12, 16) {
+        $mb = $gb * 1024
+        if ($up -lt 0 -and $mb -ge $need) { $up = $mb }
+        if ($mb -le $safe) { $within = $mb }
+    }
+    if ($up -gt 0 -and $up -le $safe) { $rec = $up } else { $rec = $within }
     return @{ Total = [int]$total; Rec = [int]$rec; Safe = [int]$safe }
 }
 

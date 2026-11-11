@@ -278,14 +278,25 @@ public final class Helper implements Runnable {
         return any ? sum / MB : -1;
     }
 
+    /** the game RAM sizes the window offers (GB) */
+    static final long[] STANDARD_GB = {3, 4, 6, 8, 10, 12, 16};
+
     /**
      * Game RAM to suggest (1.2.1): what the game used at most in the last sessions x 1.5
-     * + 1.5 GB, at least 6 GB, rounded up to whole GB; 8 GB before there is any data.
-     * Never more than safeHeapMb (room left for Windows, Discord, a browser).
+     * + 1.5 GB, at least 6 GB; 8 GB before there is any data. Rounded up to one of the
+     * standard sizes (3 4 6 8 10 12 16 GB), but never more than safeHeapMb (room left for
+     * Windows, Discord, a browser): then the biggest standard size within it.
      */
     static long recommendHeapMb(long totalMb, long peakMb) {
-        long need = peakMb > 0 ? Math.max(6144, (peakMb * 3 / 2 + 1536 + 1023) / 1024 * 1024) : 8192;
-        return Math.max(3072, Math.min(safeHeapMb(totalMb), need));
+        long need = peakMb > 0 ? Math.max(6144, peakMb * 3 / 2 + 1536) : 8192;
+        long safe = safeHeapMb(totalMb);
+        long up = -1, within = STANDARD_GB[0] * 1024;
+        for (long gb : STANDARD_GB) {
+            long mb = gb * 1024;
+            if (up < 0 && mb >= need) up = mb;
+            if (mb <= safe) within = mb;
+        }
+        return up > 0 && up <= safe ? up : within;
     }
 
     static long recommendHeapMb(long totalMb) {

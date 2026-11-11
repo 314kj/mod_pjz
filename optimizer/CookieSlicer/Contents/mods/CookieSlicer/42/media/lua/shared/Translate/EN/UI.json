@@ -314,15 +314,17 @@
     "UI_CookieSlicer_Fix_joinfail_1": "Read what the game said (above), then try again in a minute",
     "UI_CookieSlicer_Fix_joinfail_2": "Still the same: send Zomboid/console.txt to an admin on Discord",
     "UI_CookieSlicer_Ver_heapPick": "%1 GB",
-    "UI_CookieSlicer_Ver_heapUseRec": "Use suggested %1 GB",
     "UI_CookieSlicer_Ver_heapNowSame": "The game has %1 GB now (changes apply from the next game start)",
     "UI_CookieSlicer_Ver_heapNow": "Now %1 GB | from the next game start %2 GB",
-    "UI_CookieSlicer_Ver_heapAdvice": "Suggested %1 GB: the game used at most %2 GB (x1.5 room); this PC should not go over %3 GB",
+    "UI_CookieSlicer_Ver_heapAdvice": "Suggested %1 GB: the game used at most %2 GB (about x1.5 room); this PC should not go over %3 GB",
     "UI_CookieSlicer_Ver_heapAdviceNew": "Suggested %1 GB (no data on real use yet); this PC should not go over %2 GB",
     "UI_CookieSlicer_Ver_heapTooHigh": "More than this PC can spare (%1 GB): the PC may run out of RAM, stall or get kicked",
     "UI_CookieSlicer_Ver_heapTooLow": "Less than the game has used (%1 GB): it may stutter or close",
     "UI_CookieSlicer_Ver_ramWinV2": "%1 GB held | %2 GB really used | helper keeps it near %3 GB",
     "UI_CookieSlicer_J_ramHigh": "%1 GB: more than this PC can spare (%2 GB), it may run out of RAM and get kicked",
     "UI_CookieSlicer_J_ramBtnLower": "Lower to %1 GB (from the next start)",
-    "UI_CookieSlicer_J_ramGuard": "PC almost out of RAM: the helper is giving the game's unused RAM back to Windows | closing the browser / other programs helps"
+    "UI_CookieSlicer_J_ramGuard": "PC almost out of RAM: the helper is giving the game's unused RAM back to Windows | closing the browser / other programs helps",
+    "UI_CookieSlicer_Ver_heapTagRec": "suggested",
+    "UI_CookieSlicer_Ver_heapTagHigh": "too much",
+    "UI_CookieSlicer_Ver_heapTagLow": "too little"
 }

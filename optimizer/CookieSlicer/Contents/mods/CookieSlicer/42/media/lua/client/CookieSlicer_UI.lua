@@ -897,17 +897,11 @@ end
 
 -- ---------------------------------------------------------------- game RAM chooser (helper 1.2.1+)
 
+CS.HEAP_SIZES = { 3, 4, 6, 8, 10, 12, 16 } -- GB, the sizes offered (the helper suggests one of them)
+
 local function heapLimit()
     local total = tonumber(CS.pc.ram_total_mb) or 16384
     return math.min(32768, math.max(3072, total - 2048)) -- what the helper accepts
-end
-
-function CookieSlicerWindow:onHeapStep(d)
-    local pc = CS.pc
-    local cur = CS.heapPick or tonumber(pc.heap_next_mb) or tonumber(pc.heap_max_mb) or 8192
-    local v = clamp(math.floor((cur + d) / 1024 + 0.5) * 1024, 3072, heapLimit())
-    CS.heapPick = v
-    CS.requestHeap(v)
 end
 
 function CookieSlicerWindow:onHeapSet(v)
@@ -915,9 +909,9 @@ function CookieSlicerWindow:onHeapSet(v)
     CS.requestHeap(v)
 end
 
--- game RAM for the next start: - / + by 1 GB, "use the suggestion", what the suggestion is
--- based on, and a warning when the choice is above what the PC can spare or below what
--- the game has used
+-- game RAM for the next start: one button per standard size (the ones this PC can take),
+-- "suggested" under the suggestion, "too much" / "too little" under sizes above what the
+-- PC can spare or below what the game has used; then what the suggestion is based on
 function CookieSlicerWindow:drawHeapPick(cx, y, cw, labelW)
     local F, gap = self.F, self.gap
     local pc = CS.pc
@@ -929,20 +923,35 @@ function CookieSlicerWindow:drawHeapPick(cx, y, cw, labelW)
     self:text(fit(T("Ver_heap"), F.body, labelW), cx, y, C.dim, F.body)
     local vx, vw = cx + labelW + gap, cw - labelW - gap
     local bh = fh(F.body) + 10
-    local bw = bh + 6
-    local warn = (safe and pick > safe) or (peak and pick < peak * 1.2)
-    self:button(vx, y - 4, bw, bh, "-", F.body, CookieSlicerWindow.onHeapStep, -1024, "normal")
-    local val = T("Ver_heapPick", gb(pick))
-    local valW = tw(T("Ver_heapPick", "32"), F.body) + 24
-    self:textC(val, vx + bw + valW / 2, y, warn and C.warn or C.mint, F.body)
-    self:button(vx + bw + valW, y - 4, bw, bh, "+", F.body, CookieSlicerWindow.onHeapStep, 1024, "normal")
-    if rec then
-        local rl = T("Ver_heapUseRec", gb(rec))
-        local rx = vx + 2 * bw + valW + gap
-        self:button(rx, y - 4, math.min(vx + vw - rx, tw(rl, F.small) + 24), bh, rl, F.small,
-            CookieSlicerWindow.onHeapSet, rec, pick == rec and "ghost" or "primary")
+    local sizes = {}
+    for _, g in ipairs(CS.HEAP_SIZES) do
+        if g * 1024 <= heapLimit() then sizes[#sizes + 1] = g end
     end
-    y = y + bh + 4
+    local function tag(mb)
+        if rec and mb == rec then return T("Ver_heapTagRec"), C.mint end
+        if safe and mb > safe then return T("Ver_heapTagHigh"), C.warn end
+        if peak and mb < peak * 1.2 then return T("Ver_heapTagLow"), C.warn end
+        return nil
+    end
+    local bw = 0
+    for _, g in ipairs(sizes) do
+        bw = math.max(bw, tw(T("Ver_heapPick", g), F.body) + 20)
+        local tg = tag(g * 1024)
+        if tg then bw = math.max(bw, tw(tg, F.small) + 8) end
+    end
+    local rowH = bh + fh(F.small) + 4
+    local x, yy = vx, y - 4
+    for _, g in ipairs(sizes) do
+        if x + bw > vx + vw and x > vx then
+            x, yy = vx, yy + rowH + 4
+        end
+        local mb = g * 1024
+        self:button(x, yy, bw, bh, T("Ver_heapPick", g), F.body, CookieSlicerWindow.onHeapSet, mb, mb == pick and "primary" or "normal")
+        local tg, tc = tag(mb)
+        if tg then self:textC(tg, x + bw / 2, yy + bh + 2, tc, F.small) end
+        x = x + bw + 6
+    end
+    y = yy + 4 + rowH + 4
     local now = pick ~= max and T("Ver_heapNow", gb(max), gb(pick)) or T("Ver_heapNowSame", gb(max))
     y = self:para(now, vx, y, vw, C.text, F.small) + 2
     if rec and safe then
