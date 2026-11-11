@@ -87,10 +87,7 @@
     "IGUI_CH_FixGain": "Repairs up to %1%",
     "IGUI_CH_FixNoSkill": "skill too low",
     "IGUI_CH_FloorHere": "Floor next to you",
-<<<<<<< HEAD:cookie/CookiePack/Contents/mods/CookieHelper/42/media/lua/shared/Translate/EN/IG_UI.json
     "IGUI_CH_FloorZone": "Zone floor",
-=======
->>>>>>> origin/main:CookieHelper/Contents/mods/CookieHelper/42/media/lua/shared/Translate/EN/IG_UI.json
     "IGUI_CH_FromBag": "in your bag",
     "IGUI_CH_FromHouse": "in the house (asks first)",
     "IGUI_CH_FromZone": "fetch from the zone",
@@ -241,11 +238,7 @@
     "IGUI_CH_Msg_StashFloor": "Bag is heavy - leaving what was made on the floor here",
     "IGUI_CH_Msg_TooDark": "Too dark to make %1 - turn a light on or hold a flashlight",
     "IGUI_CH_Msg_TooFar": "Stand within %1 tiles of the house",
-<<<<<<< HEAD:cookie/CookiePack/Contents/mods/CookieHelper/42/media/lua/shared/Translate/EN/IG_UI.json
     "IGUI_CH_Msg_TooHeavy": "Bag is full - cannot go on with %1",
-=======
-    "IGUI_CH_Msg_TooHeavy": "One item for %1 does not fit in the bag even alone - put something down first",
->>>>>>> origin/main:CookieHelper/Contents/mods/CookieHelper/42/media/lua/shared/Translate/EN/IG_UI.json
     "IGUI_CH_Msg_TorchEmpty": "Blowtorch is empty and there is no propane tank to refill it (%1)",
     "IGUI_CH_Msg_TransferCap": "%1 already owns %2 houses",
     "IGUI_CH_Msg_TransferMemberOnly": "%1 must be a member of this house first",

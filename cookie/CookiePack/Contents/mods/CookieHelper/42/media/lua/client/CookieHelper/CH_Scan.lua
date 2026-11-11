@@ -29,7 +29,6 @@ end
 
 -- every container that stands inside zone r on floor z.
 -- returns { { c = ItemContainer, sq = IsoGridSquare, veh = BaseVehicle|nil }, ... }, vehicles
-<<<<<<< HEAD:cookie/CookiePack/Contents/mods/CookieHelper/42/media/lua/client/CookieHelper/CH_Scan.lua
 -- returns entries { c, sq } of every box in the zone (+ vehicle parts). entries.floor lists what
 -- lies on the zone floor: { { sq, items = { InventoryItem } } } (not containers: counted, and a
 -- craft walks there to pick it up)
@@ -49,11 +48,6 @@ function Scan.containers(r, z, withVehicles)
             end
             if #items > 0 then floorList[#floorList + 1] = { sq = sq, items = items } end
         end
-=======
-function Scan.containers(r, z, withVehicles)
-    local out, vehicles, seenVeh = {}, {}, {}
-    Scan.eachSquare(r, z, function(sq)
->>>>>>> origin/main:CookieHelper/Contents/mods/CookieHelper/42/media/lua/client/CookieHelper/CH_Scan.lua
         local objs = sq:getObjects()
         for i = 0, objs:size() - 1 do
             local o = objs:get(i)

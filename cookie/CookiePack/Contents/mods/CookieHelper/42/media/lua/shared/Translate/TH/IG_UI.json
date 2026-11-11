@@ -87,10 +87,7 @@
     "IGUI_CH_FixGain": "ซ่อมได้สูงสุด %1%",
     "IGUI_CH_FixNoSkill": "สกิลไม่ถึง",
     "IGUI_CH_FloorHere": "พื้นข้างตัว",
-<<<<<<< HEAD:cookie/CookiePack/Contents/mods/CookieHelper/42/media/lua/shared/Translate/TH/IG_UI.json
     "IGUI_CH_FloorZone": "พื้นในโซน",
-=======
->>>>>>> origin/main:CookieHelper/Contents/mods/CookieHelper/42/media/lua/shared/Translate/TH/IG_UI.json
     "IGUI_CH_FromBag": "มีในตัว",
     "IGUI_CH_FromHouse": "มีในบ้าน (ถามก่อน)",
     "IGUI_CH_FromZone": "หยิบจากโซน",
@@ -241,11 +238,7 @@
     "IGUI_CH_Msg_StashFloor": "กระเป๋าหนัก · วางของที่ทำเสร็จไว้ที่พื้นตรงนี้",
     "IGUI_CH_Msg_TooDark": "มืดเกินไป ทำ %1 ไม่ได้ · เปิดไฟหรือถือไฟฉาย",
     "IGUI_CH_Msg_TooFar": "ต้องยืนห่างบ้านไม่เกิน %1 ช่อง",
-<<<<<<< HEAD:cookie/CookiePack/Contents/mods/CookieHelper/42/media/lua/shared/Translate/TH/IG_UI.json
     "IGUI_CH_Msg_TooHeavy": "กระเป๋าเต็ม ทำ %1 ต่อไม่ได้",
-=======
-    "IGUI_CH_Msg_TooHeavy": "ของสำหรับ %1 ชิ้นเดียวก็ใส่กระเป๋าไม่ได้ · วางของในตัวลงก่อน",
->>>>>>> origin/main:CookieHelper/Contents/mods/CookieHelper/42/media/lua/shared/Translate/TH/IG_UI.json
     "IGUI_CH_Msg_TorchEmpty": "หัวเชื่อมแก๊สหมด และไม่มีถังโพรเพนให้เติม (%1)",
     "IGUI_CH_Msg_TransferCap": "%1 เป็นเจ้าของครบ %2 หลังแล้ว",
     "IGUI_CH_Msg_TransferMemberOnly": "%1 ต้องเป็นลูกบ้านหลังนี้ก่อน",
