@@ -2,8 +2,8 @@
 require "CookieExpress/CKX_Codec"
 
 CKX = CKX or {}
-CKX.VERSION = "1.2.4"
-CKX.BUILD = "ckx-261024-e1ff8a"
+CKX.VERSION = "1.2.5"
+CKX.BUILD = "ckx-261112-ftzmark"
 CKX.CREDIT = "Cookie Express - baked by lookchinnoi for CookieCheetah"
 CKX.NET = "CookieExpress"
 CKX.SLIP = "CookieExpress.VehicleSlip"

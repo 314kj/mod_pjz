@@ -359,12 +359,21 @@ local function syncAdd(container, item)
 end
 S.syncAdd = syncAdd
 
-local function giveItem(player, ft, n)
+-- FTZ carts (FTZ Carts & Trolleys) get the order id in their mod data as "ckx_o", so
+-- CookieServerPatch can tell a donated cart from a found one and keeps it (12 Nov).
+-- Every other item is handed over exactly as before.
+local function marksOrder(ft)
+    return type(ft) == "string" and string.find(ft, "FTZ_", 1, true) ~= nil
+end
+
+local function giveItem(player, ft, n, orderId)
     local inv = player:getInventory()
     local given = 0
+    local mark = orderId ~= nil and marksOrder(ft)
     for _ = 1, n do
         local ok, item = pcall(instanceItem, ft)
         if ok and item then
+            if mark then pcall(function() item:getModData().ckx_o = orderId end) end
             inv:AddItem(item)
             syncAdd(inv, item)
             given = given + 1
@@ -415,7 +424,7 @@ function S.claimLine(player, orderId, idx)
     if ln.kind == "v" then
         given, label = giveSlips(player, o, ln)
     else
-        given = giveItem(player, ln.ft, ln.n)
+        given = giveItem(player, ln.ft, ln.n, o.id)
         label = ln.ft
     end
     if given < ln.n then

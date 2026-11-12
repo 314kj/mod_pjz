@@ -9,3 +9,28 @@ source 3807510799 BlackoutPredatorsExtended version= mod.info=P:\cookiev1\steama
 source 2788256295 ammomaker (Ammo Maker) removed 2026-11-04 - NO files copied (author forbids repacking)
   script 42/media/scripts/CRT_AmmoMakerStub.txt = own stub entities Base.ammomaker_BirdFeeder / Base.ammomaker_ElectrolysisSetup / Base.ammomaker_NitreBed
   names from P:\Zomboid\Saves\Multiplayer\cookiev1\WorldDictionaryReadable.lua (SpriteConfigs 459-461), sprites csp_nofloor_65..67 (CookieServerPatch)
+source 3806443105 KentuckyCannabis version=0.4 mod.info=P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\mod.info  removed 2026-11-11 (Workshop page has no repack/AI terms)
+  tiledef KC_Crops 7113 <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\KC_Crops.tiles  md5=63266972510AEA3C440C9E9AB6804A81
+  tiledef KC_CompactDryingRack 7114 <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\KC_CompactDryingRack.tiles  md5=1F93CCC59CF1B133A86E246FC6194ED3
+  tiledef KC_Hydroponics 7115 <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\KC_Hydroponics.tiles  md5=BA622E2E2AAB3CC68CD4B6B59D67484A
+  tiledef KC_Paint 7116 <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\KC_Paint.tiles  md5=484216EE8C937C1B1AA6803328284F82
+  tiledef KC_RosinPress 7117 <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\KC_RosinPress.tiles  md5=7012B783DA0326EB1C1A425513E47235
+  tiledef KC_IrrigationBarrel 7118 <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\KC_IrrigationBarrel.tiles  md5=9182B3FD24E45BADB6375633D6C56B35
+  pack KC_Crops2x <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\texturepacks\KC_Crops2x.pack  md5=5FFC7E84BAA0580D40FF07E05DFD21ED
+  pack KC_Workstation2x <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\texturepacks\KC_Workstation2x.pack  md5=276701DE7DB7EAE5C16F0F985B226AD5
+  pack KC_Drying2x <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\texturepacks\KC_Drying2x.pack  md5=67395231270D0BD73F3E5868753BFFA8
+  pack KC_Poppy2x <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\texturepacks\KC_Poppy2x.pack  md5=330392ADF5C6E6477E3E923A7FAC97B8
+  pack KC_OpiumTreatment2x <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\texturepacks\KC_OpiumTreatment2x.pack  md5=1344E2F732C15AA63C6673325C543C2C
+  pack KC_MushroomPlanter2x <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\texturepacks\KC_MushroomPlanter2x.pack  md5=E4DA1FA7C38F08B4CAD8ECD5811B6092
+  pack KC_ChemistryTable2x <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\texturepacks\KC_ChemistryTable2x.pack  md5=A415CF596696694913F91BBEF7692055
+  pack KC_CompactDryingRack2x <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\texturepacks\KC_CompactDryingRack2x.pack  md5=9A9EAA7DA60AD839902B6F3CB377665D
+  pack KC_Hydroponics2x <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\texturepacks\KC_Hydroponics2x.pack  md5=A43C15C1C6A18448D25FB61A41F6E819
+  pack KC_Paint2x <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\texturepacks\KC_Paint2x.pack  md5=40A8BC3413F785EE9CFA6D0C5178E4A2
+  pack KC_RosinPress2x <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\texturepacks\KC_RosinPress2x.pack  md5=B57A9B7801F8F00624F919C08F810F90
+  pack KC_IrrigationBarrel2x <- P:\SteamLibrary\steamapps\workshop\content\108600\3806443105\mods\KentuckyCannabis\42\media\texturepacks\KC_IrrigationBarrel2x.pack  md5=426BCCB49ED9FF882A5C691B2222AE42
+  script 42/media/scripts/CRT_KentuckyCannabisStub.txt = SpriteConfig faces of the 7 entities in the save (KentuckyCannabis.KC_ChemistryTable / KC_CompactDryingRack / KC_HydroTray / KC_IrrigationBarrel / KC_OpiumTreatmentBarrel / KC_ProcessingStation / KC_RosinPress) copied from 42/media/scripts/entities/KC_*.txt without OnCreate
+source 3814657376 Monorails version=1.3.1 mod.info=P:\SteamLibrary\steamapps\workshop\content\108600\3814657376\mods\Monorails\42\mod.info  removed 2026-11-11 (Workshop page has no repack/AI terms)
+  tiledef monorails_01 6213 <- P:\SteamLibrary\steamapps\workshop\content\108600\3814657376\mods\Monorails\42\media\monorails_01.tiles  md5=0817DC60592F72F4AE9877E9DDD06BF1
+  pack monorails <- P:\SteamLibrary\steamapps\workshop\content\108600\3814657376\mods\Monorails\42\media\texturepacks\monorails.pack  md5=0C4780018175D9D37095E3B20A28E006
+  script 42/media/scripts/CRT_MonorailsStub.txt = SpriteConfig faces of the 37 Base.Monorails_* entities in the save, copied from 42/media/scripts/Monorails_track.txt without OnCreate / OnIsValid
+  names from P:\Zomboid\Saves\Multiplayer\cookiev1\WorldDictionaryReadable.lua (scripts.SpriteConfigs), 11 Nov 2026

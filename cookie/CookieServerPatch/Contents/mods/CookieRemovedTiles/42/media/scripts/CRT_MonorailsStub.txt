@@ -1,0 +1,1280 @@
+/*
+================================================================
+  Cookie - Removed Mod Tiles : Monorails entity stubs
+  Written for CookieCheetah.
+
+  Monorails (3814657376, mod id Monorails) was removed on
+  11 Nov 2026. The save's WorldDictionary (SpriteConfigs) lists
+  37 of its track/station entity scripts, and a client refuses
+  to load the world when one of them is missing.
+
+  These stubs keep those names alive with the same pictures:
+  - only the SpriteConfig faces (same sprite names), no
+    CraftRecipe (not in the build menu), no UI, no Lua callbacks
+  - the sprites come from Monorails' own tile file, kept in
+    this mod with its tiledef number (6213), see SOURCES.txt
+  - track already turned into plain objects by CookieServerPatch
+    (monorails-plain) keeps its picture through the same tiles
+
+  NEVER enable together with Monorails (same entity names and
+  tile number). If Monorails is ever put back, delete this file
+  and its tiledef/pack lines from mod.info first.
+================================================================
+*/
+
+module Base
+{
+    entity Monorails_ElevatedBendLeft
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_03_108 monorails_03_109 monorails_03_110,
+                    row = monorails_03_111 monorails_03_112 monorails_03_113,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_03_114 monorails_03_115,
+                    row = monorails_03_116 monorails_03_117,
+                    row = monorails_03_118 monorails_03_119,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_03_120 monorails_03_121 monorails_03_122,
+                    row = monorails_03_123 monorails_03_124 monorails_03_125,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_03_126 monorails_03_127,
+                    row = monorails_03_128 monorails_03_129,
+                    row = monorails_03_130 monorails_03_131,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedBendRight
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_03_84 monorails_03_85 monorails_03_86,
+                    row = monorails_03_87 monorails_03_88 monorails_03_89,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_03_90 monorails_03_91,
+                    row = monorails_03_92 monorails_03_93,
+                    row = monorails_03_94 monorails_03_95,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_03_96 monorails_03_97 monorails_03_98,
+                    row = monorails_03_99 monorails_03_100 monorails_03_101,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_03_102 monorails_03_103,
+                    row = monorails_03_104 monorails_03_105,
+                    row = monorails_03_106 monorails_03_107,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedBufferStop
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_02_466,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_02_467,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_02_468,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_02_469,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedCrossing
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_02_465,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedCurve
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_02_297 monorails_02_298 monorails_02_299,
+                    row = monorails_02_300 monorails_02_301 monorails_02_302,
+                    row = monorails_02_303 monorails_02_304 monorails_02_305,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_02_306 monorails_02_307 monorails_02_308,
+                    row = monorails_02_309 monorails_02_310 monorails_02_311,
+                    row = monorails_02_312 monorails_02_313 monorails_02_314,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_02_315 monorails_02_316 monorails_02_317,
+                    row = monorails_02_318 monorails_02_319 monorails_02_320,
+                    row = monorails_02_321 monorails_02_322 monorails_02_323,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_02_324 monorails_02_325 monorails_02_326,
+                    row = monorails_02_327 monorails_02_328 monorails_02_329,
+                    row = monorails_02_330 monorails_02_331 monorails_02_332,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedDiagonal
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_03_50,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_03_51,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedDiagonal10
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_03_64 false false false false false false false false false,
+                    row = false monorails_03_65 false false false false false false false false,
+                    row = false false monorails_03_66 false false false false false false false,
+                    row = false false false monorails_03_67 false false false false false false,
+                    row = false false false false monorails_03_68 false false false false false,
+                    row = false false false false false monorails_03_69 false false false false,
+                    row = false false false false false false monorails_03_70 false false false,
+                    row = false false false false false false false monorails_03_71 false false,
+                    row = false false false false false false false false monorails_03_72 false,
+                    row = false false false false false false false false false monorails_03_73,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = false false false false false false false false false monorails_03_74,
+                    row = false false false false false false false false monorails_03_75 false,
+                    row = false false false false false false false monorails_03_76 false false,
+                    row = false false false false false false monorails_03_77 false false false,
+                    row = false false false false false monorails_03_78 false false false false,
+                    row = false false false false monorails_03_79 false false false false false,
+                    row = false false false monorails_03_80 false false false false false false,
+                    row = false false monorails_03_81 false false false false false false false,
+                    row = false monorails_03_82 false false false false false false false false,
+                    row = monorails_03_83 false false false false false false false false false,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedDiagonal5
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_03_54 false false false false,
+                    row = false monorails_03_55 false false false,
+                    row = false false monorails_03_56 false false,
+                    row = false false false monorails_03_57 false,
+                    row = false false false false monorails_03_58,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = false false false false monorails_03_59,
+                    row = false false false monorails_03_60 false,
+                    row = false false monorails_03_61 false false,
+                    row = false monorails_03_62 false false false,
+                    row = monorails_03_63 false false false false,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedDiagonalBare
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_03_52,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_03_53,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedJunction4
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_03_157 monorails_03_158 monorails_03_159 monorails_03_160 monorails_03_161,
+                    row = monorails_03_162 monorails_03_163 monorails_03_164 monorails_03_165 monorails_03_166,
+                    row = monorails_03_167 monorails_03_168 monorails_03_169 monorails_03_170 monorails_03_171,
+                    row = monorails_03_172 monorails_03_173 monorails_03_174 monorails_03_175 monorails_03_176,
+                    row = monorails_03_177 monorails_03_178 monorails_03_179 monorails_03_180 monorails_03_181,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedJunctionT
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_02_405 monorails_02_406 monorails_02_407 monorails_02_408 monorails_02_409,
+                    row = monorails_02_410 monorails_02_411 monorails_02_412 monorails_02_413 monorails_02_414,
+                    row = monorails_02_415 monorails_02_416 monorails_02_417 monorails_02_418 monorails_02_419,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_02_420 monorails_02_421 monorails_02_422,
+                    row = monorails_02_423 monorails_02_424 monorails_02_425,
+                    row = monorails_02_426 monorails_02_427 monorails_02_428,
+                    row = monorails_02_429 monorails_02_430 monorails_02_431,
+                    row = monorails_02_432 monorails_02_433 monorails_02_434,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_02_435 monorails_02_436 monorails_02_437 monorails_02_438 monorails_02_439,
+                    row = monorails_02_440 monorails_02_441 monorails_02_442 monorails_02_443 monorails_02_444,
+                    row = monorails_02_445 monorails_02_446 monorails_02_447 monorails_02_448 monorails_02_449,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_02_450 monorails_02_451 monorails_02_452,
+                    row = monorails_02_453 monorails_02_454 monorails_02_455,
+                    row = monorails_02_456 monorails_02_457 monorails_02_458,
+                    row = monorails_02_459 monorails_02_460 monorails_02_461,
+                    row = monorails_02_462 monorails_02_463 monorails_02_464,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedStation
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_02_58 monorails_02_59 monorails_02_60 false false false,
+                    row = false false false false false false,
+                    row = monorails_02_52 monorails_02_53 monorails_02_54 monorails_02_55 monorails_02_56 monorails_02_57,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_02_61 false monorails_02_67,
+                    row = monorails_02_62 false monorails_02_68,
+                    row = monorails_02_63 false monorails_02_69,
+                    row = monorails_02_64 false false,
+                    row = monorails_02_65 false false,
+                    row = monorails_02_66 false false,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_02_75 monorails_02_74 monorails_02_73 monorails_02_72 monorails_02_71 monorails_02_70,
+                    row = false false false false false false,
+                    row = false false false monorails_02_78 monorails_02_77 monorails_02_76,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = false false monorails_02_84,
+                    row = false false monorails_02_83,
+                    row = false false monorails_02_82,
+                    row = monorails_02_87 false monorails_02_81,
+                    row = monorails_02_86 false monorails_02_80,
+                    row = monorails_02_85 false monorails_02_79,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedStraight
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_02_263,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_02_264,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedStraight10
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_02_277 monorails_02_278 monorails_02_279 monorails_02_280 monorails_02_281 monorails_02_282 monorails_02_283 monorails_02_284 monorails_02_285 monorails_02_286,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_02_287,
+                    row = monorails_02_288,
+                    row = monorails_02_289,
+                    row = monorails_02_290,
+                    row = monorails_02_291,
+                    row = monorails_02_292,
+                    row = monorails_02_293,
+                    row = monorails_02_294,
+                    row = monorails_02_295,
+                    row = monorails_02_296,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedStraight5
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_02_267 monorails_02_268 monorails_02_269 monorails_02_270 monorails_02_271,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_02_272,
+                    row = monorails_02_273,
+                    row = monorails_02_274,
+                    row = monorails_02_275,
+                    row = monorails_02_276,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedStraightBare
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_02_265,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_02_266,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedSwitchLeft
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_02_369 monorails_02_370 monorails_02_371,
+                    row = monorails_02_372 monorails_02_373 monorails_02_374,
+                    row = monorails_02_375 monorails_02_376 monorails_02_377,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_02_378 monorails_02_379 monorails_02_380,
+                    row = monorails_02_381 monorails_02_382 monorails_02_383,
+                    row = monorails_02_384 monorails_02_385 monorails_02_386,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_02_387 monorails_02_388 monorails_02_389,
+                    row = monorails_02_390 monorails_02_391 monorails_02_392,
+                    row = monorails_02_393 monorails_02_394 monorails_02_395,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_02_396 monorails_02_397 monorails_02_398,
+                    row = monorails_02_399 monorails_02_400 monorails_02_401,
+                    row = monorails_02_402 monorails_02_403 monorails_02_404,
+                }
+            }
+        }
+    }
+
+    entity Monorails_ElevatedSwitchRight
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_02_333 monorails_02_334 monorails_02_335,
+                    row = monorails_02_336 monorails_02_337 monorails_02_338,
+                    row = monorails_02_339 monorails_02_340 monorails_02_341,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_02_342 monorails_02_343 monorails_02_344,
+                    row = monorails_02_345 monorails_02_346 monorails_02_347,
+                    row = monorails_02_348 monorails_02_349 monorails_02_350,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_02_351 monorails_02_352 monorails_02_353,
+                    row = monorails_02_354 monorails_02_355 monorails_02_356,
+                    row = monorails_02_357 monorails_02_358 monorails_02_359,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_02_360 monorails_02_361 monorails_02_362,
+                    row = monorails_02_363 monorails_02_364 monorails_02_365,
+                    row = monorails_02_366 monorails_02_367 monorails_02_368,
+                }
+            }
+        }
+    }
+
+    entity Monorails_StationSign
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_392,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_393,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackBendLeft
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_332 monorails_01_333 monorails_01_334,
+                    row = monorails_01_335 monorails_01_336 monorails_01_337,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_338 monorails_01_339,
+                    row = monorails_01_340 monorails_01_341,
+                    row = monorails_01_342 monorails_01_343,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_01_344 monorails_01_345 monorails_01_346,
+                    row = monorails_01_347 monorails_01_348 monorails_01_349,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_01_350 monorails_01_351,
+                    row = monorails_01_352 monorails_01_353,
+                    row = monorails_01_354 monorails_01_355,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackBendRight
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_308 monorails_01_309 monorails_01_310,
+                    row = monorails_01_311 monorails_01_312 monorails_01_313,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_314 monorails_01_315,
+                    row = monorails_01_316 monorails_01_317,
+                    row = monorails_01_318 monorails_01_319,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_01_320 monorails_01_321 monorails_01_322,
+                    row = monorails_01_323 monorails_01_324 monorails_01_325,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_01_326 monorails_01_327,
+                    row = monorails_01_328 monorails_01_329,
+                    row = monorails_01_330 monorails_01_331,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackBufferStop
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_356,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_357,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_01_358,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_01_359,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackCrossing
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_220,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackCurve
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_2 monorails_01_3 monorails_01_4,
+                    row = monorails_01_5 monorails_01_6 monorails_01_7,
+                    row = monorails_01_8 monorails_01_9 monorails_01_10,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_11 monorails_01_12 monorails_01_13,
+                    row = monorails_01_14 monorails_01_15 monorails_01_16,
+                    row = monorails_01_17 monorails_01_18 monorails_01_19,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_01_20 monorails_01_21 monorails_01_22,
+                    row = monorails_01_23 monorails_01_24 monorails_01_25,
+                    row = monorails_01_26 monorails_01_27 monorails_01_28,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_01_29 monorails_01_30 monorails_01_31,
+                    row = monorails_01_32 monorails_01_33 monorails_01_34,
+                    row = monorails_01_35 monorails_01_36 monorails_01_37,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackDiagonal
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_306,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_307,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackDiagonal10
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_434 false false false false false false false false false,
+                    row = false monorails_01_435 false false false false false false false false,
+                    row = false false monorails_01_436 false false false false false false false,
+                    row = false false false monorails_01_437 false false false false false false,
+                    row = false false false false monorails_01_438 false false false false false,
+                    row = false false false false false monorails_01_439 false false false false,
+                    row = false false false false false false monorails_01_440 false false false,
+                    row = false false false false false false false monorails_01_441 false false,
+                    row = false false false false false false false false monorails_01_442 false,
+                    row = false false false false false false false false false monorails_01_443,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = false false false false false false false false false monorails_01_444,
+                    row = false false false false false false false false monorails_01_445 false,
+                    row = false false false false false false false monorails_01_446 false false,
+                    row = false false false false false false monorails_01_447 false false false,
+                    row = false false false false false monorails_01_448 false false false false,
+                    row = false false false false monorails_01_449 false false false false false,
+                    row = false false false monorails_01_450 false false false false false false,
+                    row = false false monorails_01_451 false false false false false false false,
+                    row = false monorails_01_452 false false false false false false false false,
+                    row = monorails_01_453 false false false false false false false false false,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackDiagonal5
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_424 false false false false,
+                    row = false monorails_01_425 false false false,
+                    row = false false monorails_01_426 false false,
+                    row = false false false monorails_01_427 false,
+                    row = false false false false monorails_01_428,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = false false false false monorails_01_429,
+                    row = false false false monorails_01_430 false,
+                    row = false false monorails_01_431 false false,
+                    row = false monorails_01_432 false false false,
+                    row = monorails_01_433 false false false false,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackJunction
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_170 monorails_01_171 monorails_01_172 monorails_01_173 monorails_01_174,
+                    row = monorails_01_175 monorails_01_176 monorails_01_177 monorails_01_178 monorails_01_179,
+                    row = monorails_01_180 monorails_01_181 monorails_01_182 monorails_01_183 monorails_01_184,
+                    row = monorails_01_185 monorails_01_186 monorails_01_187 monorails_01_188 monorails_01_189,
+                    row = monorails_01_190 monorails_01_191 monorails_01_192 monorails_01_193 monorails_01_194,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_195 monorails_01_196 monorails_01_197 monorails_01_198 monorails_01_199,
+                    row = monorails_01_200 monorails_01_201 monorails_01_202 monorails_01_203 monorails_01_204,
+                    row = monorails_01_205 monorails_01_206 monorails_01_207 monorails_01_208 monorails_01_209,
+                    row = monorails_01_210 monorails_01_211 monorails_01_212 monorails_01_213 monorails_01_214,
+                    row = monorails_01_215 monorails_01_216 monorails_01_217 monorails_01_218 monorails_01_219,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackJunction4
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_221 monorails_01_222 monorails_01_223 monorails_01_224 monorails_01_225,
+                    row = monorails_01_226 monorails_01_227 monorails_01_228 monorails_01_229 monorails_01_230,
+                    row = monorails_01_231 monorails_01_232 monorails_01_233 monorails_01_234 monorails_01_235,
+                    row = monorails_01_236 monorails_01_237 monorails_01_238 monorails_01_239 monorails_01_240,
+                    row = monorails_01_241 monorails_01_242 monorails_01_243 monorails_01_244 monorails_01_245,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackJunctionT
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_246 monorails_01_247 monorails_01_248 monorails_01_249 monorails_01_250,
+                    row = monorails_01_251 monorails_01_252 monorails_01_253 monorails_01_254 monorails_01_255,
+                    row = monorails_01_256 monorails_01_257 monorails_01_258 monorails_01_259 monorails_01_260,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_261 monorails_01_262 monorails_01_263,
+                    row = monorails_01_264 monorails_01_265 monorails_01_266,
+                    row = monorails_01_267 monorails_01_268 monorails_01_269,
+                    row = monorails_01_270 monorails_01_271 monorails_01_272,
+                    row = monorails_01_273 monorails_01_274 monorails_01_275,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_01_276 monorails_01_277 monorails_01_278 monorails_01_279 monorails_01_280,
+                    row = monorails_01_281 monorails_01_282 monorails_01_283 monorails_01_284 monorails_01_285,
+                    row = monorails_01_286 monorails_01_287 monorails_01_288 monorails_01_289 monorails_01_290,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_01_291 monorails_01_292 monorails_01_293,
+                    row = monorails_01_294 monorails_01_295 monorails_01_296,
+                    row = monorails_01_297 monorails_01_298 monorails_01_299,
+                    row = monorails_01_300 monorails_01_301 monorails_01_302,
+                    row = monorails_01_303 monorails_01_304 monorails_01_305,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackRamp
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_360 monorails_01_361 monorails_01_362 monorails_01_363 monorails_01_364 monorails_01_365 monorails_01_366 monorails_01_367,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_368,
+                    row = monorails_01_369,
+                    row = monorails_01_370,
+                    row = monorails_01_371,
+                    row = monorails_01_372,
+                    row = monorails_01_373,
+                    row = monorails_01_374,
+                    row = monorails_01_375,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_01_376 monorails_01_377 monorails_01_378 monorails_01_379 monorails_01_380 monorails_01_381 monorails_01_382 monorails_01_383,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_01_384,
+                    row = monorails_01_385,
+                    row = monorails_01_386,
+                    row = monorails_01_387,
+                    row = monorails_01_388,
+                    row = monorails_01_389,
+                    row = monorails_01_390,
+                    row = monorails_01_391,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackStraight
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_0,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_1,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackStraight10
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_404 monorails_01_405 monorails_01_406 monorails_01_407 monorails_01_408 monorails_01_409 monorails_01_410 monorails_01_411 monorails_01_412 monorails_01_413,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_414,
+                    row = monorails_01_415,
+                    row = monorails_01_416,
+                    row = monorails_01_417,
+                    row = monorails_01_418,
+                    row = monorails_01_419,
+                    row = monorails_01_420,
+                    row = monorails_01_421,
+                    row = monorails_01_422,
+                    row = monorails_01_423,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackStraight5
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_394 monorails_01_395 monorails_01_396 monorails_01_397 monorails_01_398,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_399,
+                    row = monorails_01_400,
+                    row = monorails_01_401,
+                    row = monorails_01_402,
+                    row = monorails_01_403,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackSwitch3
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_110 monorails_01_111 monorails_01_112,
+                    row = monorails_01_113 monorails_01_114 monorails_01_115,
+                    row = monorails_01_116 monorails_01_117 monorails_01_118,
+                    row = monorails_01_119 monorails_01_120 monorails_01_121,
+                    row = monorails_01_122 monorails_01_123 monorails_01_124,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_125 monorails_01_126 monorails_01_127 monorails_01_128 monorails_01_129,
+                    row = monorails_01_130 monorails_01_131 monorails_01_132 monorails_01_133 monorails_01_134,
+                    row = monorails_01_135 monorails_01_136 monorails_01_137 monorails_01_138 monorails_01_139,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_01_140 monorails_01_141 monorails_01_142,
+                    row = monorails_01_143 monorails_01_144 monorails_01_145,
+                    row = monorails_01_146 monorails_01_147 monorails_01_148,
+                    row = monorails_01_149 monorails_01_150 monorails_01_151,
+                    row = monorails_01_152 monorails_01_153 monorails_01_154,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_01_155 monorails_01_156 monorails_01_157 monorails_01_158 monorails_01_159,
+                    row = monorails_01_160 monorails_01_161 monorails_01_162 monorails_01_163 monorails_01_164,
+                    row = monorails_01_165 monorails_01_166 monorails_01_167 monorails_01_168 monorails_01_169,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackSwitchLeft
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_74 monorails_01_75 monorails_01_76,
+                    row = monorails_01_77 monorails_01_78 monorails_01_79,
+                    row = monorails_01_80 monorails_01_81 monorails_01_82,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_83 monorails_01_84 monorails_01_85,
+                    row = monorails_01_86 monorails_01_87 monorails_01_88,
+                    row = monorails_01_89 monorails_01_90 monorails_01_91,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_01_92 monorails_01_93 monorails_01_94,
+                    row = monorails_01_95 monorails_01_96 monorails_01_97,
+                    row = monorails_01_98 monorails_01_99 monorails_01_100,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_01_101 monorails_01_102 monorails_01_103,
+                    row = monorails_01_104 monorails_01_105 monorails_01_106,
+                    row = monorails_01_107 monorails_01_108 monorails_01_109,
+                }
+            }
+        }
+    }
+
+    entity Monorails_TrackSwitchRight
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face W
+            {
+                layer
+                {
+                    row = monorails_01_38 monorails_01_39 monorails_01_40,
+                    row = monorails_01_41 monorails_01_42 monorails_01_43,
+                    row = monorails_01_44 monorails_01_45 monorails_01_46,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = monorails_01_47 monorails_01_48 monorails_01_49,
+                    row = monorails_01_50 monorails_01_51 monorails_01_52,
+                    row = monorails_01_53 monorails_01_54 monorails_01_55,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = monorails_01_56 monorails_01_57 monorails_01_58,
+                    row = monorails_01_59 monorails_01_60 monorails_01_61,
+                    row = monorails_01_62 monorails_01_63 monorails_01_64,
+                }
+            }
+            face S
+            {
+                layer
+                {
+                    row = monorails_01_65 monorails_01_66 monorails_01_67,
+                    row = monorails_01_68 monorails_01_69 monorails_01_70,
+                    row = monorails_01_71 monorails_01_72 monorails_01_73,
+                }
+            }
+        }
+    }
+}

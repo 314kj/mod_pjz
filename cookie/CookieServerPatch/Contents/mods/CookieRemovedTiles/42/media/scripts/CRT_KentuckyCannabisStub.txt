@@ -1,0 +1,204 @@
+/*
+================================================================
+  Cookie - Removed Mod Tiles : Kentucky Cannabis entity stubs
+  Written for CookieCheetah.
+
+  Kentucky Cannabis (3806443105, mod id KentuckyCannabis) was
+  removed on 11 Nov 2026. The save's WorldDictionary
+  (SpriteConfigs) lists seven of its entity scripts, and a
+  client refuses to load the world when one of them is missing.
+  At least two of them are built in the world (a processing
+  station and a compact drying rack, seen in entity_data.bin).
+
+  These stubs keep those names alive with the same pictures:
+  - only the SpriteConfig faces (same sprite names), no
+    CraftRecipe (not in the build menu), no crafting, no UI,
+    no fluids, no containers, no Lua callbacks
+  - the sprites come from KC's own tile files, kept in this
+    mod with KC's tiledef numbers (7113-7118), see SOURCES.txt
+
+  NEVER enable together with Kentucky Cannabis (same entity
+  names and tile numbers). If KC is ever put back, delete this
+  file and KC's tiledef/pack lines from mod.info first.
+================================================================
+*/
+
+module KentuckyCannabis
+{
+    entity KC_ChemistryTable
+    {
+        component SpriteConfig
+        {
+            health = 300,
+            face S
+            {
+                layer
+                {
+                    row = kc_chemistry_table_0,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = kc_chemistry_table_1,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = kc_chemistry_table_2,
+                }
+            }
+            face W
+            {
+                layer
+                {
+                    row = kc_chemistry_table_3,
+                }
+            }
+        }
+    }
+
+    entity KC_CompactDryingRack
+    {
+        component SpriteConfig
+        {
+            health = 300,
+            face S
+            {
+                layer
+                {
+                    row = kc_compact_drying_rack_0 kc_compact_drying_rack_1,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = kc_compact_drying_rack_2,
+                    row = kc_compact_drying_rack_3,
+                }
+            }
+        }
+    }
+
+    entity KC_HydroTray
+    {
+        component SpriteConfig
+        {
+            health = 150,
+            face S
+            {
+                layer
+                {
+                    row = kc_hydro_tray_0,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = kc_hydro_tray_3,
+                }
+            }
+        }
+    }
+
+    entity KC_IrrigationBarrel
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face S
+            {
+                layer
+                {
+                    row = kc_irrigation_barrel_0,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = kc_irrigation_barrel_1,
+                }
+            }
+        }
+    }
+
+    entity KC_OpiumTreatmentBarrel
+    {
+        component SpriteConfig
+        {
+            isThumpable = false,
+            face S
+            {
+                layer
+                {
+                    row = kc_opium_treatment_0,
+                }
+            }
+        }
+    }
+
+    entity KC_ProcessingStation
+    {
+        component SpriteConfig
+        {
+            health = 200,
+            skillBaseHealth = 20,
+            face S
+            {
+                layer
+                {
+                    row = kc_processing_0,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = kc_processing_1,
+                }
+            }
+            face N
+            {
+                layer
+                {
+                    row = kc_processing_2,
+                }
+            }
+            face W
+            {
+                layer
+                {
+                    row = kc_processing_3,
+                }
+            }
+        }
+    }
+
+    entity KC_RosinPress
+    {
+        component SpriteConfig
+        {
+            health = 150,
+            face S
+            {
+                layer
+                {
+                    row = kc_rosin_press_0,
+                }
+            }
+            face E
+            {
+                layer
+                {
+                    row = kc_rosin_press_1,
+                }
+            }
+        }
+    }
+}
