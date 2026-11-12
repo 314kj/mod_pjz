@@ -23,6 +23,9 @@ function CMUI.line(win, x1, y1, x2, y2, th, c, a)
     if win.grow then win:grow(math.max(y1, y2) + th) end
     local jo = win.javaObject
     if jo then
+        -- the 4-point DrawTexture takes screen coords (unlike drawRect), so shift by the window's place on screen
+        local ox, oy = jo:getAbsoluteX(), jo:getAbsoluteY() + jo:getYScroll()
+        x1, y1, x2, y2 = x1 + ox, y1 + oy, x2 + ox, y2 + oy
         jo:DrawTexture(nil, x1 + nx, y1 + ny, x2 + nx, y2 + ny, x2 - nx, y2 - ny, x1 - nx, y1 - ny, c[1], c[2], c[3], a or 1)
     elseif win.drawLineQuad then
         win:drawLineQuad(x1, y1, x2, y2, th, c, a)
