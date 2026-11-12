@@ -114,7 +114,9 @@ local TOAST_COLOR = { farwarn = "bad", left = "bad", busy = "bad", vehicle = "ba
     sqcount = "good", sqhold = "bad", sqfix = "bad",
     off = "bad", nolife = "bad", dead = "bad", dodjoin = "good", dodleft = "bad", doddead = "bad", dodcool = "bad",
     dodbusy = "bad", dodfew = "bad", dodnopoint = "bad", dodnotready = "bad", dodnowarn = "bad", dodgone = "bad",
-    dodvote = "good", dodexpire = "bad", dodsaved = "good" }
+    dodvote = "good", dodexpire = "bad", dodsaved = "good",
+    dodnoloc = "bad", dodlocbusy = "bad", dodwait = "bad", doddown = "bad", dodyoudown = "bad", dodinbound = "bad",
+    dodc1 = "good", dodsafe = "good", dodsp = "good" }
 
 -- ===================================================================== warps
 -- wp = { x, y, z, why, stage = "wait"|"go"|"settle", t0, tries }

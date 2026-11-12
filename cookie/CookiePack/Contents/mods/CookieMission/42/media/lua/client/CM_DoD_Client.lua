@@ -1,9 +1,10 @@
--- Cookie Mission - Die or Die (client): lobby window, loading screen, ready check, match HUD, team tags over heads
+-- Cookie Mission - Die or Die (client), military look: floating button, teams window (teams / room /
+-- scoreboard / admin spot setup), insertion screen, radio arrival effect, match HUD, debrief cards
 require "CM_UI_Kit"
 require "CM_UI_Squad"
+require "CM_UI_Games"
 require "CM_DoD"
 
-local C = CMUI.C
 local T = CMC.txt
 local D = CM.DOD
 
@@ -12,216 +13,488 @@ CMDoDc.snap = nil
 CMDoDc.at = 0
 
 local function S(n) return CMUI.S(n) end
-local function lobby() return CMDoDc.snap and CMDoDc.snap.lobby or nil end
 local function left(v) return CMC.left(v, CMDoDc.at) or 0 end
+local function team() return CMDoDc.snap and CMDoDc.snap.team or nil end
 
--- am I in the match right now (warped or about to be)?
-local function inMatch()
-    local lb = lobby()
-    local p = CMC.player()
-    if not lb or not lb.me or lb.phase == "lobby" or not p then return false end
-    local me = CM.ukey(p:getUsername())
-    for _, m in ipairs(lb.members or {}) do
-        if m.st == "in" and CM.ukey(m.n) == me then return true end
-    end
-    return false
+-- ===================================================================== look
+local K = {
+    bg = { 0.03, 0.04, 0.03 }, panel = { 0.07, 0.09, 0.06 }, panel2 = { 0.10, 0.13, 0.08 },
+    line = { 0.17, 0.22, 0.14 }, line2 = { 0.24, 0.29, 0.17 },
+    g = { 0.65, 0.89, 0.29 }, gHov = { 0.78, 0.96, 0.48 }, gDim = { 0.40, 0.55, 0.20 },
+    text = { 0.90, 0.92, 0.87 }, dim = { 0.54, 0.58, 0.50 }, faint = { 0.36, 0.40, 0.32 },
+    amber = { 0.85, 0.64, 0.23 }, red = { 0.88, 0.35, 0.28 }, ink = { 0.04, 0.05, 0.04 }, purple = { 0.66, 0.50, 0.94 },
+}
+CMDoDc.K = K
+local TIER_COL = { K.dim, K.g, K.red }
+
+local function rect(win, x, y, w, h, c, a) win:drawRect(x, y, w, h, a or 1, c[1], c[2], c[3]) end
+local function border(win, x, y, w, h, c, a) win:drawRectBorder(x, y, w, h, a or 1, c[1], c[2], c[3]) end
+local function tex(win, name, x, y, w, h, a, c)
+    local t = CMUI.tex(name)
+    if not t then return false end
+    c = c or { 1, 1, 1 }
+    win:drawTextureScaled(t, x, y, w, h, a or 1, c[1], c[2], c[3])
+    return true
 end
-CMDoDc.inMatch = inMatch
 
--- ===================================================================== lobby window
+-- a location picture with a dark fade at the bottom; grey = not available
+local function locPic(win, id, x, y, w, h, grey, fade)
+    local l = D.LOC[id]
+    if not (l and tex(win, l.tex, x, y, w, h, grey and 0.35 or 1, grey and { 0.5, 0.5, 0.5 } or nil)) then
+        rect(win, x, y, w, h, K.panel2, 1)
+    end
+    if fade then
+        local steps = 8
+        for i = 0, steps - 1 do
+            rect(win, x, y + h * (0.45 + 0.55 * i / steps), w, h * 0.55 / steps + 1, K.bg, 0.12 + 0.1 * i)
+        end
+    end
+end
+
+-- sharp military button: kind = go (green), ghost, on (selected), red
+local function mbtn(win, x, y, w, h, label, fn, kind, opts)
+    opts = opts or {}
+    local dis = opts.disabled == true
+    local over, pressed = win:hit(x, y, w, h, (not dis) and fn or nil, opts.tip)
+    local yo = pressed and 1 or 0
+    local font = opts.font or UIFont.Small
+    local bg, fg, rim = K.panel, K.text, K.line2
+    if kind == "go" then bg, fg, rim = over and K.gHov or K.g, K.ink, K.g
+    elseif kind == "on" then bg, fg, rim = K.panel2, K.g, K.g
+    elseif kind == "red" then bg, fg, rim = over and { 0.30, 0.09, 0.07 } or { 0.20, 0.06, 0.05 }, { 1, 0.75, 0.70 }, K.red
+    elseif over then bg = K.panel2 end
+    if dis then bg, fg, rim = K.panel, K.faint, K.line end
+    rect(win, x, y + yo, w, h, bg, dis and 0.6 or 0.95)
+    border(win, x, y + yo, w, h, rim, 1)
+    if kind == "go" and not dis then
+        -- the cut corner
+        rect(win, x + w - S(10), y + yo + h - S(3), S(10), S(3), K.bg, 1)
+        rect(win, x + w - S(3), y + yo + h - S(10), S(3), S(10), K.bg, 1)
+    end
+    CMUI.textC(win, CMUI.fit(label, font, w - 8), x + w / 2, y + yo + (h - CMUI.fh(font)) / 2, fg, 1, font)
+    return over
+end
+CMDoDc.btn = mbtn
+
+-- crosshair drawn with lines (no texture needed)
+local function crosshair(win, cx, cy, r, c, th)
+    th = th or 2
+    CMUI.ring(win, cx, cy, r * 0.62, c, 1)
+    rect(win, cx - th / 2, cy - r, th, r * 0.5, c, 1)
+    rect(win, cx - th / 2, cy + r * 0.5, th, r * 0.5, c, 1)
+    rect(win, cx - r, cy - th / 2, r * 0.5, th, c, 1)
+    rect(win, cx + r * 0.5, cy - th / 2, r * 0.5, th, c, 1)
+    rect(win, cx - th, cy - th, th * 2, th * 2, c, 1)
+end
+
+-- the faded fence picture behind the team screens: grey picture, dark on the left, green to the right
+local function backdrop(win, x, y, w, h)
+    rect(win, x, y, w, h, K.bg, 1)
+    tex(win, "dod_bg", x, y, w, h, 0.45, { 0.62, 0.70, 0.58 })
+    local steps = 16
+    for i = 0, steps - 1 do
+        local k = i / (steps - 1)
+        rect(win, x + w * i / steps, y, w / steps + 1, h, K.bg, 0.96 - 0.62 * k)
+        rect(win, x + w * i / steps, y, w / steps + 1, h, K.gDim, 0.16 * k)
+    end
+    for i = 0, 5 do rect(win, x, y + h - h * 0.3 * (i + 1) / 6, w, h * 0.05 + 1, K.bg, 0.12) end
+    for yy = y, y + h, S(4) do rect(win, x, yy, w, 1, K.g, 0.025) end
+end
+
+local function sound(names)
+    local p = CMC.player()
+    if not p then return nil end
+    for _, n in ipairs(names) do
+        local ok, id = pcall(function() return p:playSound(n) end)
+        if ok and id and id ~= 0 then return id end
+    end
+    return nil
+end
+
+local function stopSound(id)
+    local p = CMC.player()
+    if p and id then pcall(function() p:stopOrTriggerSound(id) end) end
+end
+
+-- ===================================================================== the window
 CMDoDc.Win = CMUI.Window:derive("CMDoD_Win")
 local DW = CMDoDc.Win
 
 function DW:new(x, y, w, h)
     local o = CMUI.Window.new(self, x, y, w, h)
-    o.title = T("IGUI_CM_Dod_title")
-    o.titleIcon = "cm_skull"
-    o.bgAlpha = 0.9
+    o.title = "DIE OR DIE"
+    o.tab = "teams"
+    o.newLoc = nil
+    o.newTier = 2
+    o.newSize = 4
+    o.admLoc = D.LOCS[1].id
+    o.boardWeek = false
     return o
 end
 
-function DW:createChildren()
-    CMUI.Window.createChildren(self)
-    -- admin: name + description of the spot to save
-    self.nameBox = ISTextEntryBox:new("", S(18), 0, S(220), S(26))
-    self.nameBox:initialise(); self.nameBox:instantiate()
-    self:addChild(self.nameBox)
-    self.descBox = ISTextEntryBox:new("", S(246), 0, S(330), S(26))
-    self.descBox:initialise(); self.descBox:instantiate()
-    self:addChild(self.descBox)
-    self.nameBox:setVisible(false)
-    self.descBox:setVisible(false)
+function DW:drawFrame()
+    local w, h = self.width, self.height
+    backdrop(self, 0, 0, w, h)
+    border(self, 0, 0, w, h, K.line2, 1)
+    local hh = self.headerH
+    rect(self, 0, hh, w, 1, K.g, 0.25)
+    crosshair(self, S(26), hh / 2, S(11), K.g, 2)
+    CMUI.text(self, "DIE OR DIE", S(46), (hh - CMUI.fh(UIFont.Medium)) / 2, K.text, 1, UIFont.Medium)
+    -- tabs
+    local tx = S(46) + CMUI.tw(UIFont.Medium, "DIE OR DIE") + S(24)
+    local tabs = { { "teams", T("IGUI_CM_Dod_tabTeams") }, { "board", "SCOREBOARD" } }
+    if CMDoDc.snap and CMDoDc.snap.admin then tabs[#tabs + 1] = { "admin", T("IGUI_CM_Dod_tabAdmin") } end
+    for _, tb in ipairs(tabs) do
+        local tw = CMUI.tw(UIFont.Small, tb[2]) + S(24)
+        local on = self.tab == tb[1]
+        local over = self:hit(tx, S(8), tw, hh - S(16), function() self:setTab(tb[1]) end)
+        if on then rect(self, tx, S(8), tw, hh - S(16), K.g, 1)
+        elseif over then rect(self, tx, S(8), tw, hh - S(16), K.panel2, 1) end
+        CMUI.textC(self, tb[2], tx + tw / 2, (hh - CMUI.fh(UIFont.Small)) / 2, on and K.ink or K.dim, 1, UIFont.Small)
+        tx = tx + tw + S(4)
+    end
+    local cs = hh - S(16)
+    local cx = w - cs - S(10)
+    local over = self:hit(cx, S(8), cs, cs, function() self:close() end)
+    rect(self, cx, S(8), cs, cs, over and K.red or K.panel, over and 0.6 or 0.9)
+    border(self, cx, S(8), cs, cs, K.line2, 1)
+    CMUI.textC(self, "x", cx + cs / 2, S(8) + (cs - CMUI.fh(UIFont.Small)) / 2 - 1, K.text, 1, UIFont.Small)
 end
 
-local function swatch(win, x, y, s, c)
-    CMUI.rbox(win, x, y, s, s, c, 1, 4)
-    CMUI.rborder(win, x, y, s, s, C.white, 0.4, 4)
+function DW:setTab(tab)
+    self.tab = tab
+    if tab == "board" then CMC.send("dodBoard", { week = self.boardWeek }) end
 end
 
-function DW:drawOutside(sn, x, y, w)
+local function locState(sn, id)
+    for _, l in ipairs(sn.locs or {}) do if l.id == id then return l end end
+    return nil
+end
+
+local function locName(id) return D.LOC[id] and D.LOC[id].n or "?" end
+
+-- 5 location thumbnails; pick(id) when clicked; selected = id
+local function locRow(win, sn, x, y, w, selected, pick, mineId)
+    local gap = S(8)
+    local tw = (w - gap * 4) / 5
+    local th = tw * 0.56
+    for i, l in ipairs(D.LOCS) do
+        local st = locState(sn, l.id) or {}
+        local usable = st.ok and (not st.busy or l.id == mineId)
+        local tx = x + (i - 1) * (tw + gap)
+        win:hit(tx, y, tw, th, usable and pick and function() pick(l.id) end or nil, l.n)
+        locPic(win, l.id, tx, y, tw, th, not usable, false)
+        border(win, tx, y, tw, th, selected == l.id and K.g or K.line, 1)
+        if selected == l.id then border(win, tx + 1, y + 1, tw - 2, th - 2, K.g, 1) end
+        local tag = l.n
+        if not st.ok then tag = T("IGUI_CM_Dod_notSet")
+        elseif st.busy and l.id ~= mineId then tag = T("IGUI_CM_Dod_taken") end
+        CMUI.textC(win, CMUI.fit(tag, UIFont.Small, tw), tx + tw / 2, y + th + S(4),
+            selected == l.id and K.g or (usable and K.dim or K.faint), 1, UIFont.Small)
+    end
+    return th + S(4) + CMUI.fh(UIFont.Small)
+end
+
+local function tierRow(win, x, y, w, h, sel, pick)
+    local gap = S(8)
+    local bw = (w - gap * 2) / 3
+    for i = 1, 3 do
+        local on = sel == i
+        mbtn(win, x + (i - 1) * (bw + gap), y, bw, h, D.TIER_TAG[i] .. "  -  " .. CM.dodCount(i), pick and function() pick(i) end,
+            on and "on" or "ghost", { disabled = pick == nil and not on })
+    end
+end
+
+-- not in a team: make one (left) or join an open one (right)
+function DW:drawTeams(sn, x, y, w, h)
     local fs = UIFont.Small
-    local lh = CMUI.fh(fs) + S(4)
-    CMUI.para(self, T("IGUI_CM_Dod_about"), x, y, w, C.dim, fs, 4)
-    y = y + (CMUI.fh(fs) + S(2)) * 4 + S(10)
+    local lw = math.floor(w * 0.42)
+    local ly = y
+    CMUI.text(self, "SQUAD OPERATIONS", x, ly, K.g, 1, fs)
+    ly = ly + CMUI.fh(fs) + S(4)
+    CMUI.text(self, T("IGUI_CM_Dod_headline"), x, ly, K.text, 1, UIFont.Large)
+    ly = ly + CMUI.fh(UIFont.Large) + S(6)
+    CMUI.para(self, T("IGUI_CM_Dod_about2"), x, ly, lw, K.dim, fs, 3)
+    ly = ly + (CMUI.fh(fs) + S(2)) * 3 + S(10)
     if not sn.on then
-        CMUI.text(self, T("IGUI_CM_Dod_off_" .. tostring(sn.why or "off")), x, y, C.bad, 1, UIFont.Medium)
-        y = y + CMUI.fh(UIFont.Medium) + S(10)
-    elseif (sn.cool or 0) > 0 then
-        CMUI.text(self, T("IGUI_CM_Dod_cool", CM.clock(left(sn.cool))), x, y, C.gold, 1, UIFont.Medium)
-        y = y + CMUI.fh(UIFont.Medium) + S(10)
+        CMUI.text(self, T("IGUI_CM_Dod_off_" .. tostring(sn.why or "off")), x, ly, K.red, 1, UIFont.Medium)
+        return
     end
-    if sn.inv then
-        CMUI.text(self, T("IGUI_CM_Dod_invited", sn.inv.by), x, y, C.gold)
-        CMUI.btn(self, x + w - S(200), y - S(4), S(96), S(28), T("IGUI_CM_Sq_yes"), function() CMC.send("dodAnswer", { yes = true }) end, "good")
-        CMUI.btn(self, x + w - S(98), y - S(4), S(96), S(28), T("IGUI_CM_Sq_no"), function() CMC.send("dodAnswer", { yes = false }) end, "ghost")
-        y = y + S(32)
+    if (sn.cool or 0) > 0 then
+        CMUI.text(self, T("IGUI_CM_Dod_cool", CM.clock(left(sn.cool))), x, ly, K.amber, 1, UIFont.Medium)
+        ly = ly + CMUI.fh(UIFont.Medium) + S(10)
     end
-    local lb = sn.lobby
-    if lb and lb.phase == "lobby" then
-        CMUI.text(self, T("IGUI_CM_Dod_lobbyOf", lb.lead or "?", #(lb.members or {}), D.MAX), x, y, C.text, 1, UIFont.Medium)
-        CMUI.btn(self, x + w - S(160), y - S(4), S(160), S(32), T("IGUI_CM_Sq_join"), function() CMC.send("dodJoin", {}) end,
-            "primary", { disabled = not sn.on or (sn.cool or 0) > 0 })
-    elseif lb then
-        CMUI.text(self, T("IGUI_CM_Dod_busy"), x, y, C.dim, 1, UIFont.Medium)
-    else
-        CMUI.btn(self, x, y, w, S(40), T("IGUI_CM_Dod_make"), function() CMC.send("dodNew", {}) end, "primary",
-            { disabled = not sn.on or (sn.cool or 0) > 0, font = UIFont.Medium })
+    -- new team: spot, difficulty, size
+    if self.newLoc then
+        local st = locState(sn, self.newLoc)
+        if not st or not st.ok or st.busy then self.newLoc = nil end
     end
-    y = y + S(48)
-    -- the spots (admins save them where they stand)
-    CMUI.text(self, T("IGUI_CM_Dod_spots", #(sn.points or {})), x, y, C.dim)
-    y = y + lh
-    for _, pt in ipairs(sn.points or {}) do
-        CMUI.text(self, CMUI.fit(pt.name .. "  ·  " .. CM.townAt(pt.x, pt.y), fs, w - S(110)), x + S(8), y, C.text)
-        if sn.admin then
-            CMUI.btn(self, x + w - S(90), y - S(2), S(90), lh, T("IGUI_CM_Dod_del"), function() CMC.send("dodDel", { id = pt.id }) end, "danger")
+    if not self.newLoc then
+        for _, l in ipairs(sn.locs or {}) do if l.ok and not l.busy then self.newLoc = l.id; break end end
+    end
+    CMUI.text(self, T("IGUI_CM_Dod_pickLoc"), x, ly, K.g, 1, fs)
+    ly = ly + CMUI.fh(fs) + S(4)
+    ly = ly + locRow(self, sn, x, ly, lw, self.newLoc, function(id) self.newLoc = id end) + S(10)
+    tierRow(self, x, ly, lw, S(34), self.newTier, function(i) self.newTier = i end)
+    ly = ly + S(42)
+    CMUI.cycle(self, x, ly, S(150), S(34), T("IGUI_CM_Dod_size", self.newSize),
+        function() self.newSize = D.SIZES[CM.mod(self:sizeIdx() - 2, #D.SIZES) + 1] end,
+        function() self.newSize = D.SIZES[CM.mod(self:sizeIdx(), #D.SIZES) + 1] end)
+    mbtn(self, x + S(160), ly - S(4), lw - S(160), S(42), "+ " .. T("IGUI_CM_Dod_make"), function()
+        CMC.send("dodNew", { loc = self.newLoc, tier = self.newTier, size = self.newSize })
+    end, "go", { disabled = not self.newLoc or (sn.cool or 0) > 0, font = UIFont.Medium })
+    -- invites
+    local rx, rw = x + lw + S(28), w - lw - S(28)
+    local ry = y
+    for _, iv in ipairs(sn.inv or {}) do
+        rect(self, rx, ry, rw, S(40), K.panel2, 0.95)
+        border(self, rx, ry, rw, S(40), K.amber, 1)
+        CMUI.text(self, CMUI.fit(T("IGUI_CM_Dod_invited2", iv.by, locName(iv.loc)), fs, rw - S(200)), rx + S(10), ry + (S(40) - CMUI.fh(fs)) / 2, K.amber)
+        mbtn(self, rx + rw - S(186), ry + S(6), S(88), S(28), T("IGUI_CM_Sq_yes"), function() CMC.send("dodAnswer", { id = iv.id, yes = true }) end, "go")
+        mbtn(self, rx + rw - S(94), ry + S(6), S(88), S(28), T("IGUI_CM_Sq_no"), function() CMC.send("dodAnswer", { id = iv.id, yes = false }) end, "ghost")
+        ry = ry + S(46)
+    end
+    -- open teams
+    CMUI.text(self, T("IGUI_CM_Dod_open"), rx, ry, K.g, 1, fs)
+    rect(self, rx + CMUI.tw(fs, T("IGUI_CM_Dod_open")) + S(10), ry + CMUI.fh(fs) / 2, rw, 1, K.g, 0.2)
+    ry = ry + CMUI.fh(fs) + S(8)
+    local ch = S(92)
+    if #(sn.teams or {}) == 0 then
+        CMUI.text(self, T("IGUI_CM_Dod_noTeams"), rx, ry, K.faint)
+    end
+    for _, tm in ipairs(sn.teams or {}) do
+        if ry + ch > y + h then break end
+        local busy = tm.phase ~= "room"
+        rect(self, rx, ry, rw, ch, K.panel, 0.92)
+        local pw = ch * 1.6
+        locPic(self, tm.loc, rx, ry, pw, ch, busy, false)
+        border(self, rx, ry, rw, ch, busy and K.line or (tm.n < tm.size and K.line2 or K.line), 1)
+        local ix = rx + pw + S(14)
+        CMUI.text(self, string.upper(locName(tm.loc)), ix, ry + S(10), busy and K.dim or K.text, 1, UIFont.Medium)
+        local tag = D.TIER_TAG[tm.tier] .. " - " .. CM.dodCount(tm.tier)
+        local tgx = ix + CMUI.tw(UIFont.Medium, string.upper(locName(tm.loc))) + S(10)
+        border(self, tgx, ry + S(12), CMUI.tw(fs, tag) + S(12), CMUI.fh(fs) + S(4), TIER_COL[tm.tier], 1)
+        CMUI.text(self, tag, tgx + S(6), ry + S(14), TIER_COL[tm.tier], 1, fs)
+        local sub = busy and T("IGUI_CM_Dod_fighting", tm.lead or "?", CM.clock(left(tm.left))) or T("IGUI_CM_Dod_leadBy", tm.lead or "?")
+        CMUI.text(self, CMUI.fit(sub, fs, rw - pw - S(180)), ix, ry + S(10) + CMUI.fh(UIFont.Medium) + S(2), K.dim, 1, fs)
+        if not busy then
+            for i = 1, tm.size do
+                rect(self, ix + (i - 1) * S(22), ry + ch - S(20), S(18), S(6), i <= tm.n and K.g or K.line, 1)
+            end
+            CMUI.text(self, tm.n .. " / " .. tm.size, ix + tm.size * S(22) + S(6), ry + ch - S(24), K.dim, 1, fs)
+            mbtn(self, rx + rw - S(130), ry + (ch - S(40)) / 2, S(116), S(40), T("IGUI_CM_Sq_join"), function()
+                CMC.send("dodJoin", { id = tm.id })
+            end, "go", { disabled = tm.n >= tm.size or (sn.cool or 0) > 0 })
+        else
+            CMUI.textR(self, T("IGUI_CM_Dod_taken"), rx + rw - S(16), ry + (ch - CMUI.fh(fs)) / 2, K.faint, 1, fs)
         end
-        y = y + lh
-    end
-    if #(sn.points or {}) == 0 then
-        CMUI.text(self, T("IGUI_CM_Dod_nospot"), x + S(8), y, C.faint)
-        y = y + lh
-    end
-    -- admin save form
-    local adm = sn.admin == true
-    self.nameBox:setVisible(adm)
-    self.descBox:setVisible(adm)
-    if adm then
-        local fy = self.height - S(60)
-        CMUI.text(self, T("IGUI_CM_Dod_saveHint"), x, fy - lh, C.faint)
-        self.nameBox:setY(fy); self.descBox:setY(fy)
-        self.nameBox:setX(x); self.descBox:setX(x + S(228))
-        self.descBox:setWidth(w - S(228) - S(130))
-        CMUI.btn(self, x + w - S(122), fy, S(122), S(26), T("IGUI_CM_Dod_save"), function()
-            CMC.send("dodSave", { name = self.nameBox:getText(), desc = self.descBox:getText() })
-            self.nameBox:setText(""); self.descBox:setText("")
-        end, "good")
+        ry = ry + ch + S(8)
     end
 end
 
-function DW:drawLobby(sn, lb, x, y, w)
+function DW:sizeIdx()
+    for i, n in ipairs(D.SIZES) do if n == self.newSize then return i end end
+    return 2
+end
+
+-- in a team, before deploying
+function DW:drawRoom(sn, tm, x, y, w, h)
     local fs = UIFont.Small
-    local rh = S(30)
-    local colW = math.floor(w * 0.52)
-    local rx, rw = x + colW + S(16), w - colW - S(16)
-    local head = lb.voteLeft and T("IGUI_CM_Dod_voting", math.ceil(left(lb.voteLeft))) or T("IGUI_CM_Dod_lobby", #lb.members, D.MAX)
-    CMUI.text(self, head, x, y, lb.voteLeft and C.gold or C.text, 1, UIFont.Medium)
-    CMUI.textR(self, T("IGUI_CM_Dod_tier", CMC.tierName(lb.tier), CM.dodCount(lb.tier)), x + w, y, CMUI.tierColor(lb.tier), 1, UIFont.Medium)
-    y = y + CMUI.fh(UIFont.Medium) + S(10)
-    local top = y
+    local lw = math.floor(w * 0.52)
+    local lead = tm.leadMe
+    CMUI.text(self, T("IGUI_CM_Dod_spot"), x, y, K.g, 1, fs)
+    if tm.closeLeft then CMUI.textR(self, T("IGUI_CM_Dod_closes", CM.clock(left(tm.closeLeft))), x + lw, y, K.dim, 1, fs) end
+    local py = y + CMUI.fh(fs) + S(4)
+    local ph = math.floor(lw * 0.40)
+    locPic(self, tm.loc, x, py, lw, ph, false, true)
+    border(self, x, py, lw, ph, K.g, 1)
+    rect(self, x, py, S(16), S(3), K.g, 1); rect(self, x, py, S(3), S(16), K.g, 1)
+    rect(self, x + lw - S(16), py + ph - S(3), S(16), S(3), K.g, 1); rect(self, x + lw - S(3), py + ph - S(16), S(3), S(16), K.g, 1)
+    CMUI.text(self, string.upper(locName(tm.loc)), x + S(14), py + ph - CMUI.fh(UIFont.Large) - S(12), K.text, 1, UIFont.Large)
+    py = py + ph + S(10)
+    py = py + locRow(self, sn, x, py, lw, tm.loc, lead and function(id) CMC.send("dodSet", { loc = id }) end or nil, tm.loc) + S(10)
+    CMUI.text(self, T("IGUI_CM_Dod_diff"), x, py, K.g, 1, fs)
+    py = py + CMUI.fh(fs) + S(4)
+    tierRow(self, x, py, lw, S(38), tm.tier, lead and function(i) CMC.send("dodSet", { tier = i }) end or nil)
     -- members
-    local mine = nil
-    local myName = CM.ukey(CMC.player() and CMC.player():getUsername() or "")
-    for _, m in ipairs(lb.members) do
-        if CM.ukey(m.n) == myName then mine = m end
-        local col = CM.dodColor(m.c)
-        CMUI.rbox(self, x, y, colW, rh, C.panel2, 0.55, 6)
-        swatch(self, x + S(6), y + S(6), rh - S(12), col)
-        local label = "[" .. CM.dodSign(m.s) .. "] " .. m.n
-        if m.lead then label = label .. "  " .. T("IGUI_CM_Sq_leadTag") end
-        CMUI.text(self, CMUI.fit(label, fs, colW - S(140)), x + rh + S(4), y + (rh - CMUI.fh(fs)) / 2, col)
-        CMUI.textR(self, m.ok and T("IGUI_CM_Dod_okTag") or T("IGUI_CM_Dod_noTag"), x + colW - (lb.leadMe and not m.lead and S(70) or S(8)),
-            y + (rh - CMUI.fh(fs)) / 2, m.ok and C.good or C.bad)
-        if lb.leadMe and not m.lead then
-            CMUI.btn(self, x + colW - S(64), y + S(3), S(60), rh - S(6), T("IGUI_CM_Sq_kick"), function() CMC.send("dodKick", { who = m.k }) end, "danger")
-        end
-        y = y + rh + S(4)
+    local rx, rw = x + lw + S(28), w - lw - S(28)
+    local ry = y
+    CMUI.text(self, T("IGUI_CM_Dod_members"), rx, ry, K.g, 1, fs)
+    CMUI.text(self, #tm.members .. " / " .. tm.size, rx + CMUI.tw(fs, T("IGUI_CM_Dod_members")) + S(10), ry - S(3), K.text, 1, UIFont.Medium)
+    if lead then
+        CMUI.cycle(self, rx + rw - S(130), ry - S(4), S(130), S(26), T("IGUI_CM_Dod_size", tm.size),
+            function() local i = 1; for j, n in ipairs(D.SIZES) do if n == tm.size then i = j end end
+                CMC.send("dodSet", { size = D.SIZES[CM.mod(i - 2, #D.SIZES) + 1] }) end,
+            function() local i = 1; for j, n in ipairs(D.SIZES) do if n == tm.size then i = j end end
+                CMC.send("dodSet", { size = D.SIZES[CM.mod(i, #D.SIZES) + 1] }) end)
     end
-    y = y + S(6)
-    -- my colour / call sign
-    if mine then
-        CMUI.cycle(self, x, y, S(150), S(30), T("IGUI_CM_Dod_color", mine.c),
-            function() CMC.send("dodPick", { c = CM.mod(mine.c - 2, 8) + 1 }) end,
-            function() CMC.send("dodPick", { c = CM.mod(mine.c, 8) + 1 }) end)
-        CMUI.cycle(self, x + S(160), y, colW - S(160), S(30), CM.dodSign(mine.s),
-            function() CMC.send("dodPick", { s = CM.mod(mine.s - 2, 8) + 1 }) end,
-            function() CMC.send("dodPick", { s = CM.mod(mine.s, 8) + 1 }) end)
-        y = y + S(38)
-        -- the hardcore warning, accepted per player before the start
-        CMUI.btn(self, x, y, colW, S(44), CMUI.fit(mine.ok and T("IGUI_CM_Dod_warnOk") or T("IGUI_CM_Dod_warn"), fs, colW - S(12)),
-            function() CMC.send("dodWarn", { yes = not mine.ok }) end, mine.ok and "sel" or "danger")
-        y = y + S(52)
+    ry = ry + CMUI.fh(UIFont.Medium) + S(8)
+    local rh = S(44)
+    local me = nil
+    local myKey = CM.ukey(CMC.player() and CMC.player():getUsername() or "")
+    for _, m in ipairs(tm.members) do
+        if m.k == myKey then me = m end
+        local ok = m.ready or m.lead
+        rect(self, rx, ry, rw, rh, K.panel, 0.94)
+        rect(self, rx, ry, S(3), rh, ok and K.g or K.amber, 1)
+        rect(self, rx + S(12), ry + S(8), rh - S(16), rh - S(16), K.line, 1)
+        tex(self, "dod_avatar", rx + S(12), ry + S(8), rh - S(16), rh - S(16), 0.8, K.dim)
+        CMUI.text(self, CMUI.fit(m.n, UIFont.Medium, rw - S(200)), rx + rh + S(4), ry + S(4), K.text, 1, UIFont.Medium)
+        if m.lead then CMUI.text(self, T("IGUI_CM_Dod_leadTag"), rx + rh + S(4), ry + S(4) + CMUI.fh(UIFont.Medium), K.g, 1, fs) end
+        CMUI.textR(self, ok and "READY" or T("IGUI_CM_Dod_notReady"), rx + rw - (lead and not m.lead and S(64) or S(12)),
+            ry + (rh - CMUI.fh(fs)) / 2, ok and K.g or K.amber, 1, fs)
+        if lead and not m.lead then
+            mbtn(self, rx + rw - S(56), ry + S(9), S(48), rh - S(18), T("IGUI_CM_Sq_kick"), function() CMC.send("dodKick", { who = m.k }) end, "ghost")
+        end
+        ry = ry + rh + S(6)
     end
     -- invite (leader)
-    if lb.leadMe and lb.free then
-        CMUI.text(self, T("IGUI_CM_Sq_invite"), x, y, C.dim)
-        y = y + CMUI.fh(fs) + S(4)
+    if lead and tm.free then
+        local free = tm.free
+        local cols = 2
+        local bw = (rw - S(6)) / cols
         local i = 0
-        for _, f in ipairs(lb.free) do
-            local cy = y + math.floor(i / 2) * (S(28) + S(4))
-            if cy + S(28) > self.height - S(64) then break end
-            local cx = x + CM.mod(i, 2) * (colW / 2 + S(2))
-            CMUI.btn(self, cx, cy, colW / 2 - S(2), S(28), CMUI.fit(f.n, fs, colW / 2 - S(14)), function()
-                CMC.send("dodInvite", { who = f.k })
-            end, f.inv and "flat" or "ghost", { disabled = f.inv })
+        CMUI.text(self, T("IGUI_CM_Sq_invite"), rx, ry, K.dim, 1, fs)
+        ry = ry + CMUI.fh(fs) + S(4)
+        for _, f in ipairs(free) do
+            local cy = ry + math.floor(i / cols) * S(30)
+            if cy + S(26) > y + h - S(64) then break end
+            mbtn(self, rx + CM.mod(i, cols) * (bw + S(6)), cy, bw, S(26), (f.inv and (f.n .. " - " .. T("IGUI_CM_Sq_sent")) or ("+ " .. f.n)),
+                function() CMC.send("dodInvite", { who = f.k }) end, "ghost", { disabled = f.inv })
             i = i + 1
         end
+        if #free == 0 then CMUI.text(self, T("IGUI_CM_Sq_nofree"), rx, ry, K.faint, 1, fs) end
     end
-    -- vote (right column)
-    local vy = top
-    CMUI.text(self, T("IGUI_CM_Dod_vote"), rx, vy, C.dim)
-    vy = vy + CMUI.fh(fs) + S(6)
-    for _, pt in ipairs(sn.points or {}) do
-        local n = lb.votes and lb.votes[pt.id] or 0
-        local sel = lb.myVote == pt.id
-        CMUI.btn(self, rx, vy, rw, S(34), CMUI.fit(pt.name .. "   (" .. tostring(n) .. ")", fs, rw - S(16)), function()
-            CMC.send("dodVote", { id = pt.id })
-        end, sel and "sel" or "ghost", { tip = pt.desc ~= "" and pt.desc or nil })
-        vy = vy + S(38)
+    -- actions
+    local by = y + h - S(48)
+    if lead then
+        mbtn(self, rx, by, S(120), S(48), T("IGUI_CM_Dod_disband"), function() CMC.send("dodDisband", {}) end, "ghost")
+        mbtn(self, rx + S(128), by, rw - S(128), S(48), "DEPLOY", function() CMC.send("dodDeploy", {}) end, "go", { font = UIFont.Large })
+    else
+        mbtn(self, rx, by, S(120), S(48), T("IGUI_CM_Sq_leave"), function() CMC.send("dodLeave", {}) end, "ghost")
+        local rdy = me and me.ready
+        mbtn(self, rx + S(128), by, rw - S(128), S(48), rdy and "READY  OK" or "READY", function() CMC.send("dodReady", { yes = not rdy }) end,
+            rdy and "on" or "go", { font = UIFont.Large })
     end
-    -- leader controls + leave
-    local by = self.height - S(54)
-    if lb.leadMe then
-        CMUI.cycle(self, rx, by - S(42), rw, S(34), T("IGUI_CM_Dod_tier", CMC.tierName(lb.tier), CM.dodCount(lb.tier)),
-            function() CMC.send("dodTier", { tier = CM.mod(lb.tier - 2, 3) + 1 }) end,
-            function() CMC.send("dodTier", { tier = CM.mod(lb.tier, 3) + 1 }) end)
-        local label = lb.voteLeft and T("IGUI_CM_Dod_force") or T("IGUI_CM_Dod_start")
-        CMUI.btn(self, rx, by, rw, S(38), label, function() CMC.send("dodStart", { force = lb.voteLeft ~= nil }) end, "primary")
+end
+
+function DW:drawBoard(x, y, w, h)
+    local fs = UIFont.Small
+    local b = CMDoDc.board
+    mbtn(self, x + w - S(250), y - S(4), S(120), S(28), T("IGUI_CM_Dod_allTime"), function() self.boardWeek = false; self:setTab("board") end,
+        self.boardWeek and "ghost" or "on")
+    mbtn(self, x + w - S(124), y - S(4), S(124), S(28), T("IGUI_CM_Dod_thisWeek"), function() self.boardWeek = true; self:setTab("board") end,
+        self.boardWeek and "on" or "ghost")
+    if not b then CMUI.text(self, T("IGUI_CM_Loading"), x, y, K.dim); return end
+    local cw = (w - S(20)) / 3
+    local stats = { { T("IGUI_CM_Dod_sbTotal"), tostring(b.total or 0), K.text }, { T("IGUI_CM_Dod_sbMatches"), tostring(b.matches or 0), K.text },
+        { T("IGUI_CM_Dod_sbMine"), b.mine and ("#" .. b.mine) or "-", K.g } }
+    local sy = y + S(30)
+    for i, st in ipairs(stats) do
+        local sx = x + (i - 1) * (cw + S(10))
+        rect(self, sx, sy, cw, S(64), K.panel, 0.92)
+        border(self, sx, sy, cw, S(64), i == 3 and K.g or K.line, 1)
+        CMUI.text(self, st[1], sx + S(12), sy + S(8), i == 3 and K.g or K.faint, 1, fs)
+        CMUI.text(self, st[2], sx + S(12), sy + S(8) + CMUI.fh(fs), st[3], 1, UIFont.Large)
     end
-    CMUI.btn(self, x, by, colW, S(38), T("IGUI_CM_Sq_leave"), function() CMC.send("dodLeave", {}) end, "ghost")
+    local ty = sy + S(78)
+    local cols = { { "#", 0.07 }, { T("IGUI_CM_Dod_sbPlayer"), 0.33 }, { "RECRUIT", 0.12 }, { "VETERAN", 0.12 }, { "ELITE", 0.12 }, { T("IGUI_CM_Dod_sbSum"), 0.12 }, { "MVP", 0.12 } }
+    rect(self, x, ty, w, h - (ty - y), K.panel, 0.9)
+    border(self, x, ty, w, h - (ty - y), K.line, 1)
+    local cx = x + S(14)
+    local iw = w - S(28)
+    local rowH = S(34)
+    local function row(vals, yy, colsC, font)
+        local xx = cx
+        for i, c in ipairs(cols) do
+            local cwid = iw * c[2]
+            local v = tostring(vals[i])
+            if i <= 2 then CMUI.text(self, CMUI.fit(v, font, cwid - S(6)), xx, yy, colsC[i] or K.text, 1, font)
+            else CMUI.textR(self, v, xx + cwid - S(8), yy, colsC[i] or K.text, 1, font) end
+            xx = xx + cwid
+        end
+    end
+    local hdr = {}
+    for i, c in ipairs(cols) do hdr[i] = c[1] end
+    row(hdr, ty + S(10), { K.faint, K.faint, K.faint, K.faint, K.red, K.faint, K.g }, fs)
+    local ry = ty + S(10) + CMUI.fh(fs) + S(8)
+    for i, r in ipairs(b.rows or {}) do
+        if ry + rowH > y + h then break end
+        if r.me then rect(self, x + 1, ry - S(6), w - 2, rowH, K.g, 0.10); rect(self, x + 1, ry - S(6), S(3), rowH, K.g, 1) end
+        local top = i <= 3
+        row({ CM.pad2(i), r.n, r.w[1], r.w[2], r.w[3], r.t, r.mvp }, ry,
+            { top and K.g or K.dim, K.text, K.text, K.text, K.red, K.text, K.g }, top and UIFont.Medium or fs)
+        ry = ry + rowH
+    end
+    if #(b.rows or {}) == 0 then CMUI.text(self, T("IGUI_CM_Dod_sbEmpty"), cx, ry, K.faint) end
+end
+
+function DW:drawAdmin(sn, x, y, w, h)
+    local fs = UIFont.Small
+    local lw = math.floor(w * 0.40)
+    local ly = y
+    CMUI.para(self, T("IGUI_CM_Dod_admHelp"), x, ly, w, K.dim, fs, 2)
+    ly = ly + (CMUI.fh(fs) + S(2)) * 2 + S(8)
+    for _, l in ipairs(D.LOCS) do
+        local st = locState(sn, l.id) or {}
+        local on = self.admLoc == l.id
+        local rh = S(48)
+        self:hit(x, ly, lw, rh, function() self.admLoc = l.id end)
+        rect(self, x, ly, lw, rh, on and K.panel2 or K.panel, 0.94)
+        border(self, x, ly, lw, rh, on and K.g or K.line, 1)
+        locPic(self, l.id, x + S(6), ly + S(6), (rh - S(12)) * 1.6, rh - S(12), false, false)
+        CMUI.text(self, l.n, x + S(14) + (rh - S(12)) * 1.6, ly + (rh - CMUI.fh(UIFont.Medium)) / 2, K.text, 1, UIFont.Medium)
+        local tag, col = T("IGUI_CM_Dod_notSet"), K.faint
+        if st.ok then tag, col = T("IGUI_CM_Dod_ready"), K.g elseif st.safe or #(st.spawns or {}) > 0 then tag, col = T("IGUI_CM_Dod_partial"), K.amber end
+        CMUI.textR(self, tag, x + lw - S(10), ly + (rh - CMUI.fh(fs)) / 2, col, 1, fs)
+        ly = ly + rh + S(6)
+    end
+    -- the selected spot
+    local st = locState(sn, self.admLoc) or {}
+    local rx, rw = x + lw + S(24), w - lw - S(24)
+    local ry = y + (CMUI.fh(fs) + S(2)) * 2 + S(8)
+    CMUI.text(self, locName(self.admLoc), rx, ry, K.text, 1, UIFont.Large)
+    ry = ry + CMUI.fh(UIFont.Large) + S(8)
+    local safeS = T("IGUI_CM_Dod_noSafe")
+    if st.safe then safeS = T("IGUI_CM_Dod_safeIs", st.safe.x1 .. "," .. st.safe.y1, st.safe.x2 .. "," .. st.safe.y2, st.safe.z or 0) end
+    if st.c1 then safeS = T("IGUI_CM_Dod_c1Is", st.c1.x, st.c1.y) end
+    CMUI.text(self, CMUI.fit(safeS, fs, rw), rx, ry, st.safe and K.g or K.amber, 1, fs)
+    ry = ry + CMUI.fh(fs) + S(8)
+    local bw = (rw - S(8)) / 2
+    mbtn(self, rx, ry, bw, S(36), st.c1 and T("IGUI_CM_Dod_corner2") or T("IGUI_CM_Dod_corner1"), function()
+        CMC.send("dodCorner", { loc = self.admLoc })
+    end, "on")
+    mbtn(self, rx + bw + S(8), ry, bw, S(36), T("IGUI_CM_Dod_addSpawn"), function() CMC.send("dodSpawn", { loc = self.admLoc }) end, "red")
+    ry = ry + S(44)
+    CMUI.text(self, T("IGUI_CM_Dod_spawns", #(st.spawns or {})), rx, ry, K.dim, 1, fs)
+    ry = ry + CMUI.fh(fs) + S(4)
+    for i, sp in ipairs(st.spawns or {}) do
+        if ry + S(24) > y + h - S(50) then break end
+        CMUI.text(self, "SP-" .. i .. "   " .. sp.x .. ", " .. sp.y .. ", " .. (sp.z or 0), rx + S(6), ry + S(4), K.text, 1, fs)
+        mbtn(self, rx + rw - S(60), ry, S(60), S(24), T("IGUI_CM_Dod_del"), function() CMC.send("dodSpawnDel", { loc = self.admLoc, i = i }) end, "ghost")
+        ry = ry + S(28)
+    end
+    local by = y + h - S(40)
+    mbtn(self, rx, by, bw, S(40), T("IGUI_CM_Dod_goSee"), function() CMC.send("dodLocGo", { loc = self.admLoc }) end, "ghost")
+    mbtn(self, rx + bw + S(8), by, bw, S(40), T("IGUI_CM_Dod_clearLoc"), function() CMC.send("dodLocClear", { loc = self.admLoc }) end, "red")
 end
 
 function DW:drawBody()
-    local pad = S(18)
+    local pad = S(24)
     local x, w = pad, self.width - pad * 2
-    local y = self.headerH + S(14)
+    local y = self.headerH + S(18)
+    local h = self.height - y - pad
     local sn = CMDoDc.snap
-    if not sn then
-        CMUI.textC(self, T("IGUI_CM_Loading"), self.width / 2, y + S(40), C.dim, 1, UIFont.Medium)
-        return
-    end
-    local lb = sn.lobby
-    if lb and lb.me and lb.phase == "lobby" then
-        self.nameBox:setVisible(false)
-        self.descBox:setVisible(false)
-        self:drawLobby(sn, lb, x, y, w)
-    elseif lb and lb.me then
-        self.nameBox:setVisible(false)
-        self.descBox:setVisible(false)
-        CMUI.text(self, T("IGUI_CM_Dod_inMatch"), x, y, C.gold, 1, UIFont.Medium)
-        CMUI.btn(self, x, self.height - S(54), w, S(38), T("IGUI_CM_Dod_quit"), function() CMC.send("dodLeave", {}) end, "danger")
+    if not sn then CMUI.text(self, T("IGUI_CM_Loading"), x, y, K.dim, 1, UIFont.Medium); return end
+    if self.tab == "admin" and sn.admin then self:drawAdmin(sn, x, y, w, h); return end
+    if self.tab == "board" then self:drawBoard(x, y, w, h); return end
+    local tm = sn.team
+    if tm and tm.phase == "room" then self:drawRoom(sn, tm, x, y, w, h)
+    elseif tm and tm.phase ~= "over" then
+        CMUI.text(self, T("IGUI_CM_Dod_inMatch"), x, y, K.g, 1, UIFont.Large)
+        mbtn(self, x, y + S(50), S(320), S(44), T("IGUI_CM_Dod_quit"), function() CMC.send("dodLeave", {}) end, "red")
     else
-        self:drawOutside(sn, x, y, w)
+        self:drawTeams(sn, x, y, w, h)
     end
 end
 
@@ -233,7 +506,7 @@ end
 function CMDoDc.open()
     if CMDoDc.win then CMDoDc.win:bringToTop(); return end
     CMUI.k = CMUI.fontScale()
-    local w, h = CMUI.size(780, 580)
+    local w, h = CMUI.size(1180, 680)
     local sw, sh = getCore():getScreenWidth(), getCore():getScreenHeight()
     local win = DW:new(math.floor((sw - w) / 2), math.floor((sh - h) / 2), w, h)
     win:show()
@@ -241,7 +514,134 @@ function CMDoDc.open()
     CMC.send("dodOpen", {})
 end
 
--- ===================================================================== loading screen / ready check / 3-2-1 (full screen)
+-- admin: the safe area and spawn points of the selected spot drawn on the ground while the admin tab is open
+local function adminOverlay()
+    local win = CMDoDc.win
+    local sn = CMDoDc.snap
+    if not win or win.tab ~= "admin" or not sn or not sn.admin then return end
+    local st = locState(sn, win.admLoc)
+    if not st then return end
+    local p = CMC.player()
+    if not p then return end
+    local pz = math.floor(p:getZ())
+    if st.safe and (st.safe.z or 0) == pz then
+        addAreaHighlight(st.safe.x1, st.safe.y1, st.safe.x2 + 1, st.safe.y2 + 1, pz, K.g[1], K.g[2], K.g[3], 0.30)
+    end
+    if st.c1 and st.c1.z == pz then addAreaHighlight(st.c1.x, st.c1.y, st.c1.x + 1, st.c1.y + 1, pz, K.amber[1], K.amber[2], K.amber[3], 0.6) end
+    local zoom = getCore():getZoom(0)
+    for i, sp in ipairs(st.spawns or {}) do
+        if (sp.z or 0) == pz then
+            addAreaHighlight(sp.x - 1, sp.y - 1, sp.x + 2, sp.y + 2, pz, K.red[1], K.red[2], K.red[3], 0.45)
+            local sx = isoToScreenX(0, sp.x + 0.5, sp.y + 0.5, pz)
+            local sy = isoToScreenY(0, sp.x + 0.5, sp.y + 0.5, pz) - 40 / zoom
+            getTextManager():DrawStringCentre(UIFont.Medium, sx, sy, "SP-" .. i, K.red[1], K.red[2], K.red[3], 1)
+        end
+    end
+end
+Events.OnPreUIDraw.Add(function()
+    local ok, err = pcall(adminOverlay)
+    if not ok then CM.log("dod admin overlay error: " .. tostring(err)) end
+end)
+
+-- ===================================================================== floating button (right edge, drag up / down)
+CMDoDc.Fab = ISPanel:derive("CMDoD_Fab")
+local FB = CMDoDc.Fab
+
+function FB:new()
+    local size = S(46)
+    local sw, sh = getCore():getScreenWidth(), getCore():getScreenHeight()
+    local o = ISPanel.new(self, sw - size - S(14), math.floor(sh * 0.36), size, size)
+    o.background = false
+    o.moveWithMouse = false
+    o.size = size
+    return o
+end
+
+function FB:onMouseDown(x, y)
+    self.down = { y = y, my = getMouseY(), moved = false }
+    return true
+end
+
+function FB:onMouseMove(dx, dy)
+    local d = self.down
+    if not d then return end
+    local ny = getMouseY() - d.y
+    if math.abs(getMouseY() - d.my) > 4 then d.moved = true end
+    if d.moved then
+        local sh = getCore():getScreenHeight()
+        self:setY(math.max(0, math.min(sh - self.size, ny)))
+    end
+end
+FB.onMouseMoveOutside = FB.onMouseMove
+
+function FB:onMouseUp(x, y)
+    local d = self.down
+    self.down = nil
+    if d and not d.moved then
+        if CMDoDc.win then CMDoDc.win:close() else CMDoDc.open() end
+    end
+    return true
+end
+
+function FB:onMouseUpOutside() self.down = nil end
+
+function FB:prerender() end
+
+function FB:render()
+    local s = self.size
+    local sn = CMDoDc.snap
+    local over = self:isMouseOver()
+    local cool = sn and (sn.cool or 0) > 0
+    local open = 0
+    for _, tm in ipairs((sn and sn.teams) or {}) do if tm.phase == "room" then open = open + 1 end end
+    local lit = (over or open > 0 or team() ~= nil) and not cool
+    local pulse = 0.75 + 0.25 * math.sin(CMC.ms() / 400)
+    local bg = lit and K.g or K.ink
+    rect(self, 0, 0, s, s, bg, lit and (open > 0 and not over and pulse or 1) or 0.92)
+    border(self, 0, 0, s, s, cool and K.line or K.line2, 1)
+    rect(self, s - S(8), s - S(2), S(8), S(2), K.bg, 1)
+    rect(self, s - S(2), s - S(8), S(2), S(8), K.bg, 1)
+    crosshair(self, s / 2, s / 2, s * 0.32, lit and K.ink or (cool and K.faint or K.g), 2)
+    if over or (open > 0 and not cool) then
+        -- the label slides out to the left
+        local line1 = "DIE OR DIE"
+        local line2 = T("IGUI_CM_Dod_fabIdle")
+        local c2 = K.g
+        if cool then line2, c2 = T("IGUI_CM_Dod_fabCool", CM.clock(left(sn.cool))), K.amber
+        elseif team() then line2 = T("IGUI_CM_Dod_fabTeam")
+        elseif open > 0 then line2 = T("IGUI_CM_Dod_fabOpen", open) end
+        local lw = math.max(CMUI.tw(UIFont.Small, line1), CMUI.tw(UIFont.Small, line2)) + S(20)
+        rect(self, -lw, 0, lw, s, K.ink, 0.94)
+        border(self, -lw, 0, lw + 1, s, K.line2, 1)
+        local fh = CMUI.fh(UIFont.Small)
+        CMUI.text(self, line1, -lw + S(10), s / 2 - fh, K.text, 1, UIFont.Small)
+        CMUI.text(self, line2, -lw + S(10), s / 2, c2, 1, UIFont.Small)
+    end
+end
+
+local function fabTick()
+    local want = CM.dodOn() and CMC.player() ~= nil
+    if want and not CMDoDc.fab then
+        local f = FB:new()
+        f:initialise(); f:instantiate(); f:addToUIManager(); f:setVisible(true)
+        CMDoDc.fab = f
+        -- the button needs the cooldown / open teams: one look at the snapshot
+        CMC.send("dodOpen", {})
+        if not CMDoDc.win then CMC.send("dodClose", {}) end
+        CMDoDc.peek = CMC.ms()
+    elseif not want and CMDoDc.fab then
+        CMDoDc.fab:removeFromUIManager()
+        CMDoDc.fab = nil
+    end
+    -- refresh the button's view now and then without keeping a watch
+    if CMDoDc.fab and not CMDoDc.win and CMC.ms() - (CMDoDc.peek or 0) > 30000 then
+        CMDoDc.peek = CMC.ms()
+        CMC.send("dodOpen", {})
+        CMC.send("dodClose", {})
+    end
+end
+
+-- ===================================================================== insertion screen (full screen) + radio arrival
 CMDoDc.Screen = ISPanel:derive("CMDoD_Screen")
 local SC = CMDoDc.Screen
 
@@ -255,147 +655,291 @@ end
 
 function SC:prerender() end
 
-function SC:render()
-    local lb = lobby()
-    if not lb then return end
+function SC:drawWarp(tm)
     local w, h = self.width, self.height
-    local tm = getTextManager()
-    if lb.phase == "load" then
-        self:drawRect(0, 0, w, h, 1, 0.02, 0.02, 0.03)
-        local tex = lb.point and CMUI.tex("dod_" .. tostring(lb.point.id)) or nil
-        if tex then self:drawTextureScaledAspect(tex, 0, 0, w, h, 0.55, 1, 1, 1) end
-        local cx = w / 2
-        local y = h * 0.28
-        tm:DrawStringCentre(UIFont.Title or UIFont.Large, cx, y, tostring(lb.point and lb.point.name or "?"), 1, 0.85, 0.3, 1)
-        y = y + CMUI.fh(UIFont.Title or UIFont.Large) + S(14)
-        if lb.point then
-            tm:DrawStringCentre(UIFont.Medium, cx, y, T("IGUI_CM_Dod_near", CM.townAt(lb.point.x, lb.point.y)), 0.8, 0.8, 0.85, 1)
-            y = y + CMUI.fh(UIFont.Medium) + S(10)
-            for _, line in ipairs(CMUI.wrap(lb.point.desc or "", UIFont.Medium, w * 0.6)) do
-                tm:DrawStringCentre(UIFont.Medium, cx, y, line, 0.9, 0.9, 0.9, 1)
-                y = y + CMUI.fh(UIFont.Medium) + S(4)
-            end
+    rect(self, 0, 0, w, h, K.bg, 1)
+    local l = D.LOC[tm.loc]
+    if l then tex(self, l.tex, 0, 0, w, h, 0.35, { 0.55, 0.62, 0.5 }) end
+    for i = 0, 9 do
+        local k = i / 9
+        rect(self, w * 0.5 * k, 0, w * (1 - k), h * 0.5 * k + 1, K.bg, 0.05)
+        rect(self, w * 0.5 * k, h - h * 0.5 * k, w * (1 - k), h * 0.5 * k + 1, K.bg, 0.05)
+    end
+    for yy = 0, h, 3 do rect(self, 0, yy, w, 1, K.g, 0.03) end
+    local tm2 = getTextManager()
+    local frac = 1 - math.min(1, math.max(0, left(tm.phaseLeft) / D.WARP))
+    -- smooth between snapshots
+    self.frac = math.max(self.frac or 0, frac)
+    local f = self.frac
+    local cx, cy = w / 2, h / 2
+    tm2:DrawString(UIFont.Small, S(40), S(32), "HELI INSERTION  -  " .. D.TIER_TAG[tm.tier] .. "  -  " .. (tm.target or 0), K.g[1], K.g[2], K.g[3], 1)
+    tm2:DrawStringCentre(UIFont.Small, cx, cy - S(110), "DEPLOYING TO", K.dim[1], K.dim[2], K.dim[3], 1)
+    tm2:DrawStringCentre(UIFont.Title or UIFont.Large, cx, cy - S(84), string.upper(l and l.n or "?"), K.text[1], K.text[2], K.text[3], 1)
+    local bw, bh = math.min(S(760), w * 0.7), S(22)
+    local bx, by = cx - bw / 2, cy + S(4)
+    border(self, bx, by, bw, bh, K.g, 1)
+    local segs = 40
+    local sw2 = (bw - S(6)) / segs
+    for i = 0, math.floor(segs * f) - 1 do rect(self, bx + S(3) + i * sw2, by + S(3), sw2 - S(3), bh - S(6), K.g, 1) end
+    tm2:DrawStringCentre(UIFont.Title or UIFont.Large, cx, by + bh + S(16), math.floor(f * 100) .. "%", K.g[1], K.g[2], K.g[3], 1)
+    tm2:DrawStringCentre(UIFont.Small, cx, by + bh + S(16) + CMUI.fh(UIFont.Title or UIFont.Large) + S(6),
+        T("IGUI_CM_Dod_eta", math.ceil(left(tm.phaseLeft))), K.dim[1], K.dim[2], K.dim[3], 1)
+    local names = {}
+    for _, m in ipairs(tm.members or {}) do if m.st == "in" then names[#names + 1] = m.n end end
+    tm2:DrawString(UIFont.Small, S(40), h - S(44), "SQUAD " .. #names .. "  -  " .. table.concat(names, " - "), K.faint[1], K.faint[2], K.faint[3], 1)
+end
+
+-- radio static: grey snow with scan lines, then a green camera tint with the place name, then gone (~2 s)
+function SC:drawArrive()
+    local w, h = self.width, self.height
+    local t = (CMC.ms() - (CMDoDc.arriveAt or 0)) / 1000
+    if t > 2.2 then return false end
+    local tm = team()
+    if t < 0.8 then
+        local a = 1 - t / 0.8 * 0.35
+        rect(self, 0, 0, w, h, { 0.08, 0.08, 0.08 }, a)
+        for _ = 1, 260 do
+            local g = ZombRand(100) / 100
+            rect(self, ZombRand(w), ZombRand(h), S(2) + ZombRand(S(10)), S(2), { g, g, g }, 0.6)
         end
-        y = y + S(20)
-        tm:DrawStringCentre(UIFont.Large, cx, y, T("IGUI_CM_Dod_intel", lb.target or 0, lb.faction or "?"), 1, 0.4, 0.4, 1)
-        y = y + CMUI.fh(UIFont.Large) + S(10)
-        tm:DrawStringCentre(UIFont.Medium, cx, y, T("IGUI_CM_Dod_warnShort"), 1, 0.3, 0.3, 1)
-        tm:DrawStringCentre(UIFont.Medium, cx, h - S(80), T("IGUI_CM_Dod_loading", math.ceil(left(lb.phaseLeft))), 0.7, 0.7, 0.75, 1)
-    elseif lb.phase == "count" then
-        tm:DrawStringCentre(UIFont.Title or UIFont.Large, w / 2, h * 0.35, tostring(math.max(1, math.ceil(left(lb.phaseLeft)))), 1, 0.3, 0.3, 1)
+        for yy = 0, h, 3 do rect(self, 0, yy, w, 1, { 0, 0, 0 }, 0.35) end
+        rect(self, 0, (CMC.ms() / 3) % h, w, S(22), { 1, 1, 1 }, 0.18)
+    else
+        local k = (t - 0.8) / 1.4
+        rect(self, 0, 0, w, h, K.gDim, 0.35 * (1 - k))
+        for yy = 0, h, 3 do rect(self, 0, yy, w, 1, { 0, 0, 0 }, 0.25 * (1 - k)) end
+        if tm and k < 0.8 then
+            local tm2 = getTextManager()
+            tm2:DrawStringCentre(UIFont.Small, w / 2, h * 0.42, "BOOTS ON GROUND", K.g[1], K.g[2], K.g[3], 1 - k)
+            tm2:DrawStringCentre(UIFont.Title or UIFont.Large, w / 2, h * 0.42 + S(22), string.upper(locName(tm.loc)), 1, 1, 1, 1 - k)
+        end
+    end
+    getTextManager():DrawString(UIFont.Small, S(30), S(30), "REC  -  SIGNAL " .. math.min(100, math.floor(t / 2 * 100)) .. "%", K.g[1], K.g[2], K.g[3], 1)
+    return true
+end
+
+function SC:render()
+    local tm = team()
+    if self.mode == "warp" and tm then self:drawWarp(tm)
+    elseif self.mode == "arrive" then
+        if not self:drawArrive() then CMDoDc.arriveAt = nil end
     end
 end
 
--- the ready check is a small window (the world is visible behind it)
-CMDoDc.Ready = CMUI.Window:derive("CMDoD_Ready")
-local RW = CMDoDc.Ready
+-- ===================================================================== HUD (recon banner + right panel)
+CMDoDc.Hud = ISPanel:derive("CMDoD_Hud")
+local HU = CMDoDc.Hud
 
-function RW:new(x, y, w, h)
-    local o = CMUI.Window.new(self, x, y, w, h)
-    o.title = T("IGUI_CM_Dod_title")
-    o.titleIcon = "cm_skull"
+function HU:new()
+    local w = S(300)
+    local sw = getCore():getScreenWidth()
+    local o = ISPanel.new(self, sw - w - S(24), S(110), w, S(420))
+    o.background = false
+    o.moveWithMouse = true
     return o
 end
 
-function RW:onClosed() if CMDoDc.ready == self then CMDoDc.ready = nil end end
+function HU:prerender() end
 
-function RW:drawBody()
-    local lb = lobby()
-    if not lb or lb.phase ~= "ready" then return end
-    local pad = S(16)
-    local x, w = pad, self.width - pad * 2
-    local y = self.headerH + S(10)
-    CMUI.text(self, T("IGUI_CM_Dod_readyHead", math.ceil(left(lb.phaseLeft))), x, y, C.gold, 1, UIFont.Medium)
-    y = y + CMUI.fh(UIFont.Medium) + S(8)
-    local me = nil
-    local myName = CM.ukey(CMC.player() and CMC.player():getUsername() or "")
-    for _, m in ipairs(lb.members) do
-        if m.st == "in" then
-            if CM.ukey(m.n) == myName then me = m end
-            CMUI.text(self, CMUI.fit("[" .. CM.dodSign(m.s) .. "] " .. m.n, UIFont.Small, w - S(80)), x, y, CM.dodColor(m.c))
-            CMUI.textR(self, m.ready and T("IGUI_CM_Dod_readyTag") or "...", x + w, y, m.ready and C.good or C.dim)
-            y = y + CMUI.fh(UIFont.Small) + S(4)
-        end
-    end
-    CMUI.btn(self, x, self.height - S(56), w, S(42), T("IGUI_CM_Dod_ready"), function() CMC.send("dodReady", {}) end,
-        "good", { disabled = me and me.ready, font = UIFont.Medium })
-end
-
--- ===================================================================== match HUD
-CMDoDc.Hud = CMUI.Window:derive("CMDoD_Hud")
-local HW = CMDoDc.Hud
-
-function HW:new(x, y, w, h)
-    local o = CMUI.Window.new(self, x, y, w, h)
-    o.title = T("IGUI_CM_Dod_title")
-    o.titleIcon = "cm_skull"
-    o.bgAlpha = 0.6
-    return o
-end
-
-function HW:onClosed() if CMDoDc.hud == self then CMDoDc.hud = nil end end
-
-function HW:drawBody()
-    local lb = lobby()
-    if not lb then return end
-    local pad = S(12)
-    local x, w = pad, self.width - pad * 2
-    local y = self.headerH + S(8)
+function HU:render()
+    local tm = team()
+    if not tm then return end
+    local w = self.width
     local fs = UIFont.Small
-    local lh = CMUI.fh(fs) + S(3)
-    CMUI.text(self, T("IGUI_CM_Dod_kills", lb.dead or 0, lb.spawned or 0), x, y, C.bad, 1, UIFont.Medium)
-    CMUI.textR(self, CM.clock(left(lb.left)), x + w, y, C.gold, 1, UIFont.Medium)
-    y = y + CMUI.fh(UIFont.Medium) + S(4)
-    if lb.reinf then
-        CMUI.text(self, T("IGUI_CM_Dod_reinf"), x, y, C.gold)
-        y = y + lh
+    local pad = S(14)
+    local y = 0
+    local hh = S(40)
+    rect(self, 0, 0, w, hh, K.ink, 0.88)
+    border(self, 0, 0, w, hh, K.line, 1)
+    crosshair(self, pad + S(8), hh / 2, S(8), K.g, 2)
+    CMUI.text(self, "DIE OR DIE", pad + S(22), (hh - CMUI.fh(fs)) / 2, K.text, 1, fs)
+    local clock = tm.phase == "recon" and CM.clock(left(tm.phaseLeft)) or CM.clock(left(tm.left))
+    CMUI.textR(self, clock, w - pad, (hh - CMUI.fh(UIFont.Medium)) / 2, tm.phase == "recon" and K.amber or K.text, 1, UIFont.Medium)
+    y = hh
+    local bodyH = S(80)
+    rect(self, 0, y, w, bodyH, K.ink, 0.82)
+    border(self, 0, y, w, bodyH, K.line, 1)
+    local target = tm.phase == "live" and math.max(tm.spawned or 0, tm.target or 0) or (tm.target or 0)
+    local remain = tm.phase == "live" and math.max(0, target - (tm.dead or 0)) or target
+    CMUI.text(self, T("IGUI_CM_Dod_remain"), pad, y + S(10), K.faint, 1, fs)
+    local big = tostring(remain)
+    CMUI.textR(self, "/ " .. target, w - pad, y + S(14), K.faint, 1, fs)
+    CMUI.textR(self, big, w - pad - CMUI.tw(fs, "/ " .. target) - S(6), y + S(4), K.red, 1, UIFont.Large)
+    local segs = math.max(1, target)
+    local sw2 = (w - pad * 2) / segs
+    for i = 1, segs do
+        rect(self, pad + (i - 1) * sw2, y + S(46), math.max(1, sw2 - 2), S(6), i <= (tm.dead or 0) and K.line2 or K.red, 1)
     end
-    -- team
-    for _, m in ipairs(lb.members) do
-        local col = m.st == "in" and CM.dodColor(m.c) or C.faint
-        local s = "[" .. CM.dodSign(m.s) .. "] " .. m.n .. "  " .. tostring(m.kills or 0)
-        if m.st ~= "in" then s = s .. "  " .. T("IGUI_CM_Dod_st_" .. tostring(m.st)) end
-        CMUI.text(self, CMUI.fit(s, fs, w), x, y, col)
-        y = y + lh
+    if tm.reinf and tm.phase == "live" then CMUI.text(self, T("IGUI_CM_Dod_reinf"), pad, y + S(58), K.amber, 1, fs)
+    elseif tm.phase == "recon" then CMUI.text(self, T("IGUI_CM_Dod_reconHint"), pad, y + S(58), K.amber, 1, fs) end
+    y = y + bodyH
+    local lh = CMUI.fh(fs) + S(6)
+    local teamH = pad + lh * #(tm.members or {}) + S(8)
+    rect(self, 0, y, w, teamH, K.ink, 0.82)
+    border(self, 0, y, w, teamH, K.line, 1)
+    local ty = y + S(8)
+    for _, m in ipairs(tm.members or {}) do
+        local on = m.st == "in"
+        CMUI.text(self, CMUI.fit(m.n, fs, w - S(140)), pad, ty, on and K.text or K.faint, 1, fs)
+        local right = on and (m.kills .. " kill") or T("IGUI_CM_Dod_st_" .. tostring(m.st))
+        CMUI.textR(self, right, w - pad, ty, on and K.g or K.faint, 1, fs)
+        ty = ty + lh
     end
-    y = y + S(4)
-    -- enemies: struck through when down
-    for _, e in ipairs(lb.npcs or {}) do
-        if y + lh > self.height - S(6) then break end
-        local col = e.d and C.faint or C.text
-        CMUI.text(self, CMUI.fit(e.n, fs, w), x, y, col)
-        if e.d then CMUI.rect(self, x, y + CMUI.fh(fs) / 2, math.min(w, CMUI.tw(fs, e.n)), S(1), C.faint, 1) end
-        y = y + lh
+end
+
+-- top centre: RECON countdown, then "ENEMY INBOUND" for a few seconds
+CMDoDc.Banner = ISPanel:derive("CMDoD_Banner")
+local BN = CMDoDc.Banner
+
+function BN:new()
+    local w = S(520)
+    local o = ISPanel.new(self, math.floor((getCore():getScreenWidth() - w) / 2), S(20), w, S(110))
+    o.background = false
+    o.moveWithMouse = false
+    return o
+end
+
+function BN:prerender() end
+function BN:onMouseDown() return false end
+
+function BN:render()
+    local tm = team()
+    if not tm then return end
+    local w = self.width
+    local tm2 = getTextManager()
+    if tm.phase == "recon" then
+        local label, clock = "RECON", CM.clock(left(tm.phaseLeft))
+        local lw = CMUI.tw(UIFont.Small, label) + S(30)
+        local cw = CMUI.tw(UIFont.Large, clock) + S(40)
+        local x = (w - lw - cw) / 2
+        rect(self, x, 0, lw, S(42), K.ink, 0.88)
+        border(self, x, 0, lw + cw, S(42), K.line2, 1)
+        tm2:DrawStringCentre(UIFont.Small, x + lw / 2, (S(42) - CMUI.fh(UIFont.Small)) / 2, label, K.amber[1], K.amber[2], K.amber[3], 1)
+        rect(self, x + lw, 0, cw, S(42), K.amber, 1)
+        tm2:DrawStringCentre(UIFont.Large, x + lw + cw / 2, (S(42) - CMUI.fh(UIFont.Large)) / 2, clock, K.ink[1], K.ink[2], K.ink[3], 1)
+        tm2:DrawStringCentre(UIFont.Small, w / 2, S(48), T("IGUI_CM_Dod_reconSub"), 1, 1, 1, 1)
+    elseif tm.phase == "live" and CMDoDc.inboundAt and CMC.ms() - CMDoDc.inboundAt < 4000 then
+        local a = math.min(1, (4000 - (CMC.ms() - CMDoDc.inboundAt)) / 800)
+        rect(self, 0, S(20), w, S(56), K.ink, 0.88 * a)
+        rect(self, 0, S(20), w, S(2), K.red, a)
+        rect(self, 0, S(74), w, S(2), K.red, a)
+        tm2:DrawStringCentre(UIFont.Large, w / 2, S(20) + (S(56) - CMUI.fh(UIFont.Large)) / 2, "ENEMY INBOUND", K.red[1], K.red[2], K.red[3], a)
+        tm2:DrawStringCentre(UIFont.Small, w / 2, S(82), T("IGUI_CM_Dod_inboundSub", tm.target or 0), 1, 1, 1, a)
     end
+end
+
+-- ===================================================================== debrief (team cards, MVP in the middle)
+CMDoDc.Debrief = CMUI.Window:derive("CMDoD_Debrief")
+local DB = CMDoDc.Debrief
+
+function DB:new(x, y, w, h, tm)
+    local o = CMUI.Window.new(self, x, y, w, h)
+    o.tm = tm
+    o.t0 = CMC.ms()
+    return o
+end
+
+function DB:drawFrame()
+    local w, h = self.width, self.height
+    backdrop(self, 0, 0, w, h)
+    border(self, 0, 0, w, h, K.line2, 1)
+end
+
+local function card(win, x, y, w, h, m, mvp, tm)
+    local down = m.st == "dead" or m.st == "left"
+    rect(win, x, y, w, h, mvp and { 0.09, 0.13, 0.06 } or K.panel, 0.95)
+    border(win, x, y, w, h, mvp and K.g or K.line, 1)
+    if mvp then border(win, x + 1, y + 1, w - 2, h - 2, K.g, 1) end
+    local ph = math.floor(h * 0.56)
+    rect(win, x + S(1), y + S(1), w - S(2), ph, mvp and { 0.14, 0.22, 0.09 } or { 0.08, 0.10, 0.07 }, 1)
+    tex(win, "dod_avatar", x + w * 0.2, y + ph * 0.12, w * 0.6, ph * 0.88, down and 0.35 or 0.9, mvp and K.g or (down and K.faint or K.dim))
+    if mvp then
+        local lw = CMUI.tw(UIFont.Medium, "MVP") + S(24)
+        rect(win, x + (w - lw) / 2, y + S(10), lw, CMUI.fh(UIFont.Medium) + S(6), K.g, 1)
+        CMUI.textC(win, "MVP", x + w / 2, y + S(13), K.ink, 1, UIFont.Medium)
+    end
+    local cy = y + ph + S(10)
+    local px = x + S(12)
+    local iw = w - S(24)
+    CMUI.text(win, CMUI.fit(m.n, mvp and UIFont.Large or UIFont.Medium, iw), px, cy, mvp and K.g or (down and K.dim or K.text), 1, mvp and UIFont.Large or UIFont.Medium)
+    cy = cy + CMUI.fh(mvp and UIFont.Large or UIFont.Medium) + S(4)
+    if down then
+        CMUI.text(win, T("IGUI_CM_Dod_st_" .. tostring(m.st)), px, cy, K.red, 1, UIFont.Small)
+        cy = cy + CMUI.fh(UIFont.Small) + S(2)
+    end
+    local rows = { { T("IGUI_CM_Dod_kill"), m.kills or 0 }, { "Damage", m.dmg or 0 }, { "Assist", m.ast or 0 } }
+    for _, r in ipairs(rows) do
+        CMUI.text(win, r[1], px, cy, K.dim, 1, UIFont.Small)
+        CMUI.textR(win, tostring(r[2]), px + iw, cy, mvp and K.g or K.text, 1, mvp and UIFont.Medium or UIFont.Small)
+        cy = cy + CMUI.fh(mvp and UIFont.Medium or UIFont.Small) + S(2)
+    end
+end
+
+function DB:drawBody()
+    local tm = self.tm
+    local w, h = self.width, self.height
+    local win = tm.res == "win"
+    local title = win and "AREA CLEARED" or ((tm.res == "abort" or tm.res == "nofight") and "MISSION ABORTED" or "MISSION FAILED")
+    CMUI.textC(self, "MISSION DEBRIEF  -  " .. string.upper(locName(tm.loc)) .. "  -  " .. D.TIER_TAG[tm.tier], w / 2, S(26), K.dim, 1, UIFont.Small)
+    CMUI.textC(self, title, w / 2, S(26) + CMUI.fh(UIFont.Small) + S(6), win and K.g or K.red, 1, UIFont.Title or UIFont.Large)
+    -- cards: MVP in the middle, the others around it
+    local mem = {}
+    local mvpM = nil
+    for _, m in ipairs(tm.members or {}) do
+        if tm.mvp and m.n == tm.mvp and not mvpM then mvpM = m else mem[#mem + 1] = m end
+    end
+    local order = {}
+    local half = math.floor(#mem / 2)
+    for i = 1, half do order[#order + 1] = mem[i] end
+    if mvpM then order[#order + 1] = mvpM end
+    for i = half + 1, #mem do order[#order + 1] = mem[i] end
+    local n = #order
+    local cw, ch = S(170), S(300)
+    local mw, mh = S(220), S(370)
+    local gap = S(12)
+    local total = (n - (mvpM and 1 or 0)) * (cw + gap) + (mvpM and (mw + gap) or 0) - gap
+    local cx = (w - total) / 2
+    local base = S(120) + mh
+    for _, m in ipairs(order) do
+        local isM = m == mvpM
+        local ww, hh = isM and mw or cw, isM and mh or ch
+        card(self, cx, base - hh, ww, hh, m, isM, tm)
+        cx = cx + ww + gap
+    end
+    -- my rewards + close
+    local names = {}
+    for _, e in ipairs(tm.rw or {}) do names[#names + 1] = CMC.itemName(e.t) .. ((e.n or 1) > 1 and (" x" .. e.n) or "") end
+    local rs = #names > 0 and (T("IGUI_CM_Dod_got") .. "  " .. table.concat(names, " - ")) or (win and "" or T("IGUI_CM_Dod_noReward"))
+    CMUI.textC(self, CMUI.fit(rs, UIFont.Small, w - S(320)), w / 2 - S(130), h - S(50), K.dim, 1, UIFont.Small)
+    mbtn(self, w - S(260), h - S(62), S(220), S(44), T("IGUI_CM_Dod_close"), function() self:close() end, "go", { font = UIFont.Medium })
+end
+
+function DB:onClosed() if CMDoDc.debrief == self then CMDoDc.debrief = nil end end
+
+local function openDebrief(tm)
+    if CMDoDc.debrief then CMDoDc.debrief:close() end
+    CMUI.k = CMUI.fontScale()
+    local w, h = CMUI.size(1180, 620)
+    local sw, sh = getCore():getScreenWidth(), getCore():getScreenHeight()
+    local win = DB:new(math.floor((sw - w) / 2), math.floor((sh - h) / 2), w, h, CM.copy(tm))
+    win:show()
+    CMDoDc.debrief = win
 end
 
 -- ===================================================================== screens on / off from the snapshot
-local function showScreen(on)
-    if on and not CMDoDc.screen then
-        local s = SC:new()
-        s:initialise(); s:instantiate(); s:addToUIManager(); s:setVisible(true)
-        pcall(function() s:setAlwaysOnTop(true) end)
-        CMDoDc.screen = s
-    elseif not on and CMDoDc.screen then
-        CMDoDc.screen:setVisible(false)
-        CMDoDc.screen:removeFromUIManager()
-        CMDoDc.screen = nil
-    end
-end
-
-local function showWin(key, cls, on, w0, h0, place)
-    local win = CMDoDc[key]
-    if on and not win then
-        CMUI.k = CMUI.fontScale()
-        local w, h = CMUI.size(w0, h0)
-        local x, y = place(w, h)
-        win = cls:new(x, y, w, h)
-        win:show()
-        CMDoDc[key] = win
-    elseif not on and win then
-        win:close()
+local function showPanel(key, cls, on)
+    local p = CMDoDc[key]
+    if on and not p then
+        p = cls:new()
+        p:initialise(); p:instantiate(); p:addToUIManager(); p:setVisible(true)
+        if key == "screen" then pcall(function() p:setAlwaysOnTop(true) end) end
+        CMDoDc[key] = p
+    elseif not on and p then
+        p:setVisible(false)
+        p:removeFromUIManager()
         CMDoDc[key] = nil
     end
+    return CMDoDc[key]
 end
 
 local frozen = false
@@ -406,64 +950,59 @@ local function setFrozen(on)
     if p then pcall(function() p:setBlockMovement(on) end) end
 end
 
-local function sync()
-    local lb = lobby()
-    local mine = lb and lb.me
-    local phase = mine and lb.phase or nil
-    local myIn = mine and inMatch()
-    -- the lock first: a broken window must never leave the player stuck
-    setFrozen(myIn and (phase == "load" or phase == "ready" or phase == "count") or false)
-    local sw, sh = getCore():getScreenWidth(), getCore():getScreenHeight()
-    local ok1, e1 = pcall(showScreen, myIn and (phase == "load" or phase == "count"))
-    local ok2, e2 = pcall(showWin, "ready", RW, myIn and phase == "ready", 380, 320,
-        function(w, h) return math.floor((sw - w) / 2), math.floor(sh * 0.62 - h / 2) end)
-    local ok3, e3 = pcall(showWin, "hud", HW, mine and phase == "live", 300, 420,
-        function(w, h) return sw - w - S(20), math.floor(sh * 0.22) end)
-    if not (ok1 and ok2 and ok3) then CM.log("dod screens error: " .. tostring(e1 or e2 or e3)) end
+local function myState(tm)
+    local p = CMC.player()
+    if not tm or not p then return nil end
+    local me = CM.ukey(p:getUsername())
+    for _, m in ipairs(tm.members or {}) do if m.k == me then return m.st end end
+    return nil
 end
 
--- ===================================================================== tags over the team's heads
-local function tags()
-    local lb = lobby()
-    if not lb or not lb.me or lb.phase == "lobby" or lb.phase == "over" then return end
-    local me = CMC.player()
-    if not me then return end
-    local zoom = getCore():getZoom(0)
-    local tm = getTextManager()
-    for _, m in ipairs(lb.members) do
-        if m.st == "in" then
-            local p = getPlayerFromUsername and getPlayerFromUsername(m.n)
-            if p and math.abs(p:getZ() - me:getZ()) < 1 and math.abs(p:getX() - me:getX()) < 40 and math.abs(p:getY() - me:getY()) < 40 then
-                local sx = isoToScreenX(0, p:getX(), p:getY(), p:getZ())
-                local sy = isoToScreenY(0, p:getX(), p:getY(), p:getZ()) - 205 / zoom
-                local c = CM.dodColor(m.c)
-                local s = "[" .. CM.dodSign(m.s) .. "] " .. m.n
-                tm:DrawStringCentre(UIFont.Small, sx + 1, sy + 1, s, 0, 0, 0, 0.85)
-                tm:DrawStringCentre(UIFont.Small, sx, sy, s, c[1], c[2], c[3], 1)
-            end
+local lastPhase, lastTeam = nil, nil
+local function sync()
+    local tm = team()
+    local phase = tm and tm.phase or nil
+    local mine = myState(tm) == "in"
+    -- the lock first (only while the insertion screen hides the world): a broken screen must never leave you stuck
+    setFrozen(mine and phase == "warp" or false)
+    if tm and tm.id == lastTeam and phase ~= lastPhase then
+        if lastPhase == "warp" and phase == "recon" and mine then
+            CMDoDc.arriveAt = CMC.ms()
+            stopSound(CMDoDc.heli); CMDoDc.heli = nil
+            sound({ "RadioStatic", "RadioTalk", "UIRadioStatic" })
+        elseif phase == "live" and mine then
+            CMDoDc.inboundAt = CMC.ms()
         end
     end
+    if phase == "warp" and mine and not CMDoDc.heli then CMDoDc.heli = sound({ "Helicopter", "HelicopterFly", "HeliFlyby" }) end
+    if phase ~= "warp" and CMDoDc.heli then stopSound(CMDoDc.heli); CMDoDc.heli = nil end
+    if phase == "over" and tm.res and CMDoDc.shownFor ~= tm.id then
+        CMDoDc.shownFor = tm.id
+        pcall(openDebrief, tm)
+    end
+    lastPhase, lastTeam = phase, tm and tm.id or nil
+    local arriving = CMDoDc.arriveAt ~= nil and CMC.ms() - CMDoDc.arriveAt < 2200
+    local ok1, scr = pcall(showPanel, "screen", SC, (mine and phase == "warp") or arriving)
+    if ok1 and scr then scr.mode = (mine and phase == "warp") and "warp" or "arrive"; if scr.mode == "warp" then scr.frac = scr.frac or 0 end end
+    pcall(showPanel, "hud", HU, mine and (phase == "recon" or phase == "live"))
+    pcall(showPanel, "banner", BN, mine and (phase == "recon" or phase == "live"))
 end
-Events.OnPreUIDraw.Add(function()
-    local ok, err = pcall(tags)
-    if not ok then CM.log("dod tags error: " .. tostring(err)) end
-end)
 
 -- ===================================================================== invite popup (the squad one, other answer)
 CMDoDc.Ask = CMSquad.Ask:derive("CMDoD_Ask")
 function CMDoDc.Ask:answer(yes)
-    CMC.send("dodAnswer", { yes = yes })
+    CMC.send("dodAnswer", { id = self.inv.id, yes = yes })
     self:close()
 end
 function CMDoDc.Ask:drawBody()
     if CMC.ms() - self.at > 60000 then self:close(); return end
     local pad = S(16)
     local x, w = pad, self.width - pad * 2
-    CMUI.para(self, T("IGUI_CM_Dod_invited", self.inv.by), x, self.headerH + S(12), w, C.text, UIFont.Medium, 3)
+    CMUI.para(self, T("IGUI_CM_Dod_invited2", self.inv.by, locName(self.inv.loc)), x, self.headerH + S(12), w, CMUI.C.text, UIFont.Medium, 3)
     local by = self.height - S(52)
     local bw = (w - S(10)) / 2
-    CMUI.btn(self, x, by, bw, S(36), T("IGUI_CM_Sq_yes"), function() self:answer(true) end, "good")
-    CMUI.btn(self, x + bw + S(10), by, bw, S(36), T("IGUI_CM_Sq_no"), function() self:answer(false) end, "ghost")
+    mbtn(self, x, by, bw, S(36), T("IGUI_CM_Sq_yes"), function() self:answer(true) end, "go")
+    mbtn(self, x + bw + S(10), by, bw, S(36), T("IGUI_CM_Sq_no"), function() self:answer(false) end, "ghost")
 end
 
 -- ===================================================================== server messages
@@ -474,31 +1013,32 @@ Events.OnServerCommand.Add(function(module, command, args)
         CMDoDc.at = CMC.ms()
         local ok, err = pcall(sync)
         if not ok then CM.log("dod sync error: " .. tostring(err)) end
+    elseif command == "dodboard" then
+        CMDoDc.board = args
     elseif command == "dodinv" then
         CMUI.k = CMUI.fontScale()
         local w, h = CMUI.size(420, 200)
         local win = CMDoDc.Ask:new(math.floor((getCore():getScreenWidth() - w) / 2), CMUI.S(120), w, h, args)
+        win.title = "DIE OR DIE"
         win:show()
         pcall(function() win:setAlwaysOnTop(true) end)
-    elseif command == "dodres" then
-        local key = "IGUI_CM_Dod_res_" .. tostring(args.res)
-        local names = {}
-        for _, e in ipairs(args.rw or {}) do names[#names + 1] = CMC.itemName(e.t) .. (e.n > 1 and (" x" .. e.n) or "") end
-        local s = T(key, args.kills or 0)
-        if args.mvp then s = s .. " · " .. T("IGUI_CM_Dod_mvp", args.mvp) end
-        if #names > 0 then s = s .. "\n" .. table.concat(names, ", ") end
-        CMC.toast(s, args.res == "win" and "good" or "bad", 12)
     end
 end)
 
--- nothing comes when we are not in a lobby or watching: drop the screens if the snapshot goes stale
+-- snapshots stop when we are in no team and not watching: drop the match screens if it goes stale
 local lastCheck = 0
 Events.OnTick.Add(function()
     local t = CMC.ms()
+    if CMDoDc.arriveAt and t - CMDoDc.arriveAt > 2300 and CMDoDc.screen and CMDoDc.screen.mode == "arrive" then
+        CMDoDc.arriveAt = nil
+        pcall(sync)
+    end
     if t - lastCheck < 1000 then return end
     lastCheck = t
-    if CMDoDc.snap and t - CMDoDc.at > 6000 then
-        CMDoDc.snap.lobby = nil
+    local ok, err = pcall(fabTick)
+    if not ok then CM.log("dod button error: " .. tostring(err)) end
+    if CMDoDc.snap and CMDoDc.snap.team and t - CMDoDc.at > 6000 then
+        CMDoDc.snap.team = nil
         pcall(sync)
     end
 end)

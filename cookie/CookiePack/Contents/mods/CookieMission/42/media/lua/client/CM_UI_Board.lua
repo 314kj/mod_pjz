@@ -224,12 +224,6 @@ function BW:drawBody()
     CMUI.textC(self, "?", qx + cs / 2, 8 + (cs - CMUI.fh(UIFont.Small)) / 2 - 1, C.gold, 1, UIFont.Small)
     local resetS = T("IGUI_CM_ResetShort", CM.clock(reset))
     CMUI.textR(self, resetS, qx - S(10), (self.headerH - CMUI.fh(UIFont.Small)) / 2, C.dim)
-    -- Die or Die (only when the sandbox switch is on)
-    if CM.dodOn() and CMDoDc then
-        local dw = S(130)
-        local dx = qx - S(10) - CMUI.tw(UIFont.Small, resetS) - S(16) - dw
-        CMUI.btn(self, dx, 8, dw, cs, T("IGUI_CM_Dod_title"), function() CMDoDc.open() end, "danger", { tip = T("IGUI_CM_Dod_btnTip") })
-    end
     local gap = S(18)
     local cw = math.floor((w - pad * 2 - gap * 2) / 3)
     local ch = self.height - top - S(18)
