@@ -88,24 +88,55 @@ local function crosshair(win, cx, cy, r, c, th)
 end
 
 -- the faded fence picture behind the team screens: grey picture, dark on the left, green to the right
-local function backdrop(win, x, y, w, h)
-    rect(win, x, y, w, h, K.bg, 1)
-    tex(win, "dod_bg", x, y, w, h, 0.45, { 0.62, 0.70, 0.58 })
+local function backdrop(win, x, y, w, h, op)
+    op = op or 1
+    rect(win, x, y, w, h, K.bg, op)
+    tex(win, "dod_bg", x, y, w, h, 0.45 * op, { 0.62, 0.70, 0.58 })
     local steps = 16
     for i = 0, steps - 1 do
         local k = i / (steps - 1)
-        rect(win, x + w * i / steps, y, w / steps + 1, h, K.bg, 0.96 - 0.62 * k)
-        rect(win, x + w * i / steps, y, w / steps + 1, h, K.gDim, 0.16 * k)
+        rect(win, x + w * i / steps, y, w / steps + 1, h, K.bg, (0.96 - 0.62 * k) * op)
+        rect(win, x + w * i / steps, y, w / steps + 1, h, K.gDim, 0.16 * k * op)
     end
-    for i = 0, 5 do rect(win, x, y + h - h * 0.3 * (i + 1) / 6, w, h * 0.05 + 1, K.bg, 0.12) end
-    for yy = y, y + h, S(4) do rect(win, x, yy, w, 1, K.g, 0.025) end
+    for i = 0, 5 do rect(win, x, y + h - h * 0.3 * (i + 1) / 6, w, h * 0.05 + 1, K.bg, 0.12 * op) end
+    for yy = y, y + h, S(4) do rect(win, x, yy, w, 1, K.g, 0.025 * op) end
+end
+
+-- background opacity of the Die or Die window (per player, this machine)
+local BG_FILE = "CookieMission_dod.txt"
+local BG_STEPS = { 1, 0.85, 0.7, 0.55, 0.4 }
+local function bgLoad()
+    CMDoDc.bg = 1
+    pcall(function()
+        local r = getFileReader(BG_FILE, false)
+        if not r then return end
+        local v = tonumber(r:readLine() or "")
+        r:close()
+        if v then CMDoDc.bg = math.max(0.4, math.min(1, v)) end
+    end)
+end
+
+local function bgNext()
+    local nxt = BG_STEPS[1]
+    for i, v in ipairs(BG_STEPS) do
+        if math.abs(v - (CMDoDc.bg or 1)) < 0.01 then nxt = BG_STEPS[CM.mod(i, #BG_STEPS) + 1] end
+    end
+    CMDoDc.bg = nxt
+    pcall(function()
+        local w = getFileWriter(BG_FILE, true, false)
+        w:writeln(tostring(nxt))
+        w:close()
+    end)
 end
 
 local function sound(names)
     local p = CMC.player()
     if not p then return nil end
     for _, n in ipairs(names) do
-        local ok, id = pcall(function() return p:playSound(n) end)
+        local ok, id = pcall(function()
+            if p.playSoundLocal then return p:playSoundLocal(n) end
+            return p:playSound(n)
+        end)
         if ok and id and id ~= 0 then return id end
     end
     return nil
@@ -113,7 +144,13 @@ end
 
 local function stopSound(id)
     local p = CMC.player()
-    if p and id then pcall(function() p:stopOrTriggerSound(id) end) end
+    if not p or not id then return end
+    local ok = pcall(function()
+        local em = p:getEmitter()
+        em:stopSoundLocal(id)
+        em:stopSound(id)
+    end)
+    if not ok then pcall(function() p:stopOrTriggerSound(id) end) end
 end
 
 -- ===================================================================== the window
@@ -134,7 +171,8 @@ end
 
 function DW:drawFrame()
     local w, h = self.width, self.height
-    backdrop(self, 0, 0, w, h)
+    if not CMDoDc.bg then bgLoad() end
+    backdrop(self, 0, 0, w, h, CMDoDc.bg)
     border(self, 0, 0, w, h, K.line2, 1)
     local hh = self.headerH
     rect(self, 0, hh, w, 1, K.g, 0.25)
@@ -159,6 +197,14 @@ function DW:drawFrame()
     rect(self, cx, S(8), cs, cs, over and K.red or K.panel, over and 0.6 or 0.9)
     border(self, cx, S(8), cs, cs, K.line2, 1)
     CMUI.textC(self, "x", cx + cs / 2, S(8) + (cs - CMUI.fh(UIFont.Small)) / 2 - 1, K.text, 1, UIFont.Small)
+    -- background opacity: each press = the next step (100 / 85 / 70 / 55 / 40)
+    local bl = T("IGUI_CM_Dod_bg") .. " " .. math.floor((CMDoDc.bg or 1) * 100 + 0.5) .. "%"
+    local bw = CMUI.tw(UIFont.Small, bl) + S(24)
+    local bx = cx - bw - S(8)
+    local overB = self:hit(bx, S(8), bw, cs, bgNext)
+    rect(self, bx, S(8), bw, cs, overB and K.panel2 or K.panel, 0.9)
+    border(self, bx, S(8), bw, cs, K.line2, 1)
+    CMUI.textC(self, bl, bx + bw / 2, S(8) + (cs - CMUI.fh(UIFont.Small)) / 2, K.dim, 1, UIFont.Small)
 end
 
 function DW:setTab(tab)
@@ -554,6 +600,8 @@ function FB:new()
     o.background = false
     o.moveWithMouse = false
     o.size = size
+    o.internal = "Die or Die"
+    o.tex = CMUI.tex("dod_avatar")
     return o
 end
 
@@ -584,6 +632,11 @@ function FB:onMouseUp(x, y)
 end
 
 function FB:onMouseUpOutside() self.down = nil end
+
+-- the Dock's click when the button is grouped there
+function FB:forceClick()
+    if CMDoDc.win then CMDoDc.win:close() else CMDoDc.open() end
+end
 
 function FB:prerender() end
 
@@ -733,7 +786,8 @@ local HU = CMDoDc.Hud
 function HU:new()
     local w = S(300)
     local sw = getCore():getScreenWidth()
-    local o = ISPanel.new(self, sw - w - S(24), S(110), w, S(420))
+    -- left of the floating button's column so it never covers it
+    local o = ISPanel.new(self, sw - w - S(76), S(110), w, S(420))
     o.background = false
     o.moveWithMouse = true
     return o
@@ -806,7 +860,6 @@ function BN:render()
     local tm = team()
     if not tm then return end
     local w = self.width
-    local tm2 = getTextManager()
     if tm.phase == "recon" then
         local label, clock = "RECON", CM.clock(left(tm.phaseLeft))
         local lw = CMUI.tw(UIFont.Small, label) + S(30)
@@ -814,17 +867,17 @@ function BN:render()
         local x = (w - lw - cw) / 2
         rect(self, x, 0, lw, S(42), K.ink, 0.88)
         border(self, x, 0, lw + cw, S(42), K.line2, 1)
-        tm2:DrawStringCentre(UIFont.Small, x + lw / 2, (S(42) - CMUI.fh(UIFont.Small)) / 2, label, K.amber[1], K.amber[2], K.amber[3], 1)
+        CMUI.textC(self, label, x + lw / 2, (S(42) - CMUI.fh(UIFont.Small)) / 2, K.amber, 1, UIFont.Small)
         rect(self, x + lw, 0, cw, S(42), K.amber, 1)
-        tm2:DrawStringCentre(UIFont.Large, x + lw + cw / 2, (S(42) - CMUI.fh(UIFont.Large)) / 2, clock, K.ink[1], K.ink[2], K.ink[3], 1)
-        tm2:DrawStringCentre(UIFont.Small, w / 2, S(48), T("IGUI_CM_Dod_reconSub"), 1, 1, 1, 1)
+        CMUI.textC(self, clock, x + lw + cw / 2, (S(42) - CMUI.fh(UIFont.Large)) / 2, K.ink, 1, UIFont.Large)
+        CMUI.textC(self, T("IGUI_CM_Dod_reconSub"), w / 2, S(48), { 1, 1, 1 }, 1, UIFont.Small)
     elseif tm.phase == "live" and CMDoDc.inboundAt and CMC.ms() - CMDoDc.inboundAt < 4000 then
         local a = math.min(1, (4000 - (CMC.ms() - CMDoDc.inboundAt)) / 800)
         rect(self, 0, S(20), w, S(56), K.ink, 0.88 * a)
         rect(self, 0, S(20), w, S(2), K.red, a)
         rect(self, 0, S(74), w, S(2), K.red, a)
-        tm2:DrawStringCentre(UIFont.Large, w / 2, S(20) + (S(56) - CMUI.fh(UIFont.Large)) / 2, "ENEMY INBOUND", K.red[1], K.red[2], K.red[3], a)
-        tm2:DrawStringCentre(UIFont.Small, w / 2, S(82), T("IGUI_CM_Dod_inboundSub", tm.target or 0), 1, 1, 1, a)
+        CMUI.textC(self, "ENEMY INBOUND", w / 2, S(20) + (S(56) - CMUI.fh(UIFont.Large)) / 2, K.red, a, UIFont.Large)
+        CMUI.textC(self, T("IGUI_CM_Dod_inboundSub", tm.target or 0), w / 2, S(82), { 1, 1, 1 }, a, UIFont.Small)
     end
 end
 
@@ -836,7 +889,52 @@ function DB:new(x, y, w, h, tm)
     local o = CMUI.Window.new(self, x, y, w, h)
     o.tm = tm
     o.t0 = CMC.ms()
+    o.models = {}    -- member key -> ISUI3DModel (only for players this client has loaded)
+    o.lookAt = {}    -- member key -> ms of the next look
     return o
+end
+
+-- the member's own character when this client has them loaded (near you); nil = silhouette
+local function onlineChar(key)
+    local me = CMC.player()
+    if me and CM.ukey(me:getUsername()) == key then return me end
+    local list = getOnlinePlayers and getOnlinePlayers()
+    if list then
+        for i = 0, list:size() - 1 do
+            local p = list:get(i)
+            if p and CM.ukey(p:getUsername()) == key then return p end
+        end
+    end
+    return nil
+end
+
+function DB:model(m, x, y, w, h)
+    local mo = self.models[m.k]
+    if mo == nil and CMC.ms() >= (self.lookAt[m.k] or 0) then
+        self.lookAt[m.k] = CMC.ms() + 1000
+        local p = onlineChar(m.k)
+        local okD, dead = pcall(function() return p and p:isDead() end)
+        if p and okD and not dead then
+            local ok, made = pcall(function()
+                local a = ISUI3DModel:new(x, y, w, h)
+                a:initialise()
+                a:instantiate()
+                a:setVisible(true)
+                self:addChild(a)
+                a:setState("idle")
+                a:setDirection(IsoDirections.S)
+                a:setIsometric(false)
+                a:setCharacter(p)
+                return a
+            end)
+            if ok and made then mo = made; self.models[m.k] = mo end
+        end
+    end
+    if mo then
+        mo:setX(x); mo:setY(y); mo:setWidth(w); mo:setHeight(h)
+        return true
+    end
+    return false
 end
 
 function DB:drawFrame()
@@ -852,26 +950,29 @@ local function card(win, x, y, w, h, m, mvp, tm)
     if mvp then border(win, x + 1, y + 1, w - 2, h - 2, K.g, 1) end
     local ph = math.floor(h * 0.56)
     rect(win, x + S(1), y + S(1), w - S(2), ph, mvp and { 0.14, 0.22, 0.09 } or { 0.08, 0.10, 0.07 }, 1)
-    tex(win, "dod_avatar", x + w * 0.2, y + ph * 0.12, w * 0.6, ph * 0.88, down and 0.35 or 0.9, mvp and K.g or (down and K.faint or K.dim))
+    if down or not win:model(m, x + S(1), y + S(1), w - S(2), ph) then
+        tex(win, "dod_avatar", x + w * 0.2, y + ph * 0.12, w * 0.6, ph * 0.88, down and 0.35 or 0.9, mvp and K.g or (down and K.faint or K.dim))
+    end
     if mvp then
         local lw = CMUI.tw(UIFont.Medium, "MVP") + S(24)
         rect(win, x + (w - lw) / 2, y + S(10), lw, CMUI.fh(UIFont.Medium) + S(6), K.g, 1)
         CMUI.textC(win, "MVP", x + w / 2, y + S(13), K.ink, 1, UIFont.Medium)
     end
     local cy = y + ph + S(10)
-    local px = x + S(12)
-    local iw = w - S(24)
-    CMUI.text(win, CMUI.fit(m.n, mvp and UIFont.Large or UIFont.Medium, iw), px, cy, mvp and K.g or (down and K.dim or K.text), 1, mvp and UIFont.Large or UIFont.Medium)
-    cy = cy + CMUI.fh(mvp and UIFont.Large or UIFont.Medium) + S(4)
+    local px = x + S(14)
+    local iw = w - S(28)
+    local fv = mvp and UIFont.Large or UIFont.Medium
+    CMUI.text(win, CMUI.fit(m.n, UIFont.Large, iw), px, cy, mvp and K.g or (down and K.dim or K.text), 1, UIFont.Large)
+    cy = cy + CMUI.fh(UIFont.Large) + S(4)
     if down then
-        CMUI.text(win, T("IGUI_CM_Dod_st_" .. tostring(m.st)), px, cy, K.red, 1, UIFont.Small)
-        cy = cy + CMUI.fh(UIFont.Small) + S(2)
+        CMUI.text(win, T("IGUI_CM_Dod_st_" .. tostring(m.st)), px, cy, K.red, 1, UIFont.Medium)
+        cy = cy + CMUI.fh(UIFont.Medium) + S(4)
     end
     local rows = { { T("IGUI_CM_Dod_kill"), m.kills or 0 }, { "Damage", m.dmg or 0 }, { "Assist", m.ast or 0 } }
     for _, r in ipairs(rows) do
-        CMUI.text(win, r[1], px, cy, K.dim, 1, UIFont.Small)
-        CMUI.textR(win, tostring(r[2]), px + iw, cy, mvp and K.g or K.text, 1, mvp and UIFont.Medium or UIFont.Small)
-        cy = cy + CMUI.fh(mvp and UIFont.Medium or UIFont.Small) + S(2)
+        CMUI.text(win, r[1], px, cy + (CMUI.fh(fv) - CMUI.fh(UIFont.Medium)) / 2, K.dim, 1, UIFont.Medium)
+        CMUI.textR(win, tostring(r[2]), px + iw, cy, mvp and K.g or K.text, 1, fv)
+        cy = cy + CMUI.fh(fv) + S(4)
     end
 end
 
@@ -880,8 +981,8 @@ function DB:drawBody()
     local w, h = self.width, self.height
     local win = tm.res == "win"
     local title = win and "AREA CLEARED" or ((tm.res == "abort" or tm.res == "nofight") and "MISSION ABORTED" or "MISSION FAILED")
-    CMUI.textC(self, "MISSION DEBRIEF  -  " .. string.upper(locName(tm.loc)) .. "  -  " .. D.TIER_TAG[tm.tier], w / 2, S(26), K.dim, 1, UIFont.Small)
-    CMUI.textC(self, title, w / 2, S(26) + CMUI.fh(UIFont.Small) + S(6), win and K.g or K.red, 1, UIFont.Title or UIFont.Large)
+    CMUI.textC(self, "MISSION DEBRIEF  -  " .. string.upper(locName(tm.loc)) .. "  -  " .. D.TIER_TAG[tm.tier], w / 2, S(26), K.dim, 1, UIFont.Medium)
+    CMUI.textC(self, title, w / 2, S(26) + CMUI.fh(UIFont.Medium) + S(6), win and K.g or K.red, 1, UIFont.Title or UIFont.Large)
     -- cards: MVP in the middle, the others around it
     local mem = {}
     local mvpM = nil
@@ -894,12 +995,18 @@ function DB:drawBody()
     if mvpM then order[#order + 1] = mvpM end
     for i = half + 1, #mem do order[#order + 1] = mem[i] end
     local n = #order
-    local cw, ch = S(170), S(300)
-    local mw, mh = S(220), S(370)
-    local gap = S(12)
+    local cw, ch = S(210), S(380)
+    local mw, mh = S(260), S(450)
+    local gap = S(14)
     local total = (n - (mvpM and 1 or 0)) * (cw + gap) + (mvpM and (mw + gap) or 0) - gap
+    -- a big team: narrower cards so all of them fit the window
+    if total > w - S(40) then
+        local f = (w - S(40)) / total
+        cw, mw, gap = math.floor(cw * f), math.floor(mw * f), math.floor(gap * f)
+        total = (n - (mvpM and 1 or 0)) * (cw + gap) + (mvpM and (mw + gap) or 0) - gap
+    end
     local cx = (w - total) / 2
-    local base = S(120) + mh
+    local base = S(110) + mh
     for _, m in ipairs(order) do
         local isM = m == mvpM
         local ww, hh = isM and mw or cw, isM and mh or ch
@@ -910,16 +1017,23 @@ function DB:drawBody()
     local names = {}
     for _, e in ipairs(tm.rw or {}) do names[#names + 1] = CMC.itemName(e.t) .. ((e.n or 1) > 1 and (" x" .. e.n) or "") end
     local rs = #names > 0 and (T("IGUI_CM_Dod_got") .. "  " .. table.concat(names, " - ")) or (win and "" or T("IGUI_CM_Dod_noReward"))
-    CMUI.textC(self, CMUI.fit(rs, UIFont.Small, w - S(320)), w / 2 - S(130), h - S(50), K.dim, 1, UIFont.Small)
+    CMUI.textC(self, CMUI.fit(rs, UIFont.Medium, w - S(320)), w / 2 - S(130), h - S(52), K.dim, 1, UIFont.Medium)
     mbtn(self, w - S(260), h - S(62), S(220), S(44), T("IGUI_CM_Dod_close"), function() self:close() end, "go", { font = UIFont.Medium })
 end
 
-function DB:onClosed() if CMDoDc.debrief == self then CMDoDc.debrief = nil end end
+function DB:onClosed()
+    -- let go of the characters before the window goes
+    for _, mo in pairs(self.models or {}) do
+        pcall(function() mo:setCharacter(nil); self:removeChild(mo) end)
+    end
+    self.models = {}
+    if CMDoDc.debrief == self then CMDoDc.debrief = nil end
+end
 
 local function openDebrief(tm)
     if CMDoDc.debrief then CMDoDc.debrief:close() end
     CMUI.k = CMUI.fontScale()
-    local w, h = CMUI.size(1180, 620)
+    local w, h = CMUI.size(1280, 680)
     local sw, sh = getCore():getScreenWidth(), getCore():getScreenHeight()
     local win = DB:new(math.floor((sw - w) / 2), math.floor((sh - h) / 2), w, h, CM.copy(tm))
     win:show()
@@ -934,6 +1048,8 @@ local function showPanel(key, cls, on)
         p:initialise(); p:instantiate(); p:addToUIManager(); p:setVisible(true)
         if key == "screen" then pcall(function() p:setAlwaysOnTop(true) end) end
         CMDoDc[key] = p
+        -- a new panel lands on top: keep the floating button clickable
+        if key ~= "screen" and CMDoDc.fab then pcall(function() CMDoDc.fab:bringToTop() end) end
     elseif not on and p then
         p:setVisible(false)
         p:removeFromUIManager()
@@ -974,7 +1090,11 @@ local function sync()
             CMDoDc.inboundAt = CMC.ms()
         end
     end
-    if phase == "warp" and mine and not CMDoDc.heli then CMDoDc.heli = sound({ "Helicopter", "HelicopterFly", "HeliFlyby" }) end
+    if phase == "warp" and mine and not CMDoDc.heli and not CMDoDc.heliFor then
+        CMDoDc.heli = sound({ "Helicopter", "HelicopterFly", "HeliFlyby" })
+        CMDoDc.heliFor, CMDoDc.heliAt = tm.id, CMC.ms()
+    end
+    if phase ~= "warp" then CMDoDc.heliFor = nil end
     if phase ~= "warp" and CMDoDc.heli then stopSound(CMDoDc.heli); CMDoDc.heli = nil end
     if phase == "over" and tm.res and CMDoDc.shownFor ~= tm.id then
         CMDoDc.shownFor = tm.id
@@ -1032,6 +1152,9 @@ Events.OnTick.Add(function()
     if CMDoDc.arriveAt and t - CMDoDc.arriveAt > 2300 and CMDoDc.screen and CMDoDc.screen.mode == "arrive" then
         CMDoDc.arriveAt = nil
         pcall(sync)
+    end
+    if CMDoDc.heli and t - (CMDoDc.heliAt or t) > (D.WARP + 2) * 1000 then
+        stopSound(CMDoDc.heli); CMDoDc.heli = nil
     end
     if t - lastCheck < 1000 then return end
     lastCheck = t

@@ -21,6 +21,7 @@ local ON = {}              -- ukey -> IsoPlayer (rebuilt every tick)
 local seq = 0
 local lastTick = 0
 local recovered = nil      -- { tries, at } crash recovery of matches that were live at boot
+local credit               -- (t, uid, killerKey) one soldier down, set further down
 
 local function now() return CM.now() end
 local function nowMs() return getTimestampMs and getTimestampMs() or now() * 1000 end
@@ -576,6 +577,11 @@ local function matchTick(t, a)
     elseif t.phase == "live" then
         spawnTick(t, a)
         scanNpcs(t, a)
+        -- client kill reports waiting for the server to see that soldier down
+        for uid in pairs(t.claims or {}) do
+            local e = t.npcs[uid]
+            if e and e.dead then credit(t, uid, nil) elseif not e then t.claims[uid] = nil end
+        end
         local n, dead = counts(t)
         if #t.pend == 0 and n > 0 and dead >= n then t.allDownAt = t.allDownAt or tn else t.allDownAt = nil end
         if #t.pend == 0 and n == 0 and t.target <= 0 then finish(t, "abort")
@@ -931,39 +937,130 @@ local function teamOfNpc(uid)
     return nil
 end
 
--- damage and assists: every player hit on one of our soldiers
-if Events.OnWeaponHitCharacter then Events.OnWeaponHitCharacter.Add(function(attacker, target, weapon, damage)
-    if not attacker or not target or not instanceof(attacker, "IsoPlayer") or not instanceof(target, "IsoZombie") then return end
-    local okU, uid = pcall(function() return target:getModData().ProjectALifeUID end)
-    if not okU or not uid then return end
-    uid = tostring(uid)
+-- a soldier the scan has not listed yet (killed right after it showed up): find its team by its A-Life group
+local function teamOfUid(uid)
     local t = teamOfNpc(uid)
+    if t then return t end
+    -- every NPC on the server lands here: look into the registry only while a match is live
+    local live = false
+    for _, tt in pairs(TEAMS) do if tt.phase == "live" then live = true; break end end
+    if not live then return nil end
+    local a = alife()
+    if not a then return nil end
+    local gid = nil
+    pcall(a.ActorRegistry.each, function(r)
+        if tostring(r.uid or "") == uid then
+            gid = tostring(type(r.memory) == "table" and r.memory.groupId or "")
+            return true
+        end
+    end)
+    if not gid then return nil end
+    for _, tt in pairs(TEAMS) do
+        if tt.groups and tt.groups[gid] and tt.npcs then
+            tt.npcs[uid] = { n = "?" }
+            return tt
+        end
+    end
+    return nil
+end
+
+local function uidOf(body)
+    local ok, uid = pcall(function()
+        local md = body:getModData()
+        return md.ProjectALifeUID
+    end)
+    if ok and type(uid) == "string" and uid ~= "" then return uid end
+    ok, uid = pcall(function() return body:GetVariable("ALifeUID") end)
+    if ok and type(uid) == "string" and uid ~= "" then return uid end
+    return nil
+end
+
+local function playerKey(c)
+    if c and instanceof(c, "IsoPlayer") then return keyOf(c) end
+    return nil
+end
+
+-- damage and assists: every player hit on one of our soldiers
+local function noteHit(uid, attacker, damage)
+    local t = teamOfUid(uid)
     if not t or t.phase ~= "live" then return end
-    local k = keyOf(attacker)
-    local s = t.stats[k]
+    local k = playerKey(attacker)
+    local s = k and t.stats[k]
     if not s or t.st[k] ~= "in" then return end
-    s.d = s.d + math.max(0, CM.num(damage, 0))
+    if damage then s.d = s.d + math.max(0, CM.num(damage, 0)) end
     hitLog[uid] = hitLog[uid] or {}
     hitLog[uid][k] = nowMs()
-end) end
+end
 
--- a soldier body died (called from the main server file's OnZombieDead): kill to the killer, assists to the
--- others who hit it lately
-function CMS.dodNpcDead(zombie, killer)
-    local okU, uid = pcall(function() return zombie:getModData().ProjectALifeUID end)
-    if not okU or not uid then return end
-    uid = tostring(uid)
-    local t = teamOfNpc(uid)
-    local e = t and t.npcs[uid]
-    if not e or e.dead then return end
+-- one soldier down: counted dead once, the kill credited once (A-Life's killer, else the server's own guess,
+-- else the client that saw its own hit kill it), assists to the others who hit it lately
+credit = function(t, uid, kk)
+    local e = t.npcs[uid]
+    if not e then return end
     e.dead = true
-    local kk = killer and keyOf(killer) or nil
-    if kk and t.stats[kk] and t.st[kk] == "in" then t.stats[kk].k = t.stats[kk].k + 1 end
+    if e.kc then return end
+    kk = kk or (t.claims and t.claims[uid]) or nil
+    if not kk or not t.stats[kk] or t.st[kk] ~= "in" then return end
+    e.kc = true
+    if t.claims then t.claims[uid] = nil end
+    t.stats[kk].k = t.stats[kk].k + 1
     local ms = nowMs()
     for k, at in pairs(hitLog[uid] or {}) do
         if k ~= kk and t.stats[k] and ms - at <= D.ASSIST * 1000 then t.stats[k].a = t.stats[k].a + 1 end
     end
     hitLog[uid] = nil
+end
+
+local function npcDown(uid, killer)
+    local t = teamOfUid(uid)
+    if not t or not t.npcs or t.phase == "over" then return end
+    credit(t, uid, playerKey(killer))
+end
+
+-- A-Life's own events (its Compat interop): the hits and deaths it already resolved, killer included
+local hooked = false
+local function hookALife()
+    if hooked then return end
+    if not Events.ProjectALife_NpcDied or not Events.ProjectALife_NpcHit then return end
+    hooked = true
+    Events.ProjectALife_NpcDied.Add(function(body, uid, killer)
+        if type(uid) ~= "string" then return end
+        local ok, err = pcall(npcDown, uid, killer)
+        if not ok then CM.log("dod npc died error: " .. tostring(err)) end
+    end)
+    Events.ProjectALife_NpcHit.Add(function(body, attacker, damage)
+        local uid = body and uidOf(body)
+        if not uid then return end
+        pcall(noteHit, uid, attacker, damage)
+    end)
+end
+
+if Events.OnWeaponHitCharacter then Events.OnWeaponHitCharacter.Add(function(attacker, target, weapon, damage)
+    if not attacker or not target or not instanceof(attacker, "IsoPlayer") or not instanceof(target, "IsoZombie") then return end
+    local uid = uidOf(target)
+    if not uid then return end
+    -- the damage comes from A-Life's hit event when it is there
+    pcall(noteHit, uid, attacker, not hooked and damage or nil)
+end) end
+
+-- a soldier body died (called from the main server file's OnZombieDead)
+function CMS.dodNpcDead(zombie, killer)
+    local uid = uidOf(zombie)
+    if uid then npcDown(uid, killer) end
+end
+
+-- client report: "my hit killed this soldier" (used only when the server found no killer)
+function H.dodKill(p, args)
+    local k = keyOf(p)
+    local t = teamOf(k)
+    local uid = type(args.uid) == "string" and args.uid or nil
+    if not t or not uid or t.phase ~= "live" or t.st[k] ~= "in" then return end
+    if not t.npcs[uid] and teamOfUid(uid) ~= t then return end
+    local e = t.npcs[uid]
+    if not e or e.kc then return end
+    t.claims = t.claims or {}
+    t.claims[uid] = t.claims[uid] or k
+    if e.dead then credit(t, uid, nil) end
 end
 
 -- seen by the missions and the squads: one queue at a time
@@ -981,6 +1078,7 @@ local function onTick()
     rebuild()
     recoverTick()
     local a = alife()
+    if a and not hooked then hookALife() end
     for _, tid in ipairs(CM.sortedKeys(TEAMS)) do
         local t = TEAMS[tid]
         if t and t.phase == "room" then

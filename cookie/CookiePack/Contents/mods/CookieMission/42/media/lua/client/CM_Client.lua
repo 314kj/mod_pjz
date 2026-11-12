@@ -405,6 +405,18 @@ CMC.onServerCommand = onServerCommand
 -- ===================================================================== kill fallback
 local sentKill = {}
 local function onZombieDead(z)
+    -- a Die or Die soldier my hit killed: tell the server (it counts it only if it found no killer itself)
+    local okU, uid = pcall(function() return z:getModData().ProjectALifeUID end)
+    if okU and type(uid) == "string" and uid ~= "" then
+        local sn = CMDoDc and CMDoDc.snap
+        if not sn or not sn.team or sn.team.phase ~= "live" or sentKill[uid] then return end
+        local okA, a = pcall(function() return z:getAttackedBy() end)
+        if okA and a == CMC.player() then
+            sentKill[uid] = true
+            CMC.send("dodKill", { uid = uid })
+        end
+        return
+    end
     local run = CMC.run()
     if not run or run.phase ~= "live" or not run.zone then return end
     local p = CMC.player()

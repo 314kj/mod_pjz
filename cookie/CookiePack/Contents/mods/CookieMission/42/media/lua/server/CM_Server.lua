@@ -2671,13 +2671,18 @@ local function onZombieDead(zombie)
     if not okP then return end
     local okM, tag, npc = pcall(function()
         local md = zombie:getModData()
-        return md.cmRun, md.ProjectALifeOwned
+        return md.cmRun, md.ProjectALifeOwned == true or md.ProjectALifeActor == true or type(md.ProjectALifeUID) == "string"
     end)
     if not okM then tag = nil end
     -- Project A-Life NPC bodies are zombies underneath: never count them (their own docs ask for this);
     -- Die or Die counts its own soldiers
     if npc == true then
-        if CMS.dodNpcDead then pcall(CMS.dodNpcDead, zombie, c0 and c0.p or nil) end
+        local killer = c0 and c0.p
+        if not killer then
+            local ok, a = pcall(function() return zombie:getAttackedBy() end)
+            if ok and a and instanceof(a, "IsoPlayer") then killer = a end
+        end
+        if CMS.dodNpcDead then pcall(CMS.dodNpcDead, zombie, killer) end
         return
     end
     for s = 1, 3 do
