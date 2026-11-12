@@ -395,3 +395,39 @@ option CookieMission.DodHard
     type = integer, min = 1, max = 80, default = 40,
     page = CookieMission, translation = CookieMission_DodHard,
 }
+
+option CookieMission.DodLegendEasy
+{
+    type = integer, min = 0, max = 100, default = 0,
+    page = CookieMission, translation = CookieMission_DodLegendEasy,
+}
+
+option CookieMission.DodLegendMedium
+{
+    type = integer, min = 0, max = 100, default = 10,
+    page = CookieMission, translation = CookieMission_DodLegendMedium,
+}
+
+option CookieMission.DodLegendHard
+{
+    type = integer, min = 0, max = 100, default = 25,
+    page = CookieMission, translation = CookieMission_DodLegendHard,
+}
+
+option CookieMission.DodMvpEasy
+{
+    type = integer, min = 0, max = 100, default = 10,
+    page = CookieMission, translation = CookieMission_DodMvpEasy,
+}
+
+option CookieMission.DodMvpMedium
+{
+    type = integer, min = 0, max = 100, default = 25,
+    page = CookieMission, translation = CookieMission_DodMvpMedium,
+}
+
+option CookieMission.DodMvpHard
+{
+    type = integer, min = 0, max = 100, default = 50,
+    page = CookieMission, translation = CookieMission_DodMvpHard,
+}

@@ -429,8 +429,9 @@ end
 local function rollList(lines)
     local out = {}
     for _, d in ipairs(lines or {}) do
+        local chance = CM.dropChance(d)
         for _ = 1, d.r do
-            if rand(100) < d.c then
+            if rand(100) < chance then
                 local e = CMS.pickFrom(CMS.poolList(d.p))
                 if not e and d.f then e = CMS.pickFrom(CMS.poolList(d.f)) end
                 if e then out[#out + 1] = { t = e.t, n = CM.int(e.n, 1, 1, 50) } end

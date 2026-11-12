@@ -29,13 +29,15 @@ CM.DOD = {
         { id = "farable", n = "F.ARABLE", tex = "dod_loc_farable" },
         { id = "mccoy", n = "McCoy Logging", tex = "dod_loc_mccoy" },
     },
-    -- reward per surviving winner: p = pool, r = rolls, c = chance %; mvp = extra lines for the top killer
+    -- reward per winner: p = pool, r = rolls, c = chance %, cs = sandbox option that overrides c;
+    -- MVP = extra lines for the top killer (the legendary chances are set in the sandbox)
     DROPS = {
-        { { p = "guns", r = 1, c = 100, f = "melee" }, { p = "meds", r = 2, c = 100 } },
-        { { p = "guns", r = 1, c = 100, f = "melee" }, { p = "medsplus", r = 1, c = 100 }, { p = "legend", r = 1, c = 10 } },
-        { { p = "guns", r = 2, c = 100, f = "melee" }, { p = "medsplus", r = 2, c = 100 }, { p = "legend", r = 1, c = 25 } },
+        { { p = "guns", r = 1, c = 100, f = "melee" }, { p = "meds", r = 2, c = 100 }, { p = "legend", r = 1, c = 0, cs = "DodLegendEasy" } },
+        { { p = "guns", r = 1, c = 100, f = "melee" }, { p = "medsplus", r = 1, c = 100 }, { p = "legend", r = 1, c = 10, cs = "DodLegendMedium" } },
+        { { p = "guns", r = 2, c = 100, f = "melee" }, { p = "medsplus", r = 2, c = 100 }, { p = "legend", r = 1, c = 25, cs = "DodLegendHard" } },
     },
-    MVP = { { p = "legend", r = 1, c = 10 }, { p = "legend", r = 1, c = 25 }, { p = "legend", r = 1, c = 50 } },
+    MVP = { { { p = "legend", r = 1, c = 10, cs = "DodMvpEasy" } }, { { p = "legend", r = 1, c = 25, cs = "DodMvpMedium" } },
+        { { p = "legend", r = 1, c = 50, cs = "DodMvpHard" } } },
 }
 
 CM.DOD.LOC = {}

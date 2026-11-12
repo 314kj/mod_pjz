@@ -216,6 +216,7 @@ CM.DEFAULTS = {
     EasyRate = 40, MediumRate = 80, HardRate = 150,
     EasyCure = 0, MediumCure = 0, HardCure = 100,
     DieOrDie = false, DodCooldown = 3, DodMinutes = 30, DodEasy = 20, DodMedium = 30, DodHard = 40,
+    DodLegendEasy = 0, DodLegendMedium = 10, DodLegendHard = 25, DodMvpEasy = 10, DodMvpMedium = 25, DodMvpHard = 50,
 }
 
 function CM.sv(name, def)
@@ -454,7 +455,7 @@ CM.GAME = {
               lives = { 3, 2, 1 }, red = { false, false, true }, work = 3, noise = 14, failNoise = 30, spawn = 1 },
     -- mole: no window, cookie dolls pop up on floor squares of the building and the team whacks them
     -- goal = whacks needed, up = dolls up at once, life = seconds a doll stays, fake = % red decoys
-    mole  = { goal = { 12, 20, 30 }, up = { 3, 4, 5 }, life = { 25, 15, 9 }, fake = { 0, 15, 25 }, reach = 2,
+    mole  = { goal = { 12, 20, 30 }, up = { 3, 4, 5 }, life = { 25, 15, 9 }, fake = { 0, 15, 25 }, reach = 2, slack = 0.5,
               noise = 6, failNoise = 30, spawn = 1 },
 }
 CM.TASK_MIN = 3        -- seconds the server wants between "start" and "done" of one target

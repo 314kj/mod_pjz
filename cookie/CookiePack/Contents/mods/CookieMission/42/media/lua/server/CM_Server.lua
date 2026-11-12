@@ -2211,10 +2211,12 @@ function H.whack(p, args)
     local i = CM.int(args.i, 0)
     local o = r.moles and r.moles[i]
     if not o or nowMs() >= o.exp then toastPlayer(p, "mgone"); return end
-    local x, y, z = pos(p)
-    local dx, dy = x - o.x, y - o.y
-    local reach = (CM.gameVal("mole", "reach") or 2) + 1
-    if z ~= o.z or dx * dx + dy * dy > reach * reach then toastPlayer(p, "tfar"); return end
+    -- 2 tiles from the middle of the doll's square, measured on the real (not rounded) position
+    local okP, fx, fy, fz = pcall(function() return p:getX(), p:getY(), p:getZ() end)
+    if not okP then return end
+    local dx, dy = fx - (o.x + 0.5), fy - (o.y + 0.5)
+    local reach = (CM.gameVal("mole", "reach") or 2) + (CM.gameVal("mole", "slack") or 0.5)
+    if math.floor(fz) ~= o.z or dx * dx + dy * dy > reach * reach then toastPlayer(p, "tfar"); return end
     r.moles[i] = nil
     if o.red then
         stat("molesFake")
