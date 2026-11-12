@@ -1,3 +1,8 @@
 {
-  "Tooltip_CSP_LTWForgeSeal": "Needed to forge Legendary Tactical weapons. Not found anywhere: Legendary Tactical weapons come from Cookie Mission only. They can still be repaired."
+  "Tooltip_CSP_LTWForgeSeal": "Needed to forge Legendary Tactical weapons. Not found anywhere: Legendary Tactical weapons come from Cookie Mission only. They can still be repaired.",
+  "Tooltip_CSP_ScrapVehicle": "Cut this vehicle into scrap with a welding mask and a propane torch, like a car wreck. The vehicle and every part still on it are destroyed. <LINE> Gives 20% more salvage than a wreck. Higher Welding skill gets more usable salvage.",
+  "Tooltip_CSP_ScrapVehicle_Claimed": "This vehicle is claimed. Unclaim it first.",
+  "Tooltip_CSP_ScrapVehicle_ClaimWait": "Claim list not loaded yet, try again in a moment.",
+  "Tooltip_CSP_ScrapVehicle_Occupied": "Someone is inside the vehicle.",
+  "Tooltip_CSP_ScrapVehicle_Items": "Take every item out of the vehicle first."
 }

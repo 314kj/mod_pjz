@@ -23,5 +23,6 @@
   "IGUI_CSP_VSkin_NoCar": "Car not found",
   "IGUI_CSP_VSkin_Wait": "Wait a moment",
   "IGUI_CSP_VSkin_Failed": "Could not change the skin",
-  "IGUI_CSP_VSkin_AdminOnly": "Only admins can change car skins"
+  "IGUI_CSP_VSkin_AdminOnly": "Only admins can change car skins",
+  "IGUI_CSP_ScrapVehicle": "Dismantle Vehicle"
 }
