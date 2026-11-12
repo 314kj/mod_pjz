@@ -24,6 +24,9 @@ final class Patcher implements ClassFileTransformer {
     static final String BUCKET = "zombie/entity/EntityBucket";
     static final String ENTITIES = "zombie/entity/EngineEntityManager";
     static final String ARRAY = "zombie/entity/util/Array";
+    static final String LUA_EVENT = "zombie/Lua/Event";
+    static final String KAHLUA = "se/krka/kahlua/vm/KahluaThread";
+    static final String EXCEPTIONS = "zombie/core/logger/ExceptionLogger";
 
     private static final String EVENT = "(Ljava/lang/String;Ljava/lang/Object;)V";
 
@@ -66,6 +69,18 @@ final class Patcher implements ClassFileTransformer {
             ARRAY, "add", "(Ljava/lang/Object;)V", null, 1, "entityListAdd", "(L" + ARRAY + ";Ljava/lang/Object;)V"));
         add(ENTITIES, new ClassPatch.Redirect("removeEntityInternal", entity, ClassPatch.INVOKEVIRTUAL,
             ARRAY, "removeValue", "(Ljava/lang/Object;Z)Z", null, 1, "entityListRemove", "(L" + ARRAY + ";Ljava/lang/Object;Z)Z"));
+        // v6: Lua event handler loop (see FastEvents) and the same error printed again and again (see LogThrottle).
+        String trigger = "(Lse/krka/kahlua/vm/KahluaTable;Lse/krka/kahlua/integration/LuaCaller;[Ljava/lang/Object;)Z";
+        add(LUA_EVENT, new ClassPatch.Redirect("trigger", trigger, ClassPatch.INVOKEVIRTUAL,
+            "java/util/ArrayList", "get", "(I)Ljava/lang/Object;", null, 2, "eventGet", "(Ljava/util/ArrayList;I)Ljava/lang/Object;"));
+        add(LUA_EVENT, new ClassPatch.Redirect("trigger", trigger, ClassPatch.INVOKEVIRTUAL,
+            "java/util/ArrayList", "contains", "(Ljava/lang/Object;)Z", null, 2, "eventListed", "(Ljava/util/ArrayList;Ljava/lang/Object;)Z"));
+        add(KAHLUA, new ClassPatch.Redirect("flushErrorMessage", "()V", ClassPatch.INVOKEVIRTUAL,
+            "zombie/debug/DebugType", "error", "(Ljava/lang/Object;)V", null, 1, "luaErrorText", "(Lzombie/debug/DebugType;Ljava/lang/Object;)V"));
+        add(EXCEPTIONS, new ClassPatch.Redirect("logException",
+            "(Ljava/lang/Throwable;Ljava/lang/String;Ljava/lang/String;Lzombie/debug/DebugType;Lzombie/debug/LogSeverity;)V", ClassPatch.INVOKEVIRTUAL,
+            "zombie/debug/DebugLogStream", "printException", "(Ljava/lang/Throwable;Ljava/lang/String;Ljava/lang/String;Lzombie/debug/LogSeverity;)V", null, 1,
+            "printException", "(Lzombie/debug/DebugLogStream;Ljava/lang/Throwable;Ljava/lang/String;Ljava/lang/String;Lzombie/debug/LogSeverity;)V"));
     }
 
     private void add(String cls, ClassPatch.Redirect r) {
@@ -105,6 +120,6 @@ final class Patcher implements ClassFileTransformer {
     }
 
     static String describe() {
-        return Arrays.toString(new String[] { CHUNK, CELL, MAP, SERVER, DOWNLOAD, BUCKET, ENTITIES });
+        return Arrays.toString(new String[] { CHUNK, CELL, MAP, SERVER, DOWNLOAD, BUCKET, ENTITIES, LUA_EVENT, KAHLUA, EXCEPTIONS });
     }
 }

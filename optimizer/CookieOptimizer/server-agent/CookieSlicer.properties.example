@@ -34,3 +34,8 @@ enabled=true
 # v5: find an entity's place in the game's entity lists at once instead of searching each list
 # (cell unload while driving); false = the game's own search
 fast_entity_remove=true
+# v6: Lua events - check the slot just called before searching the whole handler list; false = the game's own search
+fast_events=true
+# v6: the same error printed in full 3 times, then one short line every 100 (count restarts after 10 min quiet);
+# the game's own error counter still counts all; false = print every one
+quiet_repeated_errors=true

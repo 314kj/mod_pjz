@@ -17,13 +17,15 @@ import java.util.zip.ZipEntry;
  * over the next ticks inside a time budget, nearest to players first. See Hooks.
  * v5 also removes entities from the game's entity lists without searching each list from
  * the start (cell unload while driving). See EntityIndex.
+ * v6: Lua events without a search after every handler (FastEvents), and the same error printed
+ * in full only 3 times (LogThrottle).
  *
  * Start: add  -javaagent:cookie\CookieSlicer.jar  to the server's java command line.
  * Check a game jar without starting anything:
  *   java -jar CookieSlicer.jar check path\to\projectzomboid.jar
  */
 public final class Agent {
-    static final String VERSION = "5";
+    static final String VERSION = "6";
 
     public static void premain(String args, Instrumentation inst) {
         try {

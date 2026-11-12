@@ -47,9 +47,34 @@ JFR 11 พ.ย. 21:18–21:23 (ขับรถในเมืองใหม่)
 - เทส: EntityTest (200,000 คำสั่งสุ่ม เทียบรายการทุกขั้น กับ Array ตัวจริงของเกม, ลบ 60,000 ตัว: ไล่หา ~200 ms → ~6 ms),
   RealEntityTest (EntityBucket ตัวจริงของเกมที่ patch แล้ว vs ไม่ patch: ผลเหมือนกันทุกขั้น; คลาสผ่าน bytecode verifier ของ JDK 25)
 
+## v6: เรียก handler ของม็อดเร็วขึ้น + กัน error เดิมพ่นซ้ำ (12 พ.ย.)
+
+**1. Lua event (ทุก event เช่น OnTick ทุก tick):** `Event.trigger` ของเกมเรียก handler ตัวที่ i แล้วถาม `callbacks.contains(handler)`
+(เช็คว่า handler ถอดตัวเองออกไหม) — contains ไล่หาตั้งแต่ต้นรายการ → event ที่มี n handler เสีย ~n²/2 ครั้งทุกรอบ
+
+- v6 จำช่องที่เพิ่งเรียก แล้วดูช่องนั้นก่อน: handler ยังอยู่ตรงนั้น = ตอบ "อยู่" ได้เลย ไม่ตรง = ให้ `contains` ของเกมตอบเหมือนเดิม
+- คำตอบเหมือน `contains` เสมอ (เจอในช่อง = อยู่ในรายการจริง) → **handler ชุดเดิม ลำดับเดิม** ไม่ว่า handler จะเพิ่ม/ถอดอะไร
+- จำได้ 8 รายการล่าสุด (handler ยิง event อื่นซ้อนได้) · ปิดเฉพาะส่วนนี้: `fast_events=false`
+
+**2. error เดิมซ้ำ:** ม็อดที่พังทุกเฟรมพิมพ์ error + stack เต็มๆ หลายร้อยบรรทัดต่อวินาที (กิน CPU/ดิสก์ + log อ่านไม่ได้)
+
+- error เดียวกัน (ชนิด + ข้อความ + 6 บรรทัดแรกของ stack, ตัดเลขที่อยู่ object ทิ้ง) พิมพ์เต็ม **3 ครั้งแรก** แล้วพิมพ์บรรทัดสั้น
+  `[CookieSlicer] the same error again (N times; ...)` ทุก 100 ครั้ง ที่เหลือนับไว้ (`repeated errors not printed N` ใน log ต่อนาที)
+- เงียบไป 10 นาที = นับใหม่ (พิมพ์เต็มอีก 3 ครั้ง) · error ใหม่/ต่างกัน พิมพ์ตามปกติ
+- ตัวนับ error ของเกม (`errorCount`, รายการ error, popup) **ไม่แตะ** นับครบทุกครั้ง · ปิดเฉพาะส่วนนี้: `quiet_repeated_errors=false`
+- แก้ 2 จุด: `KahluaThread.flushErrorMessage` (ข้อความ error ของ Lua) และ `ExceptionLogger.logException` (Java exception)
+
+แก้เพิ่ม 6 จุดใน 3 คลาส · ตามสวิตช์เดิม (`!offslice` / bat / revision ไม่ตรง = วิธีของเกม) · error ในโค้ดเรา = กลับเป็นวิธีของเกม
+
+เทส: V6Test (200 รอบ event สุ่มที่ handler เพิ่ม/ถอดกันเอง + ยิง event ซ้อน เทียบกับลูปของเกม: เหมือนกันทุกรอบ; throttle ทุกกรณี),
+RealEventTest (`Event` + Kahlua ตัวจริงของเกม patch แล้ว vs ไม่ patch: 5 seed × ~1.3 ล้าน handler ลำดับเดียวกันทุกตัว, ตอบในช่อง ~95%;
+handler Lua จริงพัง 250 ครั้ง: พิมพ์เต็ม 3 + บรรทัดสั้น 2, ตัวนับ error ของเกมยังนับครบ 250; ExceptionLogger จริงแบบเดียวกัน)
+
+**checksum ตอน join:** ไม่เกี่ยว — แก้เฉพาะ Java ในหน่วยความจำของเซิฟ ไฟล์ Lua/script ที่เกมเทียบตอน join ไม่เปลี่ยน
+
 ## ปลอดภัยยังไง
 
-- แก้แค่ "ปลายทางของการเรียก method" 14 จุดใน 7 คลาส (v5) ขนาดเท่าเดิม (ไม่มีโค้ดเกมอยู่ในนี้ ไม่แก้ jar ของเกม แก้ในหน่วยความจำตอนโหลดคลาส)
+- แก้แค่ "ปลายทางของการเรียก method" 20 จุดใน 10 คลาส (v6) ขนาดเท่าเดิม (ไม่มีโค้ดเกมอยู่ในนี้ ไม่แก้ jar ของเกม แก้ในหน่วยความจำตอนโหลดคลาส)
 - ทุกจุดต้องเจอครบตามจำนวน ไม่งั้นคลาสนั้นไม่ถูกแก้เลย + log บอก; game revision ต้องเป็น `3d39148846` (42.22.2) ไม่งั้นทำงานแบบเกมเดิม
 - error ในโค้ดเรา → ปิดตัวเอง รันงานที่ค้างทั้งหมด แล้วกลับเป็นแบบเกมเดิม
 - `IntegrityReport` ไม่แตะ: log เซิฟจะขึ้น `version=42.22.2 3d39148846 agents=1` ตามจริง — การ join ใช้ `getVersionNumber()` ที่ไม่มีส่วนนี้ ผู้เล่นเข้าได้ปกติ
@@ -62,7 +87,7 @@ JFR 11 พ.ย. 21:18–21:23 (ขับรถในเมืองใหม่)
 3. (ครั้งเดียว) ใส่บรรทัดนี้ใน bat **ก่อน**บรรทัด java เพื่อให้เวอร์ชันใหม่ถูกสลับเข้าเองตอนเปิดเซิฟ:
    `if exist cookie\CookieSlicer.next.jar move /y cookie\CookieSlicer.next.jar cookie\CookieSlicer.jar >nul`
    ตอนเซิฟรันอยู่ห้ามเขียนทับ `CookieSlicer.jar` (JVM เปิดไฟล์ไว้) → ของใหม่วางเป็น `CookieSlicer.next.jar` แทน
-4. เปิดเซิฟตามปกติ → console มี `[CookieSlicer] v5 loaded`, `patched ...` 7 บรรทัด, `ready (game revision 3d39148846): ON ...` (หรือ `OFF` ถ้า mode = off)
+4. เปิดเซิฟตามปกติ → console มี `[CookieSlicer] v6 loaded`, `patched ...` 10 บรรทัด, `ready (game revision 3d39148846): ON ...` (หรือ `OFF` ถ้า mode = off)
 
 ถอด: ลบ `-javaagent:...` ออกจาก bat แล้วรีสตาร์ท
 
@@ -109,7 +134,7 @@ chunk wait เฉลี่ย 1.3–4.9 วิ สูงสุด 31 วิ, Lua
 P:\cookiev1\jre64\bin\java.exe -jar P:\cookiev1\cookie\CookieSlicer.jar check P:\cookiev1\java\projectzomboid.jar
 ```
 
-ต้องขึ้น `ok` 5 บรรทัด (ถ้าเกมอัปเดต แม้ ok ทั้งหมด ตัว agent ก็จะไม่ทำงานจนกว่าจะแก้ `revision=` หรือออกเวอร์ชันใหม่)
+ต้องขึ้น `ok` 10 บรรทัด + `All calls found.` (ถ้าเกมอัปเดต แม้ ok ทั้งหมด ตัว agent ก็จะไม่ทำงานจนกว่าจะแก้ `revision=` หรือออกเวอร์ชันใหม่)
 
 ## Build / test (ใน container ของ Claude หรือเครื่องที่มี JDK 21+)
 

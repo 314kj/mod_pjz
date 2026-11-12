@@ -12,6 +12,9 @@ import zombie.Lua.LuaEventManager;
 import zombie.characters.IsoPlayer;
 import zombie.core.Core;
 import zombie.core.logger.ExceptionLogger;
+import zombie.debug.DebugLogStream;
+import zombie.debug.DebugType;
+import zombie.debug.LogSeverity;
 import zombie.entity.util.Array;
 import zombie.globalObjects.SGlobalObjects;
 import zombie.iso.IsoChunk;
@@ -557,9 +560,35 @@ public final class Hooks {
         return EntityIndex.remove(list, entity, identity);
     }
 
-    /** fast entity-list removal while on (main thread) */
+    /** fast entity-list removal (v5), event loop and quiet repeated errors (v6) while on (main thread) */
     private static void entityUse() {
         EntityIndex.setUse(enabled && !off && Config.fastEntities, mainThread);
+        FastEvents.use = enabled && !off && Config.fastEvents;
+        LogThrottle.use = enabled && !off && Config.quietErrors;
+    }
+
+    // ================================================================ v6: Lua events and repeated errors
+
+    /** Event.trigger: callbacks.get(i) */
+    @SuppressWarnings("rawtypes")
+    public static Object eventGet(java.util.ArrayList list, int i) {
+        return FastEvents.get(list, i);
+    }
+
+    /** Event.trigger: callbacks.contains(handler) */
+    @SuppressWarnings("rawtypes")
+    public static boolean eventListed(java.util.ArrayList list, Object handler) {
+        return FastEvents.listed(list, handler);
+    }
+
+    /** KahluaThread.flushErrorMessage: DebugType.General.error(message) */
+    public static void luaErrorText(DebugType type, Object message) {
+        LogThrottle.luaText(type, message);
+    }
+
+    /** ExceptionLogger.logException: stream.printException(t, a, b, severity) */
+    public static void printException(DebugLogStream stream, Throwable t, String a, String b, LogSeverity severity) {
+        LogThrottle.exception(stream, t, a, b, severity);
     }
 
     // ================================================================ errors and status
@@ -582,6 +611,8 @@ public final class Hooks {
             Log.line("error in CookieSlicer, turning it off (the server runs the game's own way from now on): " + sw);
             enabled = false;
             EntityIndex.setUse(false, mainThread);
+            FastEvents.use = false;
+            LogThrottle.use = false;
             notWorking = "turned itself off after an error, see CookieSlicer.log";
             cur = null;
             flushAll(R_OFF);
@@ -589,6 +620,8 @@ public final class Hooks {
         } catch (Throwable ignored) {
             enabled = false;
             EntityIndex.use = false;
+            FastEvents.use = false;
+            LogThrottle.use = false;
         } finally {
             breaking = false;
         }
@@ -672,6 +705,8 @@ public final class Hooks {
             if (luaErrors > 0) s.append("; Lua errors ").append(luaErrors);
             if (off) s.append("; OFF (").append(source).append(")");
             if (EntityIndex.use || EntityIndex.failed()) s.append("; ").append(EntityIndex.minute());
+            if (FastEvents.use) s.append("; ").append(FastEvents.minute());
+            if (LogThrottle.use) s.append("; ").append(LogThrottle.minute());
         } else {
             s.append("; game's own way");
         }
@@ -681,7 +716,10 @@ public final class Hooks {
                 .append(", cells: ").append(State.of(Patcher.CELL))
                 .append(", downloads: ").append(State.of(Patcher.DOWNLOAD))
                 .append(", entity buckets: ").append(State.of(Patcher.BUCKET))
-                .append(", entity manager: ").append(State.of(Patcher.ENTITIES));
+                .append(", entity manager: ").append(State.of(Patcher.ENTITIES))
+                .append(", events: ").append(State.of(Patcher.LUA_EVENT))
+                .append(", Lua errors: ").append(State.of(Patcher.KAHLUA))
+                .append(", exceptions: ").append(State.of(Patcher.EXCEPTIONS));
         }
         Log.line(s.toString());
         writeStatus("last " + Config.logEverySec + " s: players " + players + ", ticks " + ticks

@@ -43,6 +43,10 @@ final class Config {
     static boolean enabled;
     /** v5: fast removal from the game's entity lists (fast_entity_remove=false = the game's own search). */
     static boolean fastEntities;
+    /** v6: Lua event handler loop without a search after every handler (fast_events=false = the game's own). */
+    static boolean fastEvents;
+    /** v6: the same error printed in full 3 times, then a line every 100 (quiet_repeated_errors=false = print all). */
+    static boolean quietErrors;
 
     static File dir;
     private static long stamp = Long.MIN_VALUE;
@@ -67,6 +71,8 @@ final class Config {
         statusFile = "CookieSlicer_status.txt";
         enabled = true;
         fastEntities = true;
+        fastEvents = true;
+        quietErrors = true;
     }
 
     private static File file() {
@@ -133,6 +139,8 @@ final class Config {
         gameModeFile = p.getProperty("game_mode_file", gameModeFile).trim();
         statusFile = p.getProperty("status_file", statusFile).trim();
         fastEntities = !"false".equalsIgnoreCase(p.getProperty("fast_entity_remove", "true").trim());
+        fastEvents = !"false".equalsIgnoreCase(p.getProperty("fast_events", "true").trim());
+        quietErrors = !"false".equalsIgnoreCase(p.getProperty("quiet_repeated_errors", "true").trim());
     }
 
     /** name inside base, or name itself when it is a full path; null when there is nothing to use. */
@@ -148,7 +156,9 @@ final class Config {
             + toMs(maxDrainNs) + " ms (+" + toMs(pressureNsPer1000) + " ms per 1000 waiting), before download up to "
             + toMs(sendFlushNs) + " ms, at unload " + (runBeforeUnload ? "run" : "drop") + " what waits"
             + (runBeforeSave ? ", run everything before a save" : "")
-            + ", entity lists " + (fastEntities ? "fast removal" : "the game's own search");
+            + ", entity lists " + (fastEntities ? "fast removal" : "the game's own search")
+            + ", event loop " + (fastEvents ? "checks in place" : "the game's own search")
+            + ", repeated errors " + (quietErrors ? "shown 3 times then counted" : "all printed");
     }
 
     private static long ms(double v) { return (long) (v * 1_000_000L); }

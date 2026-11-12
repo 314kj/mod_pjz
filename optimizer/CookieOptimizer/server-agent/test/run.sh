@@ -1,15 +1,17 @@
 #!/bin/sh
 # Behaviour test of the agent's Hooks against a fake world (no game needed), and the v5
 # entity lists against a stand-in list. With JAVA25 + PZ_JAR (+ PZ_COMPILE_JAR, a copy of
-# projectzomboid.jar with class version 65 for javac 21) also against the game's real classes.
+# projectzomboid.jar with class version 65 for javac 21) also against the game's real classes;
+# + PZ_STDLIB (the game's stdlib.lua) also the v6 events and Lua errors with the real Kahlua.
 set -e
 cd "$(dirname "$0")/.."
 sh build.sh >/dev/null   # (build.sh starts from an empty build folder)
 mkdir -p build/test
-javac --release 21 -d build/test $(find test/stubs -name '*.java') $(find src -name '*.java') test/cookie/slicer/SlicerTest.java test/cookie/slicer/EntityTest.java
+javac --release 21 -d build/test $(find test/stubs -name '*.java') $(find src -name '*.java') test/cookie/slicer/SlicerTest.java test/cookie/slicer/EntityTest.java test/cookie/slicer/V6Test.java
 java -cp build/test cookie.slicer.SlicerTest
 java -cp build/test cookie.slicer.SlicerTest wrongrev
 java -cp build/test cookie.slicer.EntityTest stubs
+java -cp build/test cookie.slicer.V6Test
 if [ -n "$JAVA25" ] && [ -n "$PZ_JAR" ] && [ -n "$PZ_COMPILE_JAR" ]; then
   # the game jar is signed: patched classes cannot sit next to signed ones, so use an unsigned copy
   rm -rf build/real && mkdir -p build/real/arr build/real/drive build/real/run build/real/patched
@@ -21,4 +23,12 @@ if [ -n "$JAVA25" ] && [ -n "$PZ_JAR" ] && [ -n "$PZ_COMPILE_JAR" ]; then
   javac --release 21 -nowarn -cp "$PZ_COMPILE_JAR" -d build/real/drive test/real/zombie/entity/BucketDrive.java
   javac --release 21 -d build/real/run test/real/RealEntityTest.java
   "$JAVA25" -cp build/real/run RealEntityTest build/real/pz.jar build/classes build/real/drive build/real/patched
+  if [ -n "$PZ_STDLIB" ]; then
+    # v6: real Event.trigger + real Kahlua (needs the game's stdlib.lua, from the game folder, in the working folder)
+    javac --release 21 -nowarn -cp "$PZ_COMPILE_JAR" -d build/real/drive test/real/zombie/Lua/EventDrive.java
+    javac --release 21 -cp build/real/run -d build/real/run test/real/RealEventTest.java
+    mkdir -p build/real/lua && cp "$PZ_STDLIB" build/real/lua/stdlib.lua
+    R="$(pwd)"
+    (cd build/real/lua && "$JAVA25" -cp "$R/build/real/run" RealEventTest "$R/build/real/pz.jar" "$R/build/classes" "$R/build/real/drive" "$R/build/real/patched")
+  fi
 fi

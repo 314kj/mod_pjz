@@ -25,7 +25,7 @@ public final class RealEntityTest {
         Patched(URL[] urls, File dir) { super(urls, ClassLoader.getPlatformClassLoader()); this.dir = dir; }
         @Override protected Class<?> findClass(String name) throws ClassNotFoundException {
             File f = dir == null ? null : new File(dir, name.replace('.', '/') + ".class");
-            if (f != null && f.isFile() && name.startsWith("zombie.")) {
+            if (f != null && f.isFile() && (name.startsWith("zombie.") || name.startsWith("se.krka."))) {
                 try {
                     byte[] b = Files.readAllBytes(f.toPath());
                     return defineClass(name, b, 0, b.length);
@@ -42,10 +42,18 @@ public final class RealEntityTest {
         File patchedDir = new File(a[3]);
         System.out.println("R1 patched classes load and verify");
         Patched pl = new Patched(new URL[] {real, agent, game}, patchedDir);
-        for (String c : new String[] {"zombie.entity.EntityBucket", "zombie.entity.EngineEntityManager", "zombie.entity.EntityBucket$CustomBucket"}) {
+        for (String c : new String[] {"zombie.entity.EntityBucket", "zombie.entity.EngineEntityManager", "zombie.entity.EntityBucket$CustomBucket",
+                "zombie.Lua.Event", "se.krka.kahlua.vm.KahluaThread", "zombie.core.logger.ExceptionLogger"}) {
+            String how = new File(patchedDir, c.replace('.', '/') + ".class").isFile() ? "patched" : "as is";
             try {
                 Class<?> k = Class.forName(c, true, pl);
-                check(k.getClassLoader() == pl, c + " loaded (" + (new File(patchedDir, c.replace('.', '/') + ".class").isFile() ? "patched" : "as is") + ")");
+                check(k.getClassLoader() == pl, c + " loaded and verified (" + how + ")");
+            } catch (VerifyError | ClassFormatError t) {
+                check(false, c + ": " + t);
+            } catch (ExceptionInInitializerError | NoClassDefFoundError t) {
+                // linking (with the bytecode check) comes before the class's own start-up code;
+                // that start-up code needs the running game here
+                check(!(t.getCause() instanceof VerifyError), c + " verified (" + how + "); its start-up needs the game: " + t.getClass().getSimpleName());
             } catch (Throwable t) {
                 check(false, c + ": " + t);
             }
