@@ -1,8 +1,30 @@
 # Cookie Slicer Helper — java agent ฝั่งผู้เล่น (ไม่บังคับ)
 
 ตัวช่วยของม็อด **Cookie Slicer** ให้หน้าต่าง Slicer ในเกมเห็นสิ่งที่ Lua มองไม่เห็น + ปรับ RAM เกมแบบกดปุ่มเดียว
-ไม่แก้ไฟล์เกมบนดิสก์ (ยกเว้น Setup กด 1 ซ่อม ProjectZomboid64.json แบบมี backup) · แก้คลาสเกมในหน่วยความจำแค่ 2 จุด
-(shader 1.1.0, กล่องหน้าโหลด 1.2.0) ถ้าเกมอัปเดตแล้วหาจุดไม่เจอ = ปล่อยโค้ดเกมเดิม
+ไม่แก้ไฟล์เกมบนดิสก์ (ยกเว้น Setup กด 1 ซ่อม ProjectZomboid64.json แบบมี backup) · แก้คลาสเกมในหน่วยความจำ
+(shader 1.1.0, กล่องหน้าโหลด 1.2.0, เร่งเกม 1.3.0: 5 คลาส) ถ้าเกมอัปเดตแล้วหาจุดไม่เจอ = คลาสนั้นใช้โค้ดเกมเดิม
+
+## 1.3.0 (12 พ.ย.)
+
+ของเดียวกับที่เซิฟใช้ (Cookie Slicer v5/v6) มาไว้ที่เครื่องผู้เล่น + ปุ่มอัดการทำงาน — หน้าใหม่ **Speed Slicer** ในหน้าต่าง
+
+- **`SpeedPatcher` / `SpeedHooks`** ชี้การเรียกในเกม 10 จุด 5 คลาส (ต้องเจอครบตามจำนวน ไม่งั้นคลาสนั้นใช้โค้ดเกมเดิม + ไฟล์ pc `speed_failed`):
+  - `Event.trigger` get ×2 / contains ×2 → `FastEvents`: ดูช่องที่เพิ่งเรียกก่อนไล่หาทั้งรายการ (คำตอบเหมือน `contains` เสมอ)
+  - `KahluaThread.flushErrorMessage` + `ExceptionLogger.logException` → `LogThrottle`: error เดิมพิมพ์เต็ม 3 ครั้ง แล้วบรรทัดสั้นทุก 100
+    (ตัวนับ error / popup ของเกมไม่แตะ)
+  - `EntityBucket.updateMembership` + `EngineEntityManager.add/removeEntityInternal` → `EntityIndex`: หาตำแหน่ง entity ได้ทันที
+    ใช้ได้เฉพาะเธรดหลักของเกม: เธรดชื่อ `MainThread` ตัวแรกที่ยิง Lua event (ก่อนเจอ / เธรดอื่น = วิธีของเกม)
+  - เปิด/ปิดในหน้าต่าง → มีผลทันที (ฝั่ง entity สลับบนเธรดหลัก) + จำใน `speed.txt` ข้าง jar · ปิดตอนเปิดเกม = ไม่แก้คลาสเลย
+  - ไฟล์ pc: `speed_now`, `speed_next`, `speed_classes` (5/5), `speed_main`, `speed_ev_fast` / `speed_ev_searched`, `speed_err_cut`,
+    `speed_ent_fast` / `speed_ent_slow` (รวมตั้งแต่เปิดเกม; เธรดหลักเก็บตัวเลขทุก 2 วิ)
+- **`Recorder`** (ปุ่ม "อัด 3 นาที"): Java Flight Recorder ผ่าน DiagnosticCommand `jfrStart` (settings=profile)
+  → `Zomboid/cookie_rec_<วัน>-<เวลา>.jfr` เก็บแค่ 3 ไฟล์ล่าสุด (ลบเฉพาะ `cookie_rec_*.jfr` ของเราเอง) · ไฟล์ pc `rec` (idle / running / done / failed: …),
+  `rec_left_s`, `rec_file`, `rec_mb` · เริ่มอัดเกมอาจสะดุด ~1 วิ (JFR เริ่มครั้งแรก) · ระหว่างอัดกิน ~1–2%
+- คำขอใหม่ใน `CookieSlicer_request.txt`: `speed=0|1`, `record=<วินาที>` (30–300)
+- เทส: RealSpeedTest (คลาสจริงของเกมที่ patch แบบเดียวกับตอนเปิดเกม: ผ่าน verifier ทั้ง 5, event จริง ~2.6 ล้านครั้งลำดับเดียวกัน 95% ไม่ต้องไล่หา,
+  EntityBucket จริงรายการเหมือนกัน ลบเร็ว 7,625 / ไล่หา 0, error Lua + Java 250 ครั้ง → ไม่พิมพ์ 245 ตัวนับของเกมครบ 250, ปิด = เหมือนเกมทุกอย่าง,
+  เธรดที่ไม่ใช่ MainThread ไม่ถูกนับเป็นเธรดหลัก) · RecTest (อัดจริง 3 วิ ในโฟลเดอร์ที่มีช่องว่าง, เก็บ 3 ไฟล์, คำขอจากหน้าต่าง)
+- checksum ตอน join ไม่เกี่ยว: เกมเทียบเฉพาะไฟล์ Lua/script (LuaManager / ScriptManager → NetChecksum) ไม่ใช่คลาส Java
 
 ## 1.2.1 (11 พ.ย. ค่ำ)
 
@@ -86,7 +108,8 @@
 ```
 PZ_COMPILE_JAR=... sh build.sh      # JDK 21+, คอมไพล์กับสำเนา projectzomboid.jar (ดู build.sh)
 PZ_JAR=... JAVA25=... CONSOLE_TXT=... sh test/run.sh
-#   HelperTest, JoinTest (log -> ปัญหา, ไฟล์ diag, json, patch หน้าโหลดกับคลาสเกมจริง), RamTest (histogram, สวิตช์, ไฟล์ pc), ShaderTest
+#   HelperTest, JoinTest (log -> ปัญหา, ไฟล์ diag, json, patch หน้าโหลดกับคลาสเกมจริง), RamTest (histogram, สวิตช์, ไฟล์ pc), ShaderTest,
+#   RecTest, RealSpeedTest (PZ_STDLIB=<stdlib.lua ของเกม>; ใช้ตัวขับเทสของ ../server-agent/test/real)
 ```
 ทดสอบ 11 พ.ย. (1.2.1): Java ผ่านหมด (RamTest R5/R6: เพดานนุ่มตั้งได้จริงบน JDK 25, บีบตอน RAM เครื่องหมด, ไม่แกว่ง, ค่าแนะนำขนาดมาตรฐาน/peaks)
 · Setup `Get-RamPlan` ตรงกับ helper 110 กรณีใน pwsh 7 · UI Lua ใน lupa TH/EN (ปุ่มขนาด RAM, ป้ายแนะนำ/เกิน/น้อย, ปุ่มลด, แถบ 2 ชั้น, 1366x768) · ยังไม่ได้ลองกับเกมจริง

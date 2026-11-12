@@ -44,16 +44,21 @@ import java.util.Map;
  * request HeapReport lists what fills the game's memory (CookieSlicer_heap.txt).
  * 1.2.1: RamTune moves ZGC's soft ceiling with what the game really uses (live x 1.5 + 1 GB)
  * instead of 4/5 of the game RAM, so the game holds ~8 GB instead of 12-16 GB.
+ * 1.3.0: the server's Cookie Slicer speed-ups on the player's PC too (SpeedPatcher / SpeedHooks:
+ * Lua event loop, the same error printed 3 times then counted, entity lists), switch in the window
+ * (speed.txt); "record 3 minutes" with Java's flight recorder for the admins (Recorder).
  * Copyright (c) AKA / Cookie Cheetah. All rights reserved.
  */
 public final class Helper implements Runnable {
-    public static final String VERSION = "1.2.1";
+    public static final String VERSION = "1.3.0";
     static final long MB = 1024L * 1024L;
     static final String PC_FILE = "CookieSlicer_pc.txt";
     static final String REQUEST_FILE = "CookieSlicer_request.txt";
     static final String HEAP_FILE = "heap.txt";
     static final String RAMSAVE_FILE = "ramsave.txt";
     static final String STATS_FILE = "heapstats.txt"; // most RAM the game used in recent sessions
+    static final String SPEED_FILE = "speed.txt"; // speed-ups on/off ("speed=0" = off; no file = on)
+    static volatile boolean speedPatching; // the speed-ups were set up at this start
 
     final File luaDir;
     final File stateDir;
@@ -61,6 +66,7 @@ public final class Helper implements Runnable {
     private String heapNote = null;
     private long heapNextMb = 0;
     private String ramsaveNote = null;
+    private String speedNote = null;
     private long peakLive = 0, peakWritten = 0;
     private List<Long> pastPeaks;
     private static String ramsaveNow, gcName;
@@ -112,6 +118,17 @@ public final class Helper implements Runnable {
                     inst.addTransformer(new LoadPatcher(), false);
                 } catch (Throwable t) {
                     System.out.println("[CookieSlicerHelper] loading screen box off (the game runs as usual): " + t);
+                }
+                try {
+                    if (savedSpeed(state)) {
+                        inst.addTransformer(new SpeedPatcher(), false);
+                        speedPatching = true;
+                        SpeedHooks.setWant(true);
+                    } else {
+                        System.out.println("[CookieSlicerHelper] speed-ups off (speed.txt): the game's own code");
+                    }
+                } catch (Throwable t) {
+                    System.out.println("[CookieSlicerHelper] speed-ups off (the game runs as usual): " + t);
                 }
             }
             try {
@@ -258,6 +275,12 @@ public final class Helper implements Runnable {
         }
         m.putAll(jsonInfo);
         m.put("load_box", Integer.toString(LoadPatcher.hooked));
+        // speed-ups (1.3.0): on now / at the next start, what they did since the game started
+        m.put("speed_now", speedPatching && SpeedHooks.want ? "1" : "0");
+        m.put("speed_next", savedSpeed(stateDir) ? "1" : "0");
+        if (speedNote != null) m.put("speed_note", speedNote);
+        if (speedPatching) SpeedHooks.status(m);
+        Recorder.status(m);
         if (!m.containsKey("gpu") && gpuGuess != null) m.put("gpu", gpuGuess); // before the game has drawn a frame
         if (!m.containsKey("vram_total_mb") && gpuGuessMb > 0) m.put("vram_total_mb", Long.toString(gpuGuessMb));
         prevWall = now;
@@ -454,6 +477,10 @@ public final class Helper implements Runnable {
         String rs = r.get("ramsave");
         if (rs != null && !rs.isEmpty()) setRamSave(!"0".equals(rs.trim()));
         if ("1".equals(r.get("heap_report"))) HeapReport.startAsync(new File(luaDir, HeapReport.FILE));
+        String sp = r.get("speed");
+        if (sp != null && !sp.isEmpty()) setSpeed(!"0".equals(sp.trim()));
+        long rec = parse(r.get("record"), -1);
+        if (rec > 0) Recorder.start(luaDir.getAbsoluteFile().getParentFile(), (int) Math.min(rec, 300));
         setHeap(parse(r.get("heap_mb"), -1));
     }
 
@@ -498,6 +525,30 @@ public final class Helper implements Runnable {
         } catch (IOException e) {
             ramsaveNote = "failed: " + e.getMessage();
         }
+    }
+
+    // ================================================================ speed-ups (1.3.0)
+
+    /** on/off now (when they were set up at this start) and from the next start: speed.txt next to the jar */
+    void setSpeed(boolean on) {
+        if (speedPatching) SpeedHooks.setWant(on);
+        if (stateDir == null) {
+            speedNote = "failed: helper folder unknown";
+            return;
+        }
+        try {
+            Files.write(new File(stateDir, SPEED_FILE).toPath(), ("speed=" + (on ? 1 : 0) + "\n").getBytes(StandardCharsets.UTF_8));
+            speedNote = "ok";
+            System.out.println("[CookieSlicerHelper] speed-ups " + (on ? "on" : "off") + (speedPatching ? " now" : " from the next start"));
+        } catch (IOException e) {
+            speedNote = "failed: " + e.getMessage();
+        }
+    }
+
+    static boolean savedSpeed(File stateDir) {
+        if (stateDir == null) return true;
+        File f = new File(stateDir, SPEED_FILE);
+        return !f.isFile() || !"0".equals(read(f).get("speed"));
     }
 
     boolean savedRamSave() {

@@ -81,7 +81,7 @@ function CookieSlicerWindow:new(x, y, fonts, screenW)
     o.navW = clamp(math.floor(width * 0.19), 220, 340)
     o.colW = math.floor((width - 2 * o.pad - o.navW - 2 * o.gap) / 2)
     o.page = CS.settings.page
-    if o.page ~= "shader" and o.page ~= "version" then o.page = "perf" end
+    if o.page ~= "shader" and o.page ~= "version" and o.page ~= "speed" then o.page = "perf" end
     o.lastH = {}
     o.hits, o.tips = {}, {}
     o.backgroundColor = { r = C.bg[1], g = C.bg[2], b = C.bg[3], a = 0.97 }
@@ -1057,7 +1057,120 @@ function CookieSlicerWindow:drawRam(cx, y, cw, labelW, rowAt)
     return y
 end
 
+-- ---------------------------------------------------------------- speed-ups + record (version page, helper 1.3.0+)
+
+local function pct(a, b)
+    a, b = tonumber(a) or 0, tonumber(b) or 0
+    if a + b <= 0 then return nil end
+    return round(a * 100 / (a + b))
+end
+
+local function count(v)
+    local s = tostring(math.floor(tonumber(v) or 0))
+    local out = s:reverse():gsub("(%d%d%d)", "%1,"):reverse()
+    if out:sub(1, 1) == "," then out = out:sub(2) end
+    return out
+end
+
+local function mmss(s)
+    s = math.max(0, math.floor(tonumber(s) or 0))
+    return string.format("%d:%02d", math.floor(s / 60), s % 60)
+end
+
+-- page "Speed Slicer": the server's Cookie Slicer speed-ups on this PC (on / off at once), what
+-- they did since the game started; "record 3 minutes" and where the file is
+function CookieSlicerWindow:drawSpeedPage(x, y0, w)
+    local F, p, gap = self.F, self.pad, self.gap
+    self:card(x, y0, w, self.lastH.speed or 300)
+    local cx, cw = x + p, w - 2 * p
+    local y = self:heading("Speed Slicer", nil, cx, y0 + p)
+    local labelW = math.floor(cw * 0.3)
+    local pc = CS.pc
+    if CS.helperHas(CS.SPEED_HELPER_MIN) then
+        y = self:drawSpeed(cx, y, cw, labelW)
+    else
+        self:rect(cx, y, cw, 1, C.track)
+        y = y + gap
+        local need = pc.fresh and pc.helper and T("Ver_speedOld", tostring(pc.helper), CS.SPEED_HELPER_MIN)
+            or T(pc.present and "HelperStopped" or "Ver_speedNone", CS.SPEED_HELPER_MIN)
+        y = self:para(need, cx, y, cw, C.warn, F.body) + gap
+        y = self:para(T("Ver_speedNote"), cx, y, cw, C.dim, F.small) + gap
+    end
+    self:rect(cx, y, cw, 1, C.track)
+    y = y + p
+    self.lastH.speed = y - y0
+    return y
+end
+
+function CookieSlicerWindow:drawSpeed(cx, y, cw, labelW)
+    local F, gap = self.F, self.gap
+    local pc = CS.pc
+    local setUp = pc.speed_classes ~= nil -- set up at this game start (off at start = next start)
+    local now = tostring(pc.speed_now) == "1"
+    local nextOn = tostring(pc.speed_next) ~= "0"
+    if CS.speedAsked ~= nil then -- until the helper has read it
+        nextOn = CS.speedAsked == 1
+        now = setUp and nextOn
+    end
+    local state
+    if nextOn then state = T(now and "Ver_ramsaveOn" or "Ver_ramsaveNext") else state = T("Ver_ramsaveOff") end
+    self:rect(cx, y, cw, 1, C.track)
+    y = y + gap
+    y = self:switchRow(cx, y, cw, T("Ver_speed") .. ": " .. state, nextOn, CookieSlicerWindow.onSpeed, not nextOn)
+    y = self:para(T("Ver_speedNote"), cx + 4, y + 2, cw - 8, C.dim, F.small) + 2
+    if now then
+        local parts = {}
+        local ev = pct(pc.speed_ev_fast, pc.speed_ev_searched)
+        if ev then parts[#parts + 1] = T("Ver_speedEv", tostring(ev)) end
+        parts[#parts + 1] = T("Ver_speedErr", count(pc.speed_err_cut))
+        if tostring(pc.speed_main) == "1" then
+            parts[#parts + 1] = T("Ver_speedEnt", count(pc.speed_ent_fast))
+        end
+        y = self:para(T("Ver_speedSince") .. " " .. table.concat(parts, " | "), cx + 4, y, cw - 8, C.soft, F.small) + 2
+    end
+    if pc.speed_failed then
+        y = self:para(T("Ver_speedPart", tostring(pc.speed_failed)), cx + 4, y, cw - 8, C.warn, F.small) + 2
+    end
+    y = y + gap - 2
+
+    -- record a few minutes for the admins
+    self:rect(cx, y, cw, 1, C.track)
+    y = y + gap
+    local st = tostring(pc.rec or "idle")
+    local starting = CS.recAskedT and st ~= "running" and getTimestampMs() - CS.recAskedT < 6000
+        and (tonumber(pc.rec_t) or 0) < CS.recAskedT
+    local running = st == "running" or starting
+    self:text(fit(T("Ver_rec"), F.body, labelW), cx, y, C.dim, F.body)
+    local label
+    if st == "running" then label = T("Ver_recRunning", mmss(pc.rec_left_s))
+    elseif starting then label = T("Ver_recStarting")
+    else label = T("Ver_recBtn") end
+    local bh = fh(F.body) + 10
+    local bx, bw = cx + labelW + gap, cw - labelW - gap
+    self:button(bx, y - 4, math.min(bw, tw(label, F.body) + 36), bh, label, F.body,
+        running and function() end or CookieSlicerWindow.onRecord, nil, running and "normal" or "primary")
+    y = y + bh + gap - 2
+    if string.sub(st, 1, 6) == "failed" then
+        y = self:para(T("Ver_recFailed", string.sub(st, 9)), bx, y, bw, C.warn, F.small) + gap - 2
+    elseif st == "done" and pc.rec_file and not running then
+        y = self:para(T("Ver_recDone", tostring(pc.rec_file), tostring(pc.rec_mb or 1)), bx, y, bw, C.mint, F.small) + gap - 2
+    else
+        y = self:para(T("Ver_recNote"), bx, y, bw, C.dim, F.small) + gap - 2
+    end
+    return y
+end
+
 -- ---------------------------------------------------------------- menu (left)
+
+-- the Speed Slicer line in the menu: on / off / needs the helper
+local function speedNav()
+    local pc = CS.pc
+    if not CS.helperHas(CS.SPEED_HELPER_MIN) then return "NavSub_speedNeed" end
+    local now = tostring(pc.speed_now) == "1"
+    if CS.speedAsked ~= nil then now = pc.speed_classes ~= nil and CS.speedAsked == 1 end
+    if pc.rec == "running" then return "NavSub_speedRec" end
+    return now and "NavSub_speedOn" or "NavSub_speedOff"
+end
 
 function CookieSlicerWindow:drawNav(x, y0, w, h)
     local F = self.F
@@ -1075,6 +1188,7 @@ function CookieSlicerWindow:drawNav(x, y0, w, h)
           sub = CS.shaderActive() and T("NavSub_shaderOn", T("SLook_" .. CS.shaderLookId()))
                 or T("NavSub_shader", T("Look_" .. look.id), (b > 0 and "+" or "") .. tostring(b)) },
         { id = "version", title = "Version Slicer", sub = helperOld and T("NavSub_versionUpdate") or T("NavSub_version", CS.VERSION), sc = helperOld and C.warn or C.mint },
+        { id = "speed", title = "Speed Slicer", sub = T(speedNav()), sc = speedNav() == "NavSub_speedOn" and C.mint or C.dim },
     }
     local ih = fh(F.title) + fh(F.small) + 26
     for _, it in ipairs(items) do
@@ -1228,12 +1342,14 @@ function CookieSlicerWindow:render()
         bottom = self:drawShader(x1, top, self.colW * 2 + gap)
     elseif self.page == "version" then
         bottom = self:drawVersion(x1, top, self.colW * 2 + gap)
+    elseif self.page == "speed" then
+        bottom = self:drawSpeedPage(x1, top, self.colW * 2 + gap)
     else
         local b1 = self:drawLive(x1, top, self.colW)
         local b2 = self:drawTune(x1 + self.colW + gap, top, self.colW)
         bottom = math.max(b1, b2)
     end
-    local navMin = 20 + fh(F.small) + 3 * (fh(F.title) + fh(F.small) + 34) + 2 * fh(F.small) + 40
+    local navMin = 20 + fh(F.small) + 4 * (fh(F.title) + fh(F.small) + 34) + 2 * fh(F.small) + 40
     bottom = math.max(bottom, top + navMin)
     -- same window size on every page (the tallest one); cards fill it
     if self.minH then bottom = math.max(bottom, self.minH - pad) end
@@ -1288,6 +1404,14 @@ end
 
 function CookieSlicerWindow:onHeapReport()
     CS.requestHeapReport()
+end
+
+function CookieSlicerWindow:onSpeed(on)
+    CS.requestSpeed(on)
+end
+
+function CookieSlicerWindow:onRecord()
+    CS.requestRecord(180)
 end
 
 function CookieSlicerWindow:onPage(id)
@@ -1454,7 +1578,7 @@ function CookieSlicerWindow.toggle()
         o.dry = true
         local page = o.page
         local tallest = 0
-        for _, p in ipairs({ "perf", "shader", "version" }) do
+        for _, p in ipairs({ "perf", "shader", "version", "speed" }) do
             o.page = p
             o:render()
             o:render()

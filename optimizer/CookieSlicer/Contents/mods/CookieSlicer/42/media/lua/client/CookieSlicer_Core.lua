@@ -10,15 +10,18 @@
 --   CookieSlicer_diag.txt     written by the helper (1.2.0+): problems in the game's log
 --                             that stop a join (_prev: the game start before this one)
 --   CookieSlicer_heap.txt     written by the helper on request: what fills the game's RAM
+--   (helper 1.3.0: speed-ups on / off and "record 3 minutes" go through the request file too;
+--   the recording itself is written by Java to Zomboid/cookie_rec_<date>-<time>.jfr)
 if isServer() then return end
 
 CookieSlicer = CookieSlicer or {}
 local CS = CookieSlicer
-CS.VERSION = "1.2.1"
-CS.HELPER_LATEST = "1.2.1" -- the helper shipped in this mod's helper/ folder
+CS.VERSION = "1.3.0"
+CS.HELPER_LATEST = "1.3.0" -- the helper shipped in this mod's helper/ folder
 CS.SHADER_HELPER_MIN = "1.1.0" -- first helper that draws the shader
 CS.JOIN_HELPER_MIN = "1.2.0" -- first helper that reads the game's log and has the RAM savers
 CS.RAM_HELPER_MIN = "1.2.1" -- first helper that suggests game RAM from real use and keeps the heap near it
+CS.SPEED_HELPER_MIN = "1.3.0" -- first helper with the speed-ups (events, repeated errors, entity lists) and the recorder
 
 local SETTINGS_FILE = "CookieSlicer_client.txt"
 local HELPER_FILE = "CookieSlicer_pc.txt"
@@ -222,6 +225,18 @@ end
 function CS.requestHeapReport()
     CS.request({ heap_report = 1 })
     CS.heapAskedT = getTimestampMs()
+end
+
+-- the helper's speed-ups (Lua events, repeated errors, entity lists): on / off now (helper 1.3.0)
+function CS.requestSpeed(on)
+    CS.request({ speed = on and 1 or 0 })
+    CS.speedAsked = on and 1 or 0
+end
+
+-- record what the game does for a few minutes (Java's flight recorder), for the admins
+function CS.requestRecord(seconds)
+    CS.request({ record = math.floor(seconds) })
+    CS.recAskedT = getTimestampMs()
 end
 
 -- a key=value file in Zomboid/Lua, or nil
