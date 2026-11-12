@@ -98,6 +98,7 @@ local function drawCards(win, x, y, w, adm)
             elseif c.type == "find" then prog = tostring(run.found or 0) .. "/" .. tostring(run.caches or 0)
             elseif c.type == "gang" then prog = tostring(run.gang or 0) .. "/" .. tostring(c.goal or 0)
             elseif CM.isTask(c.type) then prog = tostring(run.tdone or 0) .. "/" .. tostring(run.tasks or 0)
+            elseif c.type == "mole" then prog = tostring(run.whacked or 0) .. "/" .. tostring(c.goal or 0)
             else prog = tostring(run.kills or 0) .. "/" .. tostring(c.goal or 0) end
             CMUI.text(win, T("IGUI_CM_RunInfo", run.id, prog, run.alive or 0, run.spawned or 0) .. "  [" ..
                 T("IGUI_CM_Phase_" .. tostring(run.phase)) .. "]", ix, y, C.text)

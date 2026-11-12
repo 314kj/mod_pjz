@@ -1,5 +1,6 @@
 -- Cookie Mission - task minigames: one window each, the world (and the horde) keeps running behind it
--- wire = match the wires, safe = pick the lock, pipe = turn the pipes, board = nail the plank, trap = repeat the code
+-- wire = match the wires, safe = pick the lock, pipe = turn the pipes, board = nail the plank, trap = repeat the code,
+-- rush = crank the generator, dance = arrows + beat (mole has no window: see CM_Mole)
 require "CM_UI_Kit"
 
 CMGame = CMGame or {}
@@ -194,7 +195,7 @@ function CMGame.stillHere(ctx)
 end
 
 local LOSE_KEY = { time = "IGUI_CM_G_lose_time", picks = "IGUI_CM_G_lose_picks", boom = "IGUI_CM_G_lose_boom",
-    far = "IGUI_CM_G_lose_far", fail = "IGUI_CM_G_lose_time" }
+    far = "IGUI_CM_G_lose_far", fail = "IGUI_CM_G_lose_time", lives = "IGUI_CM_G_lose_lives" }
 
 function G:drawBody()
     local t = CMC.ms()
@@ -886,8 +887,281 @@ function Trap:drawGame(x, y, w, h, t)
     end
 end
 
+-- ===================================================================== rush: crank the generator, keep the gauge in the green
+local Rush = G:derive("CMGame_Rush")
+CMGame.KINDS.rush = Rush
+
+function Rush:setup()
+    self.drain = CM.gameVal("rush", "drain", self.tier) / 100
+    self.band = CM.gameVal("rush", "band", self.tier)
+    self.need = CM.gameVal("rush", "need", self.tier)
+    self.moving = CM.gameVal("rush", "moving", self.tier) == true
+    self.cps = CM.gameVal("rush", "cps") or 14
+    self.g = 0.25
+    self.charge = 0
+    self.clicks = {}
+    self.spin = 0
+    self.hotAt = -99999
+    self.tp = 0
+end
+
+function Rush:center()
+    if not self.moving then return 0.6 end
+    return 0.55 + 0.22 * math.sin(self.tp * 0.7)
+end
+
+-- one crank; clicks over the per second cap do nothing (auto clickers)
+function Rush:crank()
+    local t = CMC.ms()
+    for i = #self.clicks, 1, -1 do
+        if t - self.clicks[i] >= 1000 then table.remove(self.clicks, i) end
+    end
+    if #self.clicks >= self.cps then return end
+    self.clicks[#self.clicks + 1] = t
+    self.g = math.min(1, self.g + 0.06)
+    self.spin = self.spin + 35
+    sfx("UISelectListItem")
+end
+
+function Rush:press(mx, my) self:crank() end
+
+function Rush:keyDown(key)
+    if key == Keyboard.KEY_SPACE then self:crank() end
+end
+
+function Rush:tick(dt, t)
+    self.tp = self.tp + dt
+    self.g = math.max(0, self.g - self.drain * dt)
+    local c = self:center()
+    if self.g >= 0.94 then
+        -- overheated: lose charge and time, the gauge falls back
+        if t - self.hotAt > 1000 then
+            self.hotAt = t
+            self.charge = math.max(0, self.charge - 2)
+            self.g = 0.55
+            self:penalty(2, T("IGUI_CM_G_hot", 2))
+        end
+    elseif math.abs(self.g - c) <= self.band / 2 then
+        self.charge = self.charge + dt
+        if self.charge >= self.need then self:finish(true) end
+    end
+end
+
+function Rush:status()
+    return T("IGUI_CM_G_charge", math.floor(self.charge), self.need)
+end
+
+function Rush:drawGame(x, y, w, h, t)
+    -- the crank wheel on the left
+    local cx, cy, r = x + w * 0.28, y + h * 0.5, math.min(w * 0.2, h * 0.36)
+    CMUI.disc(self, cx, cy, r, C.panel2, 1)
+    CMUI.ring(self, cx, cy, r, C.line, 0.8)
+    for i = 0, 3 do
+        local ax, ay = polar(cx, cy, r * 0.85, self.spin + i * 90)
+        CMUI.line(self, cx, cy, ax, ay, S(6), C.dim, 1)
+    end
+    local hx, hy = polar(cx, cy, r * 0.85, self.spin)
+    CMUI.disc(self, hx, hy, S(10), C.gold, 1)
+    CMUI.disc(self, cx, cy, S(9), C.ink, 1)
+    -- the gauge: red top, green band (moves on very hard), white level
+    local gx, gw = x + w * 0.58, w * 0.14
+    local gy, gh = y + S(18), h - S(36)
+    CMUI.rbox(self, gx, gy, gw, gh, C.ink, 1, 6)
+    CMUI.rect(self, gx, gy, gw, gh * 0.06, C.bad, 0.85)
+    local c = self:center()
+    local bTop = gy + gh * (1 - (c + self.band / 2))
+    CMUI.rect(self, gx + S(3), bTop, gw - S(6), gh * self.band, C.good, 0.5)
+    local lvl = gy + gh * (1 - self.g)
+    local hot = t - self.hotAt < 600
+    local lc = hot and C.bad or C.white
+    CMUI.rect(self, gx + S(3), lvl, gw - S(6), gy + gh - lvl, lc, 0.35)
+    CMUI.rect(self, gx - S(6), lvl - S(2), gw + S(12), S(4), lc, 1)
+    CMUI.rborder(self, gx, gy, gw, gh, C.line, 0.6, 6)
+    -- the charge bar
+    local qx, qw = x + w * 0.78, w * 0.08
+    CMUI.rbox(self, qx, gy, qw, gh, C.panel, 0.9, 6)
+    local k = math.min(1, self.charge / math.max(1, self.need))
+    CMUI.rect(self, qx + S(3), gy + gh * (1 - k), qw - S(6), gh * k, C.gold, 0.9)
+    CMUI.rborder(self, qx, gy, qw, gh, C.line, 0.6, 6)
+end
+
+-- ===================================================================== dance: arrows in order, then Space in the beat
+local Dance = G:derive("CMGame_Dance")
+CMGame.KINDS.dance = Dance
+
+-- 1 up, 2 down, 3 left, 4 right
+local ARROW_V = { { 0, -1 }, { 0, 1 }, { -1, 0 }, { 1, 0 } }
+local ARROW_OPP = { 2, 1, 4, 3 }
+local BEAT_PERIOD = 1.3
+
+local function arrow(win, cx, cy, size, dir, col, a)
+    local v = ARROW_V[dir]
+    local hx, hy = cx + v[1] * size / 2, cy + v[2] * size / 2
+    local tx, ty = cx - v[1] * size / 2, cy - v[2] * size / 2
+    local th = math.max(3, size * 0.16)
+    CMUI.line(win, tx, ty, hx, hy, th, col, a)
+    local px, py = -v[2], v[1]
+    local bx, by = hx - v[1] * size * 0.38, hy - v[2] * size * 0.38
+    CMUI.line(win, hx, hy, bx + px * size * 0.36, by + py * size * 0.36, th, col, a)
+    CMUI.line(win, hx, hy, bx - px * size * 0.36, by - py * size * 0.36, th, col, a)
+end
+
+-- WASD must not walk the player out of reach while dancing
+local function setFrozen(on)
+    local p = CMC.player()
+    if p then pcall(function() p:setBlockMovement(on) end) end
+end
+
+function Dance:setup()
+    self.rounds = CM.gameVal("dance", "rounds", self.tier)
+    self.lives = CM.gameVal("dance", "lives", self.tier)
+    self.step = CM.gameVal("dance", "step", self.tier)
+    self.red = CM.gameVal("dance", "red", self.tier) == true
+    self.round = 0
+    self:newRound()
+    setFrozen(true)
+end
+
+function Dance:newRound()
+    self.round = self.round + 1
+    local lo, hi = CM.gameVal("dance", "amin", self.tier), CM.gameVal("dance", "amax", self.tier)
+    local n = lo + rnd(hi - lo + 1)
+    self.seq, self.reds = {}, {}
+    for i = 1, n do
+        self.seq[i] = rnd(4) + 1
+        self.reds[i] = self.red and rnd(100) < 25
+    end
+    self.pos = 1
+    self.phase = "arrows"
+    self.roundT = 0
+    self.beatT = 0
+end
+
+-- a lost round costs one life, then the next round (or the end)
+function Dance:miss(text)
+    self.lives = self.lives - 1
+    if self.lives <= 0 then self:finish(false, "lives"); return end
+    self:penalty(0, text)
+    self:newRound()
+end
+
+function Dance:passRound(text, col)
+    self:say(text, col)
+    if self.round >= self.rounds then self:finish(true); return end
+    self:newRound()
+end
+
+function Dance:tick(dt, t)
+    self.roundT = self.roundT + dt
+    if self.phase == "beat" then self.beatT = self.beatT + dt end
+    if self.roundT >= self.step then self:miss(T("IGUI_CM_G_slow", math.max(0, self.lives - 1))) end
+end
+
+function Dance:needle()
+    local f = CM.mod(self.beatT / BEAT_PERIOD, 2)
+    if f <= 1 then return f end
+    return 2 - f
+end
+
+-- a red arrow wants the opposite direction; a wrong key starts the row again
+function Dance:arrowKey(dir)
+    if self.phase ~= "arrows" then return end
+    local want = self.seq[self.pos]
+    if self.reds[self.pos] then want = ARROW_OPP[want] end
+    if dir == want then
+        self.pos = self.pos + 1
+        sfx("UISelectListItem")
+        if self.pos > #self.seq then self.phase = "beat"; self.beatT = 0 end
+    else
+        self.pos = 1
+        self:shake()
+        sfx("UIActivateMainMenuItem")
+    end
+end
+
+function Dance:hitBeat()
+    if self.phase ~= "beat" then return end
+    local d = math.abs(self:needle() - 0.5)
+    if d <= 0.06 then self:passRound(T("IGUI_CM_G_perfect"), C.gold)
+    elseif d <= 0.16 then self:passRound(T("IGUI_CM_G_great"), C.good)
+    else self:miss(T("IGUI_CM_G_miss", math.max(0, self.lives - 1))) end
+end
+
+local DANCE_KEYS = nil
+function Dance:keyDown(key)
+    if not DANCE_KEYS then
+        DANCE_KEYS = {
+            [Keyboard.KEY_UP] = 1, [Keyboard.KEY_DOWN] = 2, [Keyboard.KEY_LEFT] = 3, [Keyboard.KEY_RIGHT] = 4,
+            [Keyboard.KEY_W] = 1, [Keyboard.KEY_S] = 2, [Keyboard.KEY_A] = 3, [Keyboard.KEY_D] = 4,
+        }
+    end
+    if key == Keyboard.KEY_SPACE then self:hitBeat(); return end
+    local dir = DANCE_KEYS[key]
+    if dir then self:arrowKey(dir) end
+end
+
+function Dance:press(mx, my) self:hitBeat() end
+
+function Dance:done()
+    setFrozen(false)
+    G.done(self)
+end
+
+function Dance:status()
+    local ph = self.phase == "beat" and T("IGUI_CM_G_beat") or T("IGUI_CM_G_arrows")
+    return T("IGUI_CM_G_round", self.round, self.rounds) .. "     " .. T("IGUI_CM_G_lives", self.lives) .. "     " .. ph
+end
+
+local RED_ARROW = { 1.00, 0.30, 0.30 }
+local BLUE_ARROW = { 0.40, 0.75, 1.00 }
+
+function Dance:drawGame(x, y, w, h, t)
+    -- time left in this round
+    local k = 1 - math.min(1, self.roundT / math.max(1, self.step))
+    CMUI.rect(self, x + S(10), y + S(10), (w - S(20)) * k, S(5), k < 0.3 and C.bad or C.gold, 0.9)
+    -- the arrow row
+    local n = #self.seq
+    local size = math.min(S(44), (w - S(40)) / math.max(1, n) - S(8))
+    local rowW = n * (size + S(8))
+    local ax = x + (w - rowW) / 2 + (size + S(8)) / 2
+    local ay = y + h * 0.36
+    for i = 1, n do
+        local cx = ax + (i - 1) * (size + S(8))
+        local col = self.reds[i] and RED_ARROW or BLUE_ARROW
+        local a = 1
+        if i < self.pos then col = C.dim; a = 0.5 end
+        if i == self.pos and self.phase == "arrows" then
+            CMUI.glow(self, cx, ay, size * 1.4, size * 1.4, col, 0.5)
+        end
+        CMUI.rbox(self, cx - size / 2 - S(3), ay - size / 2 - S(3), size + S(6), size + S(6), C.panel2, 0.8, 6)
+        arrow(self, cx, ay, size * 0.8, self.seq[i], col, a)
+    end
+    -- the beat bar
+    local bx, bw = x + w * 0.1, w * 0.8
+    local by, bh = y + h - S(64), S(26)
+    CMUI.rbox(self, bx, by, bw, bh, C.panel, 0.9, 6)
+    CMUI.rbox(self, bx + bw * (0.5 - 0.16), by + S(3), bw * 0.32, bh - S(6), C.good, 0.35, 4)
+    CMUI.rbox(self, bx + bw * (0.5 - 0.06), by + S(3), bw * 0.12, bh - S(6), C.gold, 0.85, 3)
+    if self.phase == "beat" then
+        local nx = bx + bw * self:needle()
+        CMUI.rect(self, nx - S(2), by - S(6), S(4), bh + S(12), C.white, 1)
+        CMUI.glow(self, nx, by + bh / 2, S(14), bh, C.white, 0.4)
+    end
+    CMUI.rborder(self, bx, by, bw, bh, C.line, 0.6, 6)
+end
+
+-- keys go to the open game (Space, arrows, WASD); chat typing is left alone
+Events.OnKeyPressed.Add(function(key)
+    local g = CMGame.cur
+    if not g or g.state ~= "play" or not g.keyDown then return end
+    local okC, typing = pcall(chatTyping)
+    if okC and typing then return end
+    local ok, err = pcall(g.keyDown, g, key)
+    if not ok then CM.log("minigame key error: " .. tostring(err)) end
+end)
+
 -- ===================================================================== open
--- cb(won, why, window); why = ok | time | picks | boom | far | cancel
+-- cb(won, why, window); why = ok | time | picks | boom | lives | far | cancel
 function CMGame.open(kind, tier, ctx, cb)
     if CMGame.cur then pcall(function() CMGame.cur:drop() end) end
     local cls = CMGame.KINDS[kind]

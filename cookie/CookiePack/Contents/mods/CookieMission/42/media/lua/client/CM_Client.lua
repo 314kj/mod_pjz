@@ -107,7 +107,14 @@ end
 local TOAST_COLOR = { farwarn = "bad", left = "bad", busy = "bad", vehicle = "bad", full = "bad", almost = "bad",
     nocard = "bad", rejoin = "bad", nobuilding = "bad", noitem = "bad", found = "good", joined = "good",
     pinned = "good", banned = "bad", cool = "dim", tdone = "good", tfail = "bad", tgone = "dim", tfar = "bad",
-    tbusy = "bad", tlost = "bad", tnoreach = "bad", swept = "good", sweepbusy = "bad" }
+    tbusy = "bad", tlost = "bad", tnoreach = "bad", swept = "good", sweepbusy = "bad",
+    mhit = "good", mfake = "bad", mgone = "dim",
+    sqbusy = "bad", sqsize = "bad", sqmade = "good", sqin = "good", sqjoin = "good", sqleft = "bad", sqlead = "good",
+    sqgone = "bad", sqexpire = "bad", sqdisband = "bad", sqkicked = "bad", sqtaken = "bad", sqsent = "good", sqno = "bad",
+    sqcount = "good", sqhold = "bad", sqfix = "bad",
+    off = "bad", nolife = "bad", dead = "bad", dodjoin = "good", dodleft = "bad", doddead = "bad", dodcool = "bad",
+    dodbusy = "bad", dodfew = "bad", dodnopoint = "bad", dodnotready = "bad", dodnowarn = "bad", dodgone = "bad",
+    dodvote = "good", dodexpire = "bad", dodsaved = "good" }
 
 -- ===================================================================== warps
 -- wp = { x, y, z, why, stage = "wait"|"go"|"settle", t0, tries }
@@ -265,7 +272,7 @@ local function warpTick()
             return
         end
         wp.stage = "fade"
-        local text = T(wp.why == "go" and "IGUI_CM_WarpGo" or "IGUI_CM_WarpHome")
+        local text = T((wp.why == "go" or wp.why == "dod") and "IGUI_CM_WarpGo" or "IGUI_CM_WarpHome")
         local function jump()
             local pl = CMC.player()
             if not pl then CMC.warp = nil; return end

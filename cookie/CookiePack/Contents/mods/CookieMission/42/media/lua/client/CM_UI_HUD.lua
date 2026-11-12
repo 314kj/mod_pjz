@@ -196,6 +196,9 @@ local function drawRun(self, x, y, w, run)
         if CM.isTask(run.type) and CMTasks and CMTasks.drawHud then
             y = CMTasks.drawHud(self, x, y, w, run)
         end
+        if run.type == "mole" and CMMole and CMMole.drawHud then
+            y = CMMole.drawHud(self, x, y, w, run)
+        end
         if run.zone and p then
             if (run.out or 0) > 0 then
                 local rest = math.max(0, CM.sv("LeaveSeconds") - run.out - CMC.age(CMC.meAt))

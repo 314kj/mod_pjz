@@ -169,6 +169,7 @@ local function giveTo(p, ft, n)
     end
     return got
 end
+CMS.giveTo = giveTo
 
 -- ===================================================================== reward pools
 local function poolList(name)
@@ -244,6 +245,7 @@ local function pickFrom(list)
     end
     return ok[#ok]
 end
+CMS.pickFrom = pickFrom
 
 -- roll the reward list for one player of a tier: { {t, n} }
 function CMS.rollRewards(tier)
@@ -733,7 +735,7 @@ local function newRun(card)
         id = newId("r"), phase = "live", t0 = now(), members = {},
         kills = 0, gang = 0, held = 0, spawned = 0, gangSpawned = 0,
         found = {}, caches = {}, emptyFor = 0,
-        tasks = {}, tdone = {}, tlock = {},
+        tasks = {}, tdone = {}, tlock = {}, whacked = 0,
     }
     run.endAt = run.t0 + card.limit
     card.run = run
@@ -1336,6 +1338,54 @@ local function taskOf(run, i)
 end
 CMS.taskOf = taskOf
 
+-- ===================================================================== mole: cookie dolls pop up in the building
+-- Dolls are runtime only (RT, never saved, not items): the server picks a free floor square inside a room,
+-- each doll lives a few seconds, the members see them in their tracker and whack one from up to 2 tiles.
+local function moleSquareOk(c, x, y, z, moles)
+    local sq = c:getGridSquare(x, y, z)
+    if not sq or CM.call(sq, "getRoom") == nil then return false end
+    if CM.call(sq, "isFree", false) ~= true then return false end
+    for _, o in pairs(moles) do
+        local dx, dy = o.x - x, o.y - y
+        if o.z == z and dx * dx + dy * dy < 9 then return false end
+    end
+    return true
+end
+
+local function moleTick(card, run)
+    local r = rt(run)
+    r.moles = r.moles or {}
+    r.moleSeq = r.moleSeq or 0
+    local t = nowMs()
+    local n = 0
+    for i, o in pairs(r.moles) do
+        if t >= o.exp then r.moles[i] = nil; markRun(run) else n = n + 1 end
+    end
+    local c = cell()
+    local site = card.site
+    if not c or not site then return end
+    local up = CM.gameVal("mole", "up", card.tier) or 3
+    local life = CM.gameVal("mole", "life", card.tier) or 20
+    local fake = CM.gameVal("mole", "fake", card.tier) or 0
+    local floors = math.min(4, site.floors or 1)
+    local tries = 0
+    while n < up and tries < 40 do
+        tries = tries + 1
+        local x = site.x1 + rand(site.x2 - site.x1 + 1)
+        local y = site.y1 + rand(site.y2 - site.y1 + 1)
+        local z = rand(floors)
+        if moleSquareOk(c, x, y, z, r.moles) then
+            r.moleSeq = r.moleSeq + 1
+            -- spread the end times a little so the dolls do not all vanish together
+            r.moles[r.moleSeq] = { i = r.moleSeq, x = x, y = y, z = z, exp = t + (life * 1000) * (0.8 + rand(40) / 100),
+                red = rand(100) < fake }
+            n = n + 1
+            markRun(run)
+        end
+    end
+end
+CMS.moleTick = moleTick
+
 -- ===================================================================== progress / goals
 local function progress(card, run)
     if not run then return 0, card.goal end
@@ -1344,6 +1394,7 @@ local function progress(card, run)
     if card.type == "find" then return foundCount(run), card.goal end
     if card.type == "survive" then return run.held, card.goal end
     if CM.isTask(card.type) then return CM.count(run.tdone), card.goal end
+    if card.type == "mole" then return run.whacked or 0, card.goal end
     return 0, card.goal
 end
 CMS.progress = progress
@@ -1415,6 +1466,8 @@ local function runTick(card, run, dt)
             r.placeTry = now()
             placeCaches(card, run)
         end
+    elseif card.type == "mole" then
+        if anyIn then moleTick(card, run) end
     elseif CM.isTask(card.type) then
         local r = rt(run)
         if not r.placed and now() - (r.placeTry or 0) >= 3 then
@@ -1475,6 +1528,212 @@ local function cardTick(card, dt)
 end
 
 -- ===================================================================== snapshots
+-- ===================================================================== squads (wait until full, then warp together)
+-- Memory only (never saved): a restart drops every queue. A squad holds `size` seats of one card; the rest of
+-- the card stays open for solo players and other squads. Full -> 10 s countdown -> every member is accepted.
+CM.SQUAD_SIZES = { 2, 3, 4, 6 }
+local SQ = {}              -- sid -> { id, slot, card, size, lead, list = { k... }, names = { k = n }, t0, inv = { k = t }, cdAt, warned }
+local sqOf = {}            -- ukey -> sid
+local sqSeq = 0
+local SQ_LIFE = 20 * 60
+local SQ_COUNT = 10
+local SQ_INVITE = 60
+local SQ_OFFLINE = 120
+
+local function sqToast(sq, kind, a, except)
+    for _, k in ipairs(sq.list) do
+        if k ~= except then toast(k, kind, a) end
+    end
+end
+
+local function sqDirty(sq)
+    for _, k in ipairs(sq.list) do dirty.me[k] = true end
+    dirty.pub = true
+end
+
+-- seats held by squads on a card (minus the asker's own squad when it is the one launching)
+local function sqSeats(slot, exceptSid)
+    local n = 0
+    for sid, sq in pairs(SQ) do
+        if sq.slot == slot and sid ~= exceptSid then n = n + sq.size end
+    end
+    return n
+end
+CMS.sqSeats = sqSeats
+
+local function sqDrop(sid, kind)
+    local sq = SQ[sid]
+    if not sq then return end
+    SQ[sid] = nil
+    for _, k in ipairs(sq.list) do
+        sqOf[k] = nil
+        dirty.me[k] = true
+        if kind then toast(k, kind, {}) end
+    end
+    dirty.pub = true
+end
+CMS.sqDrop = sqDrop
+function CMS.inSquad(k) return sqOf[k] ~= nil end
+
+local function sqRemove(sq, k, kind)
+    for i = #sq.list, 1, -1 do
+        if sq.list[i] == k then table.remove(sq.list, i) end
+    end
+    sqOf[k] = nil
+    dirty.me[k] = true
+    local n = sq.names[k] or k
+    sq.names[k] = nil
+    sq.cdAt = nil
+    if #sq.list == 0 then sqDrop(sq.id); return end
+    if sq.lead == k then
+        sq.lead = sq.list[1]
+        toast(sq.lead, "sqlead", {})
+    end
+    sqToast(sq, kind or "sqleft", { n, sq.size - #sq.list })
+    sqDirty(sq)
+end
+
+-- free seats on the card for one more squad of this size
+local function cardRoom(card, size)
+    if not card or (card.status ~= "open" and card.status ~= "live") then return false end
+    local used = sqSeats(card.slot)
+    if card.status == "live" and card.run then used = used + memberCount(card.run, false) end
+    return used + size <= card.cap
+end
+
+local function sqAdd(sq, k, p)
+    sq.list[#sq.list + 1] = k
+    sq.names[k] = nameOf(p)
+    sq.inv[k] = nil
+    sqOf[k] = sq.id
+    sqToast(sq, "sqjoin", { nameOf(p), sq.size - #sq.list }, k)
+    toastPlayer(p, "sqin", { sq.names[sq.lead] or "?", sq.size - #sq.list })
+    sqDirty(sq)
+end
+
+-- why this player can not be in a squad right now (nil = fine)
+local function sqBlock(k, p)
+    if not alive(p) then return "dead" end
+    if runOf(k) then return "busy" end
+    if CMS.inDod and CMS.inDod(k) then return "dodbusy" end
+    if sqOf[k] then return "sqbusy" end
+    return nil
+end
+
+-- the countdown: everyone online, alive, on foot; any problem stops it until it is fixed
+local function sqReady(sq)
+    local bad = nil
+    for _, k in ipairs(sq.list) do
+        local p = online[k]
+        if not p or not alive(p) or inVehicle(p) or runOf(k) then bad = k; break end
+    end
+    return bad
+end
+
+local function sqLaunch(sq)
+    local card = S.cards[sq.slot]
+    local list = CM.copy(sq.list)
+    sqDrop(sq.id)
+    for _, k in ipairs(list) do
+        local p = online[k]
+        if p then
+            local ok, err = pcall(CMS.H.accept, p, { slot = sq.slot })
+            if not ok then CM.log("squad accept failed: " .. tostring(err)) end
+        end
+    end
+    logLine("squad of " .. #list .. " launched on slot " .. sq.slot .. (card and card.run and (" run " .. card.run.id) or ""))
+    stat("squads")
+end
+
+local function squadTick()
+    local t = now()
+    for sid, sq in pairs(SQ) do
+        local card = S.cards[sq.slot]
+        if not card or card.id ~= sq.card or (card.status ~= "open" and card.status ~= "live")
+            or (card.run and card.run.phase ~= "live" and card.status == "live") then
+            sqDrop(sid, "sqgone")
+        elseif t - sq.t0 >= SQ_LIFE then
+            sqDrop(sid, "sqexpire")
+        else
+            for _, k in ipairs(CM.copy(sq.list)) do
+                if online[k] then sq.off = sq.off or {}; sq.off[k] = nil
+                else
+                    sq.off = sq.off or {}
+                    sq.off[k] = sq.off[k] or t
+                    if t - sq.off[k] >= SQ_OFFLINE then sqRemove(sq, k) end
+                end
+            end
+            for k, at in pairs(sq.inv) do
+                if t - at > SQ_INVITE then sq.inv[k] = nil end
+            end
+            if SQ[sid] and #sq.list >= sq.size then
+                local bad = sqReady(sq)
+                if bad then
+                    if sq.cdAt then sqToast(sq, "sqhold", { sq.names[bad] or bad }) end
+                    sq.cdAt = nil
+                    if not sq.warned or t - sq.warned >= 10 then
+                        sq.warned = t
+                        toast(bad, "sqfix", {})
+                    end
+                elseif not sq.cdAt then
+                    sq.cdAt = t + SQ_COUNT
+                    sqToast(sq, "sqcount", { SQ_COUNT })
+                elseif t >= sq.cdAt then
+                    sqLaunch(sq)
+                end
+            end
+            if SQ[sid] then
+                for _, k in ipairs(sq.list) do dirty.me[k] = true end
+            end
+        end
+    end
+end
+CMS.squadTick = squadTick
+
+-- what one player sees: the squad they are in (+ who can be invited when they lead it) and open invites
+local function sqMine(k)
+    local out = nil
+    local sid = sqOf[k]
+    local sq = sid and SQ[sid]
+    if sq then
+        local mem = {}
+        for _, mk in ipairs(sq.list) do
+            mem[#mem + 1] = { k = mk, n = sq.names[mk] or mk, lead = mk == sq.lead, off = online[mk] == nil }
+        end
+        out = { id = sq.id, slot = sq.slot, size = sq.size, lead = sq.lead == k, members = mem,
+            left = math.max(0, SQ_LIFE - (now() - sq.t0)), cd = sq.cdAt and math.max(0, sq.cdAt - now()) or nil }
+        if sq.lead == k and #sq.list < sq.size then
+            local free = {}
+            for ok, p in pairs(online) do
+                if ok ~= k and not sqOf[ok] and not runOf(ok) and #free < 40 then
+                    free[#free + 1] = { k = ok, n = nameOf(p), inv = sq.inv[ok] ~= nil }
+                end
+            end
+            table.sort(free, function(a, b) return a.n < b.n end)
+            out.free = free
+        end
+    end
+    local inv = {}
+    for isid, isq in pairs(SQ) do
+        if isq.inv[k] then
+            inv[#inv + 1] = { id = isid, slot = isq.slot, size = isq.size, n = #isq.list, by = isq.names[isq.lead] or "?" }
+        end
+    end
+    return out, inv
+end
+
+-- squads shown on a card
+local function sqPub(slot)
+    local out = {}
+    for sid, sq in pairs(SQ) do
+        if sq.slot == slot then
+            out[#out + 1] = { id = sid, by = sq.names[sq.lead] or "?", n = #sq.list, size = sq.size }
+        end
+    end
+    table.sort(out, function(a, b) return a.id < b.id end)
+    return out
+end
+
 local function cardPub(c)
     if not c then return nil end
     local o = {
@@ -1494,6 +1753,8 @@ local function cardPub(c)
         o.left = math.max(0, run.endAt - now())
     end
     if c.last then o.last = { res = c.last.res, t = c.last.t } end
+    o.squads = sqPub(c.slot)
+    o.seats = sqSeats(c.slot)
     return o
 end
 
@@ -1506,6 +1767,7 @@ end
 function CMS.meSnapshot(k)
     local me = { claims = {}, pending = S.returns[k] ~= nil }
     for id in pairs(S.claims[k] or {}) do me.claims[#me.claims + 1] = id end
+    me.sq, me.inv = sqMine(k)
     local card, run, m = runOf(k)
     if card and run then
         local cur, goal = progress(card, run)
@@ -1545,6 +1807,15 @@ function CMS.meSnapshot(k)
             end
             me.run.tasks = ts
             me.run.myTasks = m.tasks or 0
+        elseif card.type == "mole" then
+            local ms = {}
+            local r = RT[run.id]
+            local t = nowMs()
+            for _, o in pairs((r and r.moles) or {}) do
+                ms[#ms + 1] = { i = o.i, x = o.x, y = o.y, z = o.z, red = o.red, left = math.max(0, math.floor((o.exp - t) / 1000)) }
+            end
+            me.run.moles = ms
+            me.run.myTasks = m.tasks or 0
         end
     end
     return me
@@ -1564,7 +1835,7 @@ local function admSnapshot()
             o.run = {
                 id = run.id, phase = run.phase, kills = run.kills, gang = run.gang, held = run.held,
                 spawned = run.spawned, alive = r and r.alive or 0, found = foundCount(run), caches = #run.caches,
-                tdone = CM.count(run.tdone or {}), tasks = #(run.tasks or {}),
+                tdone = CM.count(run.tdone or {}), tasks = #(run.tasks or {}), whacked = run.whacked or 0,
                 members = {},
             }
             for _, k in ipairs(CM.sortedKeys(run.members)) do
@@ -1683,6 +1954,8 @@ function H.accept(p, args)
     if not card or not card.site then toastPlayer(p, "nocard"); return end
     if not alive(p) then return end
     if runOf(k) then toastPlayer(p, "busy"); return end
+    if sqOf[k] then toastPlayer(p, "sqbusy"); return end
+    if CMS.inDod and CMS.inDod(k) then toastPlayer(p, "dodbusy"); return end
     local okV, veh = pcall(function() return p:getVehicle() end)
     if okV and veh then toastPlayer(p, "vehicle"); return end
     if card.status == "cool" then toastPlayer(p, "cool", { CM.clock((card.coolUntil or 0) - now()) }); return end
@@ -1690,13 +1963,14 @@ function H.accept(p, args)
     local run = card.run
     if card.status == "live" and run then
         if run.phase ~= "live" then toastPlayer(p, "cool", { "0:00" }); return end
-        if memberCount(run, false) >= card.cap then toastPlayer(p, "full"); return end
+        if memberCount(run, false) + sqSeats(slot) >= card.cap then toastPlayer(p, "full"); return end
         local cur, goal = progress(card, run)
         if goal > 0 and cur * 100 >= goal * CM.sv("LateJoinMax") then toastPlayer(p, "almost"); return end
         if run.endAt - now() < 60 then toastPlayer(p, "almost"); return end
         local old = run.members[k]
         if old and (old.st == "left" or old.st == "dead") then toastPlayer(p, "rejoin"); return end
     else
+        if sqSeats(slot) >= card.cap then toastPlayer(p, "full"); return end
         run = newRun(card)
     end
     local x, y, z = pos(p)
@@ -1926,6 +2200,135 @@ function H.tfail(p, args)
         logLine(m.n .. " failed a " .. card.type .. " minigame (" .. why .. "), +" .. got .. " zombies")
     end
     markRun(run)
+end
+
+-- whack a cookie doll; a red one is a decoy: noise and zombies
+function H.whack(p, args)
+    local k = keyOf(p)
+    local card, run, m = runOf(k)
+    if not card or card.type ~= "mole" or run.phase ~= "live" or m.st ~= "in" then return end
+    local r = rt(run)
+    local i = CM.int(args.i, 0)
+    local o = r.moles and r.moles[i]
+    if not o or nowMs() >= o.exp then toastPlayer(p, "mgone"); return end
+    local x, y, z = pos(p)
+    local dx, dy = x - o.x, y - o.y
+    local reach = (CM.gameVal("mole", "reach") or 2) + 1
+    if z ~= o.z or dx * dx + dy * dy > reach * reach then toastPlayer(p, "tfar"); return end
+    r.moles[i] = nil
+    if o.red then
+        stat("molesFake")
+        local rad = CM.gameVal("mole", "failNoise") or 30
+        pcall(function() getWorldSoundManager():addSound(nil, o.x, o.y, o.z, rad, rad) end)
+        local n = math.floor(CM.int(CM.sv("FailZombies"), 4, 0, 30) * (CM.gameVal("mole", "spawn") or 1) * (0.75 + 0.25 * card.tier) + 0.5)
+        local got = spawnNear(card, run, o.x, o.y, o.z, n)
+        for mk, mm in pairs(run.members) do
+            if mm.st == "in" then toast(mk, "mfake", { m.n }) end
+        end
+        logLine(m.n .. " hit a decoy doll, +" .. got .. " zombies")
+    else
+        run.whacked = (run.whacked or 0) + 1
+        m.tasks = (m.tasks or 0) + 1
+        stat("molesHit")
+        local rad = CM.gameVal("mole", "noise") or 6
+        pcall(function() getWorldSoundManager():addSound(nil, o.x, o.y, o.z, rad, rad) end)
+        toastPlayer(p, "mhit", { run.whacked, card.goal })
+    end
+    deliver(p, "mpop", { i = i, red = o.red == true })
+    markRun(run)
+end
+
+-- ===================================================================== squad commands
+local function sizeOk(n)
+    for _, s in ipairs(CM.SQUAD_SIZES) do if s == n then return true end end
+    return false
+end
+
+function H.sqNew(p, args)
+    local k = keyOf(p)
+    local slot = CM.int(args.slot, 0, 0, 3)
+    local card = S.cards[slot]
+    local size = CM.int(args.size, 0)
+    if not card or not card.site then toastPlayer(p, "nocard"); return end
+    local why = sqBlock(k, p)
+    if why then toastPlayer(p, why == "dead" and "nocard" or why); return end
+    if not sizeOk(size) or size > card.cap then toastPlayer(p, "sqsize", { card.cap }); return end
+    if not cardRoom(card, size) then toastPlayer(p, "full"); return end
+    sqSeq = sqSeq + 1
+    local sid = "q" .. tostring(sqSeq)
+    local sq = { id = sid, slot = slot, card = card.id, size = size, lead = k, list = { k }, names = { [k] = nameOf(p) },
+        t0 = now(), inv = {} }
+    SQ[sid] = sq
+    sqOf[k] = sid
+    toastPlayer(p, "sqmade", { size - 1 })
+    sqDirty(sq)
+end
+
+function H.sqJoin(p, args)
+    local k = keyOf(p)
+    local sq = SQ[tostring(args.id or "")]
+    if not sq then toastPlayer(p, "sqgone"); return end
+    local why = sqBlock(k, p)
+    if why then toastPlayer(p, why == "dead" and "nocard" or why); return end
+    if #sq.list >= sq.size then toastPlayer(p, "full"); return end
+    sqAdd(sq, k, p)
+end
+
+function H.sqInvite(p, args)
+    local k = keyOf(p)
+    local sq = SQ[sqOf[k] or ""]
+    if not sq or sq.lead ~= k then return end
+    local who = CM.ukey(args.who)
+    local q = online[who]
+    if not q or who == k then return end
+    if sqOf[who] or runOf(who) then toastPlayer(p, "sqtaken", { nameOf(q) }); return end
+    if sq.inv[who] then return end
+    if #sq.list >= sq.size then toastPlayer(p, "full"); return end
+    sq.inv[who] = now()
+    local card = S.cards[sq.slot]
+    deliver(q, "sqinv", { id = sq.id, by = nameOf(p), slot = sq.slot, size = sq.size, n = #sq.list,
+        type = card and card.type, tier = card and card.tier })
+    toastPlayer(p, "sqsent", { nameOf(q) })
+    sqDirty(sq)
+end
+
+function H.sqAnswer(p, args)
+    local k = keyOf(p)
+    local sq = SQ[tostring(args.id or "")]
+    if not sq or not sq.inv[k] then toastPlayer(p, "sqgone"); return end
+    if args.yes ~= true then
+        sq.inv[k] = nil
+        toast(sq.lead, "sqno", { nameOf(p) })
+        sqDirty(sq)
+        return
+    end
+    local why = sqBlock(k, p)
+    if why then toastPlayer(p, why == "dead" and "nocard" or why); return end
+    if #sq.list >= sq.size then toastPlayer(p, "full"); return end
+    sqAdd(sq, k, p)
+end
+
+function H.sqKick(p, args)
+    local k = keyOf(p)
+    local sq = SQ[sqOf[k] or ""]
+    local who = CM.ukey(args.who)
+    if not sq or sq.lead ~= k or who == k or sqOf[who] ~= sq.id then return end
+    toast(who, "sqkicked", {})
+    sqRemove(sq, who)
+end
+
+function H.sqLeave(p, args)
+    local k = keyOf(p)
+    local sq = SQ[sqOf[k] or ""]
+    if not sq then return end
+    sqRemove(sq, k)
+end
+
+function H.sqDisband(p, args)
+    local k = keyOf(p)
+    local sq = SQ[sqOf[k] or ""]
+    if not sq or sq.lead ~= k then return end
+    sqDrop(sq.id, "sqdisband")
 end
 
 function H.dead(p, args)
@@ -2180,6 +2583,8 @@ local function onTick()
     if not okH then CM.log("shield error: " .. tostring(errH)) end
     local okR, errR = pcall(returnTick)
     if not okR then CM.log("return error: " .. tostring(errR)) end
+    local okQ, errQ = pcall(squadTick)
+    if not okQ then CM.log("squad error: " .. tostring(errQ)) end
     flush(false)
 end
 CMS.onTick = onTick
@@ -2267,8 +2672,12 @@ local function onZombieDead(zombie)
         return md.cmRun, md.ProjectALifeOwned
     end)
     if not okM then tag = nil end
-    -- Project A-Life NPC bodies are zombies underneath: never count them (their own docs ask for this)
-    if npc == true then return end
+    -- Project A-Life NPC bodies are zombies underneath: never count them (their own docs ask for this);
+    -- Die or Die counts its own soldiers
+    if npc == true then
+        if CMS.dodNpcDead then pcall(CMS.dodNpcDead, zombie, c0 and c0.p or nil) end
+        return
+    end
     for s = 1, 3 do
         local card = S.cards[s]
         local run = card and card.run

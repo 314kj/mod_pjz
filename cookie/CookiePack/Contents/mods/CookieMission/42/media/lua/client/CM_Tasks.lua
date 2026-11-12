@@ -11,6 +11,7 @@ local T = CMC.txt
 CMTasks.COL = {
     wire = { 1.00, 0.82, 0.20 }, safe = { 0.78, 0.55, 1.00 }, pipe = { 0.30, 0.80, 1.00 },
     board = { 1.00, 0.60, 0.25 }, trap = { 1.00, 0.30, 0.35 },
+    rush = { 0.45, 1.00, 0.45 }, dance = { 1.00, 0.45, 0.85 },
 }
 local BUSY_COL = { 0.55, 0.55, 0.60 }
 
@@ -21,6 +22,8 @@ CMTasks.WORK = {
     pipe  = { anim = "Loot", pos = "Low", tool = "Base.PipeWrench", sound = "RepairWithWrench" },
     board = { anim = "Build", tool = "Base.Hammer", tool2 = "Base.Plank" },
     trap  = { anim = "Loot", pos = "Mid", tool = "Base.Screwdriver" },
+    rush  = { anim = "Loot", pos = "Mid", tool = "Base.Wrench", sound = "GeneratorRepair" },
+    dance = { anim = "Loot", pos = "Mid" },
 }
 
 CMTasks.pend = nil      -- { i, tok, kind, tier, run, won }

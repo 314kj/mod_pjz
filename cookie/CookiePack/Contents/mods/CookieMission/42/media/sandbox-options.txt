@@ -138,6 +138,24 @@ option CookieMission.TypeTrap
     page = CookieMission, translation = CookieMission_TypeTrap,
 }
 
+option CookieMission.TypeMole
+{
+    type = boolean, default = true,
+    page = CookieMission, translation = CookieMission_TypeMole,
+}
+
+option CookieMission.TypeRush
+{
+    type = boolean, default = true,
+    page = CookieMission, translation = CookieMission_TypeRush,
+}
+
+option CookieMission.TypeDance
+{
+    type = boolean, default = true,
+    page = CookieMission, translation = CookieMission_TypeDance,
+}
+
 option CookieMission.GameTime
 {
     type = integer, min = 25, max = 400, default = 100,
@@ -340,4 +358,40 @@ option CookieMission.HardCure
 {
     type = integer, min = 0, max = 100, default = 100,
     page = CookieMission, translation = CookieMission_HardCure,
+}
+
+option CookieMission.DieOrDie
+{
+    type = boolean, default = false,
+    page = CookieMission, translation = CookieMission_DieOrDie,
+}
+
+option CookieMission.DodCooldown
+{
+    type = integer, min = 0, max = 48, default = 3,
+    page = CookieMission, translation = CookieMission_DodCooldown,
+}
+
+option CookieMission.DodMinutes
+{
+    type = integer, min = 5, max = 120, default = 30,
+    page = CookieMission, translation = CookieMission_DodMinutes,
+}
+
+option CookieMission.DodEasy
+{
+    type = integer, min = 1, max = 80, default = 20,
+    page = CookieMission, translation = CookieMission_DodEasy,
+}
+
+option CookieMission.DodMedium
+{
+    type = integer, min = 1, max = 80, default = 30,
+    page = CookieMission, translation = CookieMission_DodMedium,
+}
+
+option CookieMission.DodHard
+{
+    type = integer, min = 1, max = 80, default = 40,
+    page = CookieMission, translation = CookieMission_DodHard,
 }

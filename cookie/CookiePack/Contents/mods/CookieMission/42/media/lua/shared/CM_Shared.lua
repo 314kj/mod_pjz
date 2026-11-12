@@ -7,8 +7,8 @@
 
 CM = CM or {}
 CM.MOD = "CookieMission"
-CM.VERSION = "1.1.5"
-CM.BUILD = "cm-261111-maps1"
+CM.VERSION = "1.2.0"
+CM.BUILD = "cm-261112-squad-dod"
 CM.CACHE_TYPE = "CookieMission.SupplyCache"
 
 -- ===================================================================== env
@@ -202,6 +202,7 @@ CM.DEFAULTS = {
     LateJoinMax = 85, LeaveDistance = 60, LeaveSeconds = 20, Grace = 20, CleanupZombies = true, CleanupMinutes = 20, WarpShield = 10,
     EmptyAbort = 90, PinChance = 40, TypeKill = true, TypeGang = true, TypeFind = true, TypeSurvive = true,
     TypeWire = true, TypeSafe = true, TypePipe = true, TypeBoard = true, TypeTrap = true,
+    TypeMole = true, TypeRush = true, TypeDance = true,
     EasyTasks = 3, MediumTasks = 5, HardTasks = 7, GameTime = 100, FailZombies = 4,
     GangOutfits = "PrivateMilitia;Biker;Punk;Survivalist;ArmyCamoGreen",
     ExcludeTowns = "",
@@ -214,6 +215,7 @@ CM.DEFAULTS = {
     EasyAlive = 35, MediumAlive = 70, HardAlive = 120,
     EasyRate = 40, MediumRate = 80, HardRate = 150,
     EasyCure = 0, MediumCure = 0, HardCure = 100,
+    DieOrDie = false, DodCooldown = 3, DodMinutes = 30, DodEasy = 20, DodMedium = 30, DodHard = 40,
 }
 
 function CM.sv(name, def)
@@ -228,12 +230,13 @@ end
 
 -- ===================================================================== tiers / types
 CM.TIER_NAME = { "Easy", "Medium", "Hard" }
-CM.TYPES = { "kill", "gang", "find", "survive", "wire", "safe", "pipe", "board", "trap" }
+CM.TYPES = { "kill", "gang", "find", "survive", "wire", "safe", "pipe", "board", "trap", "mole", "rush", "dance" }
 CM.TYPE_OPT = { kill = "TypeKill", gang = "TypeGang", find = "TypeFind", survive = "TypeSurvive",
-    wire = "TypeWire", safe = "TypeSafe", pipe = "TypePipe", board = "TypeBoard", trap = "TypeTrap" }
+    wire = "TypeWire", safe = "TypeSafe", pipe = "TypePipe", board = "TypeBoard", trap = "TypeTrap",
+    mole = "TypeMole", rush = "TypeRush", dance = "TypeDance" }
 
 -- task missions: walk to highlighted furniture, win a minigame, then a short work action
-CM.TASK_TYPES = { wire = true, safe = true, pipe = true, board = true, trap = true }
+CM.TASK_TYPES = { wire = true, safe = true, pipe = true, board = true, trap = true, rush = true, dance = true }
 function CM.isTask(typ) return CM.TASK_TYPES[typ] == true end
 
 -- bounding-box area (tiles) and ground-floor room count a building needs for each tier
@@ -254,6 +257,7 @@ function CM.goalFor(tier, typ)
     if typ == "gang" then return CM.int(CM.tierVal(tier, "Gang"), 25, 1, 2000) end
     if typ == "find" then return CM.int(CM.tierVal(tier, "Caches"), 3, 1, 20) end
     if typ == "survive" then return CM.int(CM.tierVal(tier, "Survive"), 5, 1, 120) * 60 end
+    if typ == "mole" then return CM.gameVal("mole", "goal", tier) or 12 end
     if CM.isTask(typ) then return CM.int(CM.tierVal(tier, "Tasks"), 3, 1, 12) end
     return 1
 end
@@ -441,6 +445,17 @@ CM.GAME = {
     pipe  = { time = { 45, 55, 70 }, n = { 4, 5, 6 }, work = 4, noise = 12, failNoise = 30, spawn = 1 },
     board = { time = { 28, 32, 36 }, nails = { 3, 4, 5 }, period = { 1.5, 1.2, 0.95 }, zone = { 0.22, 0.17, 0.13 }, work = 5, noise = 25, failNoise = 30, spawn = 1 },
     trap  = { time = { 45, 55, 65 }, len = { 4, 5, 6 }, lives = { 2, 2, 1 }, show = { 0.6, 0.5, 0.42 }, work = 3, noise = 8, failNoise = 70, spawn = 2 },
+    -- rush: hold the gauge in the green until the charge is full; drain = %/s, band = width of the green (0..1),
+    -- need = seconds in the green, moving = the green drifts, cps = clicks per second counted at most
+    rush  = { time = { 30, 30, 35 }, drain = { 18, 26, 34 }, band = { 0.40, 0.30, 0.22 }, need = { 8, 10, 12 },
+              moving = { false, false, true }, cps = 14, work = 4, noise = 12, failNoise = 30, spawn = 1 },
+    -- dance: rounds of arrows, then hit Space in the beat; time = whole game, step = seconds per round
+    dance = { time = { 40, 42, 44 }, rounds = { 4, 5, 6 }, amin = { 4, 6, 8 }, amax = { 5, 7, 9 }, step = { 8, 7, 6 },
+              lives = { 3, 2, 1 }, red = { false, false, true }, work = 3, noise = 14, failNoise = 30, spawn = 1 },
+    -- mole: no window, cookie dolls pop up on floor squares of the building and the team whacks them
+    -- goal = whacks needed, up = dolls up at once, life = seconds a doll stays, fake = % red decoys
+    mole  = { goal = { 12, 20, 30 }, up = { 3, 4, 5 }, life = { 25, 15, 9 }, fake = { 0, 15, 25 }, reach = 2,
+              noise = 6, failNoise = 30, spawn = 1 },
 }
 CM.TASK_MIN = 3        -- seconds the server wants between "start" and "done" of one target
 CM.TASK_LOCK = 120     -- seconds one player keeps a target before another may take it
@@ -448,8 +463,9 @@ CM.TASK_REACH = 4      -- tiles from the target the server accepts
 
 function CM.gameTime(typ, tier)
     local g = CM.GAME[typ]
-    if not g then return 30 end
+    if not g or not g.time then return 30 end
     local base = g.time[tier] or g.time[1]
+    if typ == "dance" then base = math.max(base, CM.gameVal("dance", "rounds", tier) * (CM.gameVal("dance", "step", tier) + 1.5)) end
     return math.max(8, math.floor(base * CM.clamp(CM.num(CM.sv("GameTime"), 100), 25, 400) / 100 + 0.5))
 end
 
@@ -541,6 +557,7 @@ local ELEC_WORDS = { "fridge", "freezer", "oven", "stove", "microwave", "televis
     "coffeemaker", "cash register" }
 local WATER_WORDS = { "sink", "toilet", "bath", "tub", "shower", "urinal", "fountain", "water" }
 local WATER_SPRITES = { "fixtures_bathroom", "fixtures_sinks", "fixtures_kitchen" }
+local DANCE_WORDS = { "radio", "television", "stereo", "speaker", "jukebox", "record player", "turntable", "piano" }
 local SAFE_BEST = { "safe", "vault" }
 local SAFE_GOOD = { "locker", "filing", "file cabinet" }
 local SAFE_OK = { "desk", "dresser", "wardrobe", "cabinet", "drawer", "nightstand", "chest" }
@@ -557,9 +574,14 @@ function CM.taskScore(typ, o)
     elseif typ == "trap" then
         if kind == "door" then return 3 end
         return 0
+    elseif typ == "dance" then
+        if kind == "radio" or kind == "tv" then return 3 end
+        local nm = CM.objName(o)
+        if nm ~= "" and has(nm, DANCE_WORDS) then return 2 end
+        return 0
     end
     local name = CM.objName(o)
-    if typ == "wire" then
+    if typ == "wire" or typ == "rush" then
         local k = ELEC_KIND[kind]
         if k then return k end
         if name ~= "" and has(name, ELEC_WORDS) then return 2 end
@@ -591,7 +613,9 @@ function CM.taskFallback(typ, o)
         if ct == "counter" or (ct and string.find(ct, "counter", 1, true)) then return 1 end
         return 0
     end
-    if typ == "wire" then return kind == "cont" and 1 or 0 end
+    if typ == "wire" or typ == "rush" then return kind == "cont" and 1 or 0 end
+    -- no radio / tv: any furniture in the room is the dance floor
+    if typ == "dance" then return (kind == "cont" or kind == "fridge") and 1 or 0 end
     return 0
 end
 

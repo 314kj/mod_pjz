@@ -1,6 +1,8 @@
 -- Cookie Mission - player board (3 daily cards) + sidebar icon
 require "CM_UI_Kit"
 require "CM_UI_HUD"
+require "CM_UI_Squad"
+require "CM_DoD_Client"
 
 local C = CMUI.C
 local T = CMC.txt
@@ -160,19 +162,37 @@ local function drawCard(win, x, y, w, h, c)
         tx = tx + tws[i] + S(6)
     end
     -- action
+    local noteY = by - CMUI.fh(fs) - S(6)
     if CMC.claimed(c.id) then
-        CMUI.textC(win, T("IGUI_CM_ClaimedShort"), cx, by - CMUI.fh(fs) - S(6), C.purple, 1, fs)
+        CMUI.textC(win, T("IGUI_CM_ClaimedShort"), cx, noteY, C.purple, 1, fs)
+        noteY = noteY - CMUI.fh(fs) - S(4)
     end
+    -- squads waiting on this card
+    local sqs = c.squads or {}
+    if #sqs > 0 then
+        local q = sqs[1]
+        local s1 = T("IGUI_CM_Sq_of", q.by, q.n, q.size)
+        if #sqs > 1 then s1 = s1 .. "  +" .. tostring(#sqs - 1) end
+        CMUI.textC(win, CMUI.fit(s1, fs, iw), cx, noteY, C.gold, 1, fs)
+    end
+    local mySq = CMC.me and CMC.me.sq
+    local sqW = S(96)
     local label, style, dis = T("IGUI_CM_Go"), "primary", false
     if mine then label, style, dis = T("IGUI_CM_InThis"), "sel", true
     elseif myRun then label, dis = T("IGUI_CM_InOther"), true
+    elseif mySq then label, dis = T("IGUI_CM_Sq_inSquad"), true
     elseif c.status == "live" then label = T("IGUI_CM_JoinShort")
-        if (c.n or 0) >= (c.cap or 0) then label, dis = T("IGUI_CM_Full"), true end
-    elseif c.status ~= "open" then label, dis = T("IGUI_CM_NotNow"), true end
+        if (c.n or 0) + (c.seats or 0) >= (c.cap or 0) then label, dis = T("IGUI_CM_Full"), true end
+    elseif c.status ~= "open" then label, dis = T("IGUI_CM_NotNow"), true
+    elseif (c.seats or 0) >= (c.cap or 0) then label, dis = T("IGUI_CM_Full"), true end
     if not dis and confirm.slot == c.slot and CMC.ms() - confirm.at < 4000 then
         label, style = T("IGUI_CM_ConfirmShort"), "good"
     end
-    CMUI.btn(win, ix, by, iw, btnH, label, function()
+    local sqOn = mySq and mySq.slot == c.slot
+    local sqDis = (myRun ~= nil) or (c.status ~= "open" and c.status ~= "live") or (mySq ~= nil and not sqOn)
+    CMUI.btn(win, ix + iw - sqW, by, sqW, btnH, T("IGUI_CM_Sq_btn"), function() CMSquad.open(c.slot) end,
+        sqOn and "sel" or "ghost", { disabled = sqDis, tip = T("IGUI_CM_Sq_btnTip"), font = UIFont.Medium, rad = 10 })
+    CMUI.btn(win, ix, by, iw - sqW - S(8), btnH, label, function()
         if confirm.slot == c.slot and CMC.ms() - confirm.at < 4000 then
             confirm.slot = 0
             CMC.send("accept", { slot = c.slot })
@@ -202,7 +222,14 @@ function BW:drawBody()
     CMUI.rbox(self, qx, 8, cs, cs, over and C.panel3 or C.panel2, 0.45, 6)
     CMUI.rborder(self, qx, 8, cs, cs, C.line, 0.6, 6)
     CMUI.textC(self, "?", qx + cs / 2, 8 + (cs - CMUI.fh(UIFont.Small)) / 2 - 1, C.gold, 1, UIFont.Small)
-    CMUI.textR(self, T("IGUI_CM_ResetShort", CM.clock(reset)), qx - S(10), (self.headerH - CMUI.fh(UIFont.Small)) / 2, C.dim)
+    local resetS = T("IGUI_CM_ResetShort", CM.clock(reset))
+    CMUI.textR(self, resetS, qx - S(10), (self.headerH - CMUI.fh(UIFont.Small)) / 2, C.dim)
+    -- Die or Die (only when the sandbox switch is on)
+    if CM.dodOn() and CMDoDc then
+        local dw = S(130)
+        local dx = qx - S(10) - CMUI.tw(UIFont.Small, resetS) - S(16) - dw
+        CMUI.btn(self, dx, 8, dw, cs, T("IGUI_CM_Dod_title"), function() CMDoDc.open() end, "danger", { tip = T("IGUI_CM_Dod_btnTip") })
+    end
     local gap = S(18)
     local cw = math.floor((w - pad * 2 - gap * 2) / 3)
     local ch = self.height - top - S(18)
