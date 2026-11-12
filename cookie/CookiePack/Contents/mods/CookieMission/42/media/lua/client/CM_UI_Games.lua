@@ -1,6 +1,6 @@
 -- Cookie Mission - task minigames: one window each, the world (and the horde) keeps running behind it
 -- wire = match the wires, safe = pick the lock, pipe = turn the pipes, board = nail the plank, trap = repeat the code,
--- rush = crank the generator, dance = arrows + beat (mole has no window: see CM_Mole)
+-- mole = whack the cookies (no time), rush = crank the generator, dance = arrows + beat
 require "CM_UI_Kit"
 
 CMGame = CMGame or {}
@@ -77,6 +77,8 @@ function G:new(kind, tier, ctx)
     o.subtitle = CMC.tierName(o.tier)
     o.titleIcon = "cm_t_" .. tostring(kind)
     o.limit = CM.gameTime(kind, o.tier)
+    -- a game without a time key in CM.GAME has no clock (mole)
+    o.noTime = CM.GAME[kind] ~= nil and CM.GAME[kind].time == nil
     o.t0 = CMC.ms()
     o.last = o.t0
     o.pen = 0
@@ -202,7 +204,7 @@ function G:drawBody()
     local dt = math.min(0.1, math.max(0, (t - self.last) / 1000))
     self.last = t
     if self.state == "play" then
-        if self:left(t) <= 0 then self:finish(false, "time")
+        if not self.noTime and self:left(t) <= 0 then self:finish(false, "time")
         elseif not CMGame.stillHere(self.ctx) then self:finish(false, "far") end
     end
     if self.state == "play" and self.tick then self:tick(dt, t) end
@@ -212,11 +214,13 @@ function G:drawBody()
     local y = self.headerH + S(12)
     local tc = CMUI.tierColor(self.tier)
     -- time left
-    local left = math.max(0, self:left(t))
-    local lc = left <= 6 and C.bad or tc
-    CMUI.segbar(self, x, y + S(6), w - S(70), S(8), left / math.max(1, self.limit), lc, 30)
-    CMUI.textR(self, tostring(math.ceil(left)) .. "s", x + w, y, lc, 1, UIFont.Medium)
-    y = y + S(28)
+    if not self.noTime then
+        local left = math.max(0, self:left(t))
+        local lc = left <= 6 and C.bad or tc
+        CMUI.segbar(self, x, y + S(6), w - S(70), S(8), left / math.max(1, self.limit), lc, 30)
+        CMUI.textR(self, tostring(math.ceil(left)) .. "s", x + w, y, lc, 1, UIFont.Medium)
+        y = y + S(28)
+    end
     if self.status then CMUI.text(self, CMUI.fit(self:status(), UIFont.Small, w), x, y, C.text) end
     y = y + CMUI.fh(UIFont.Small) + S(8)
     local footH = S(66)
@@ -884,6 +888,140 @@ function Trap:drawGame(x, y, w, h, t)
         CMUI.rbox(self, bx, by, b, b, col, lit and 1 or 0.85, 8)
         CMUI.rborder(self, bx, by, b, b, lit and C.white or C.line, lit and 0.9 or 0.45, 8)
         CMUI.textC(self, tostring(k), bx + b / 2, by + (b - CMUI.fh(UIFont.Large)) / 2, lit and C.white or C.text, 1, UIFont.Large)
+    end
+end
+
+-- ===================================================================== mole: whack the cookies popping out of the holes
+-- no clock: a hit is +1, a click that hits no cookie is -1 (never below 0), reach the score to win
+local Mole = G:derive("CMGame_Mole")
+CMGame.KINDS.mole = Mole
+
+local COOKIE = { 0.86, 0.62, 0.32 }
+local CHIP = { 0.32, 0.19, 0.10 }
+local HOLE = { 0.08, 0.06, 0.04 }
+local CHIPS = { { -0.35, -0.25 }, { 0.30, -0.35 }, { 0.05, 0.10 }, { -0.30, 0.35 }, { 0.38, 0.28 } }
+
+function Mole:setup()
+    self.need = CM.gameVal("mole", "score", self.tier) or 10
+    self.cols = 3
+    self.rows = CM.gameVal("mole", "rows", self.tier) or 3
+    self.max = CM.gameVal("mole", "max", self.tier) or 1
+    self.life = (CM.gameVal("mole", "life", self.tier) or 1.2) * 1000
+    self.gap = (CM.gameVal("mole", "gap", self.tier) or 0.6) * 1000
+    self.cps = CM.gameVal("mole", "cps") or 8
+    self.score = 0
+    self.clicks = {}
+    self.holes = {}
+    for i = 1, self.cols * self.rows do self.holes[i] = { up = false } end
+    self.nextAt = CMC.ms() + 600
+    self.marks = {}
+end
+
+function Mole:upCount()
+    local n = 0
+    for _, h in ipairs(self.holes) do if h.up then n = n + 1 end end
+    return n
+end
+
+function Mole:tick(dt, t)
+    for _, h in ipairs(self.holes) do
+        if h.up and t >= h.till then h.up = false; h.downAt = t end
+    end
+    if t < self.nextAt or self:upCount() >= self.max then return end
+    -- a free hole that was not used a moment ago
+    local free = {}
+    for i, h in ipairs(self.holes) do
+        if not h.up and t - (h.downAt or 0) > 250 then free[#free + 1] = i end
+    end
+    if #free == 0 then return end
+    local h = self.holes[free[rnd(#free) + 1]]
+    h.up = true
+    h.at = t
+    h.till = t + self.life * (0.85 + rnd(31) / 100)
+    self.nextAt = t + self.gap * (0.8 + rnd(41) / 100)
+end
+
+-- hole i: centre and radius inside the play area (set every frame by drawGame)
+function Mole:holeAt(mx, my)
+    for i, c in ipairs(self.cells or {}) do
+        local dx, dy = mx - c.x, my - c.y
+        if dx * dx + dy * dy <= c.r * c.r * 1.3 then return i end
+    end
+    return nil
+end
+
+function Mole:press(mx, my)
+    local t = CMC.ms()
+    -- clicks over the per second cap do nothing (auto clickers)
+    for i = #self.clicks, 1, -1 do
+        if t - self.clicks[i] >= 1000 then table.remove(self.clicks, i) end
+    end
+    if #self.clicks >= self.cps then return end
+    self.clicks[#self.clicks + 1] = t
+    local i = self:holeAt(mx, my)
+    local h = i and self.holes[i]
+    if h and h.up then
+        h.up = false
+        h.downAt = t
+        h.hitAt = t
+        self.score = self.score + 1
+        sfx("UISelectListItem")
+        if self.score >= self.need then self:finish(true) end
+        return
+    end
+    self.score = math.max(0, self.score - 1)
+    table.insert(self.marks, { x = mx, y = my, at = t })
+    self:shake()
+    self:say(T("IGUI_CM_G_whiff"), C.bad)
+    sfx("UIActivateMainMenuItem")
+end
+
+function Mole:status()
+    return T("IGUI_CM_G_score", self.score, self.need)
+end
+
+local function cookie(win, cx, cy, r, a)
+    CMUI.disc(win, cx, cy, r, COOKIE, a)
+    CMUI.ring(win, cx, cy, r, CHIP, 0.5 * a)
+    for _, c in ipairs(CHIPS) do
+        CMUI.disc(win, cx + c[1] * r, cy + c[2] * r, math.max(2, r * 0.14), CHIP, a)
+    end
+end
+
+function Mole:drawGame(x, y, w, h, t)
+    -- the score bar along the top
+    local k = math.min(1, self.score / math.max(1, self.need))
+    CMUI.rect(self, x + S(10), y + S(10), (w - S(20)) * k, S(5), C.gold, 0.9)
+    local top = y + S(22)
+    local cw, ch = w / self.cols, (h - S(26)) / self.rows
+    local r = math.min(cw, ch) * 0.32
+    self.cells = {}
+    for row = 1, self.rows do
+        for col = 1, self.cols do
+            local i = (row - 1) * self.cols + col
+            local cx, cy = x + cw * (col - 0.5), top + ch * (row - 0.5)
+            self.cells[i] = { x = cx, y = cy, r = r }
+            local hl = self.holes[i]
+            -- the hole: a flat dark oval
+            CMUI.texBox(self, "cm_disc", cx - r * 1.15, cy + r * 0.35, r * 2.3, r * 0.9, HOLE, 0.95)
+            if hl.up then
+                -- pops up over 120 ms, blinks in its last 300 ms
+                local rise = math.min(1, (t - hl.at) / 120)
+                local a = (hl.till - t < 300 and math.floor(t / 80) % 2 == 0) and 0.55 or 1
+                cookie(self, cx, cy + r * 0.6 * (1 - rise), r * (0.6 + 0.4 * rise), a)
+            elseif hl.hitAt and t - hl.hitAt < 350 then
+                local age = (t - hl.hitAt) / 350
+                CMUI.glow(self, cx, cy, r * 1.6, r * 1.6, C.gold, 0.6 * (1 - age))
+                CMUI.textC(self, "+1", cx, cy - r - age * S(16), C.good, 1 - age, UIFont.Medium)
+            end
+        end
+    end
+    -- red rings where a click hit nothing
+    for n = #self.marks, 1, -1 do
+        local m = self.marks[n]
+        local age = (t - m.at) / 400
+        if age >= 1 then table.remove(self.marks, n)
+        else CMUI.ring(self, m.x, m.y, S(14) + age * S(10), C.bad, 1 - age) end
     end
 end
 

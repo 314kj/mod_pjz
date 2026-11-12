@@ -237,7 +237,7 @@ CM.TYPE_OPT = { kill = "TypeKill", gang = "TypeGang", find = "TypeFind", survive
     mole = "TypeMole", rush = "TypeRush", dance = "TypeDance" }
 
 -- task missions: walk to highlighted furniture, win a minigame, then a short work action
-CM.TASK_TYPES = { wire = true, safe = true, pipe = true, board = true, trap = true, rush = true, dance = true }
+CM.TASK_TYPES = { wire = true, safe = true, pipe = true, board = true, trap = true, mole = true, rush = true, dance = true }
 function CM.isTask(typ) return CM.TASK_TYPES[typ] == true end
 
 -- bounding-box area (tiles) and ground-floor room count a building needs for each tier
@@ -258,7 +258,6 @@ function CM.goalFor(tier, typ)
     if typ == "gang" then return CM.int(CM.tierVal(tier, "Gang"), 25, 1, 2000) end
     if typ == "find" then return CM.int(CM.tierVal(tier, "Caches"), 3, 1, 20) end
     if typ == "survive" then return CM.int(CM.tierVal(tier, "Survive"), 5, 1, 120) * 60 end
-    if typ == "mole" then return CM.gameVal("mole", "goal", tier) or 12 end
     if CM.isTask(typ) then return CM.int(CM.tierVal(tier, "Tasks"), 3, 1, 12) end
     return 1
 end
@@ -453,10 +452,11 @@ CM.GAME = {
     -- dance: rounds of arrows, then hit Space in the beat; time = whole game, step = seconds per round
     dance = { time = { 40, 42, 44 }, rounds = { 4, 5, 6 }, amin = { 4, 6, 8 }, amax = { 5, 7, 9 }, step = { 8, 7, 6 },
               lives = { 3, 2, 1 }, red = { false, false, true }, work = 3, noise = 14, failNoise = 30, spawn = 1 },
-    -- mole: no window, cookie dolls pop up on floor squares of the building and the team whacks them
-    -- goal = whacks needed, up = dolls up at once, life = seconds a doll stays, fake = % red decoys
-    mole  = { goal = { 12, 20, 30 }, up = { 3, 4, 5 }, life = { 25, 15, 9 }, fake = { 0, 15, 25 }, reach = 2, slack = 0.5,
-              noise = 6, failNoise = 30, spawn = 1 },
+    -- mole: whack the cookies popping out of the holes; no time (no time key), a miss takes a point back
+    -- score = points to win, holes = 3 x rows, max = cookies up at once, life = seconds a cookie stays up,
+    -- gap = seconds between pop ups, cps = clicks per second counted at most
+    mole  = { score = { 8, 12, 16 }, rows = { 2, 3, 3 }, max = { 1, 2, 2 }, life = { 1.4, 1.1, 0.85 }, gap = { 0.7, 0.55, 0.45 },
+              cps = 8, work = 3, noise = 10, failNoise = 30, spawn = 1 },
 }
 CM.TASK_MIN = 3        -- seconds the server wants between "start" and "done" of one target
 CM.TASK_LOCK = 120     -- seconds one player keeps a target before another may take it
@@ -574,6 +574,9 @@ function CM.taskScore(typ, o)
         return 0
     elseif typ == "trap" then
         if kind == "door" then return 3 end
+        return 0
+    elseif typ == "mole" then
+        if kind == "cont" or kind == "fridge" then return 2 end
         return 0
     elseif typ == "dance" then
         if kind == "radio" or kind == "tv" then return 3 end

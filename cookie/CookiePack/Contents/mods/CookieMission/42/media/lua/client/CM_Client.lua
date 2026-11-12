@@ -108,7 +108,6 @@ local TOAST_COLOR = { farwarn = "bad", left = "bad", busy = "bad", vehicle = "ba
     nocard = "bad", rejoin = "bad", nobuilding = "bad", noitem = "bad", found = "good", joined = "good",
     pinned = "good", banned = "bad", cool = "dim", tdone = "good", tfail = "bad", tgone = "dim", tfar = "bad",
     tbusy = "bad", tlost = "bad", tnoreach = "bad", swept = "good", sweepbusy = "bad",
-    mhit = "good", mfake = "bad", mgone = "dim",
     sqbusy = "bad", sqsize = "bad", sqmade = "good", sqin = "good", sqjoin = "good", sqleft = "bad", sqlead = "good",
     sqgone = "bad", sqexpire = "bad", sqdisband = "bad", sqkicked = "bad", sqtaken = "bad", sqsent = "good", sqno = "bad",
     sqcount = "good", sqhold = "bad", sqfix = "bad",

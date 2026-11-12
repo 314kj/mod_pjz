@@ -735,7 +735,7 @@ local function newRun(card)
         id = newId("r"), phase = "live", t0 = now(), members = {},
         kills = 0, gang = 0, held = 0, spawned = 0, gangSpawned = 0,
         found = {}, caches = {}, emptyFor = 0,
-        tasks = {}, tdone = {}, tlock = {}, whacked = 0,
+        tasks = {}, tdone = {}, tlock = {},
     }
     run.endAt = run.t0 + card.limit
     card.run = run
@@ -1312,6 +1312,8 @@ local function placeTasks(card, run)
     local good, loaded, spare = taskCandidates(site, card.type, need)
     if not good then return false end
     if loaded < need then return false end
+    -- a mole card rolled before mole became a task still holds the old whack count
+    if card.type == "mole" then card.goal = math.min(card.goal, CM.goalFor(card.tier, "mole")) end
     local want = card.goal
     local picked = pickTargets(good, want, {})
     if #picked < want then pickTargets(spare, want, picked) end
@@ -1338,54 +1340,6 @@ local function taskOf(run, i)
 end
 CMS.taskOf = taskOf
 
--- ===================================================================== mole: cookie dolls pop up in the building
--- Dolls are runtime only (RT, never saved, not items): the server picks a free floor square inside a room,
--- each doll lives a few seconds, the members see them in their tracker and whack one from up to 2 tiles.
-local function moleSquareOk(c, x, y, z, moles)
-    local sq = c:getGridSquare(x, y, z)
-    if not sq or CM.call(sq, "getRoom") == nil then return false end
-    if CM.call(sq, "isFree", false) ~= true then return false end
-    for _, o in pairs(moles) do
-        local dx, dy = o.x - x, o.y - y
-        if o.z == z and dx * dx + dy * dy < 9 then return false end
-    end
-    return true
-end
-
-local function moleTick(card, run)
-    local r = rt(run)
-    r.moles = r.moles or {}
-    r.moleSeq = r.moleSeq or 0
-    local t = nowMs()
-    local n = 0
-    for i, o in pairs(r.moles) do
-        if t >= o.exp then r.moles[i] = nil; markRun(run) else n = n + 1 end
-    end
-    local c = cell()
-    local site = card.site
-    if not c or not site then return end
-    local up = CM.gameVal("mole", "up", card.tier) or 3
-    local life = CM.gameVal("mole", "life", card.tier) or 20
-    local fake = CM.gameVal("mole", "fake", card.tier) or 0
-    local floors = math.min(4, site.floors or 1)
-    local tries = 0
-    while n < up and tries < 40 do
-        tries = tries + 1
-        local x = site.x1 + rand(site.x2 - site.x1 + 1)
-        local y = site.y1 + rand(site.y2 - site.y1 + 1)
-        local z = rand(floors)
-        if moleSquareOk(c, x, y, z, r.moles) then
-            r.moleSeq = r.moleSeq + 1
-            -- spread the end times a little so the dolls do not all vanish together
-            r.moles[r.moleSeq] = { i = r.moleSeq, x = x, y = y, z = z, exp = t + (life * 1000) * (0.8 + rand(40) / 100),
-                red = rand(100) < fake }
-            n = n + 1
-            markRun(run)
-        end
-    end
-end
-CMS.moleTick = moleTick
-
 -- ===================================================================== progress / goals
 local function progress(card, run)
     if not run then return 0, card.goal end
@@ -1394,7 +1348,6 @@ local function progress(card, run)
     if card.type == "find" then return foundCount(run), card.goal end
     if card.type == "survive" then return run.held, card.goal end
     if CM.isTask(card.type) then return CM.count(run.tdone), card.goal end
-    if card.type == "mole" then return run.whacked or 0, card.goal end
     return 0, card.goal
 end
 CMS.progress = progress
@@ -1466,8 +1419,6 @@ local function runTick(card, run, dt)
             r.placeTry = now()
             placeCaches(card, run)
         end
-    elseif card.type == "mole" then
-        if anyIn then moleTick(card, run) end
     elseif CM.isTask(card.type) then
         local r = rt(run)
         if not r.placed and now() - (r.placeTry or 0) >= 3 then
@@ -1807,15 +1758,6 @@ function CMS.meSnapshot(k)
             end
             me.run.tasks = ts
             me.run.myTasks = m.tasks or 0
-        elseif card.type == "mole" then
-            local ms = {}
-            local r = RT[run.id]
-            local t = nowMs()
-            for _, o in pairs((r and r.moles) or {}) do
-                ms[#ms + 1] = { i = o.i, x = o.x, y = o.y, z = o.z, red = o.red, left = math.max(0, math.floor((o.exp - t) / 1000)) }
-            end
-            me.run.moles = ms
-            me.run.myTasks = m.tasks or 0
         end
     end
     return me
@@ -1835,7 +1777,7 @@ local function admSnapshot()
             o.run = {
                 id = run.id, phase = run.phase, kills = run.kills, gang = run.gang, held = run.held,
                 spawned = run.spawned, alive = r and r.alive or 0, found = foundCount(run), caches = #run.caches,
-                tdone = CM.count(run.tdone or {}), tasks = #(run.tasks or {}), whacked = run.whacked or 0,
+                tdone = CM.count(run.tdone or {}), tasks = #(run.tasks or {}),
                 members = {},
             }
             for _, k in ipairs(CM.sortedKeys(run.members)) do
@@ -2199,44 +2141,6 @@ function H.tfail(p, args)
         end
         logLine(m.n .. " failed a " .. card.type .. " minigame (" .. why .. "), +" .. got .. " zombies")
     end
-    markRun(run)
-end
-
--- whack a cookie doll; a red one is a decoy: noise and zombies
-function H.whack(p, args)
-    local k = keyOf(p)
-    local card, run, m = runOf(k)
-    if not card or card.type ~= "mole" or run.phase ~= "live" or m.st ~= "in" then return end
-    local r = rt(run)
-    local i = CM.int(args.i, 0)
-    local o = r.moles and r.moles[i]
-    if not o or nowMs() >= o.exp then toastPlayer(p, "mgone"); return end
-    -- 2 tiles from the middle of the doll's square, measured on the real (not rounded) position
-    local okP, fx, fy, fz = pcall(function() return p:getX(), p:getY(), p:getZ() end)
-    if not okP then return end
-    local dx, dy = fx - (o.x + 0.5), fy - (o.y + 0.5)
-    local reach = (CM.gameVal("mole", "reach") or 2) + (CM.gameVal("mole", "slack") or 0.5)
-    if math.floor(fz) ~= o.z or dx * dx + dy * dy > reach * reach then toastPlayer(p, "tfar"); return end
-    r.moles[i] = nil
-    if o.red then
-        stat("molesFake")
-        local rad = CM.gameVal("mole", "failNoise") or 30
-        pcall(function() getWorldSoundManager():addSound(nil, o.x, o.y, o.z, rad, rad) end)
-        local n = math.floor(CM.int(CM.sv("FailZombies"), 4, 0, 30) * (CM.gameVal("mole", "spawn") or 1) * (0.75 + 0.25 * card.tier) + 0.5)
-        local got = spawnNear(card, run, o.x, o.y, o.z, n)
-        for mk, mm in pairs(run.members) do
-            if mm.st == "in" then toast(mk, "mfake", { m.n }) end
-        end
-        logLine(m.n .. " hit a decoy doll, +" .. got .. " zombies")
-    else
-        run.whacked = (run.whacked or 0) + 1
-        m.tasks = (m.tasks or 0) + 1
-        stat("molesHit")
-        local rad = CM.gameVal("mole", "noise") or 6
-        pcall(function() getWorldSoundManager():addSound(nil, o.x, o.y, o.z, rad, rad) end)
-        toastPlayer(p, "mhit", { run.whacked, card.goal })
-    end
-    deliver(p, "mpop", { i = i, red = o.red == true })
     markRun(run)
 end
 
