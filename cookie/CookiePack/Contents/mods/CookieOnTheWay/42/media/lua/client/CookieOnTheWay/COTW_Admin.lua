@@ -3,8 +3,8 @@
 -- straight road, full brake, measure the stopping distance). A towed trailer is scanned in the same go
 -- (size and mass only). Unscanned vehicles and trailers cannot use the autopilot.
 -- Record road: drive a road the map data does not know (map mods that do not reach the main roads);
--- a point is kept every 6 tiles and the road is saved when recording stops. Its ends snap onto the
--- nearest known road within 25 tiles.
+-- a point is kept every 6 tiles and the road is saved when recording stops (or on a teleport, which
+-- also stops it). Its ends snap onto the nearest known road within 25 tiles.
 
 require "CookieOnTheWay/COTW_Client"
 
@@ -81,11 +81,12 @@ end
 
 function A.recordToggle()
     if rec then
-        if #rec.pts >= 4 then
-            COTW.send("saveRoad", { w = 8, p = rec.pts })
-            COTW.say("IGUI_COTW_Rec_Saved", tostring(#rec.pts / 2))
+        local pts = rec.pts
+        rec = nil      -- first, so "stop" stops even if anything below fails
+        if #pts >= 4 then
+            COTW.send("saveRoad", { w = 8, p = pts })
+            COTW.say("IGUI_COTW_Rec_Saved", tostring(#pts / 2))
         end
-        rec = nil
         return
     end
     local p = COTW.player()
@@ -100,7 +101,14 @@ local function recTick()
     local p = COTW.player()
     if not p then return end
     local n = #rec.pts
-    if COTW.dist(rec.pts[n - 1], rec.pts[n], p:getX(), p:getY()) >= REC_STEP then
+    local d = COTW.dist(rec.pts[n - 1], rec.pts[n], p:getX(), p:getY())
+    if d > COTW.ROAD_GAP then
+        -- teleported: keep what was driven so far and stop
+        A.recordToggle()
+        COTW.say("IGUI_COTW_Rec_Warp")
+        return
+    end
+    if d >= REC_STEP then
         rec.pts[n + 1] = math.floor(p:getX())
         rec.pts[n + 2] = math.floor(p:getY())
     end

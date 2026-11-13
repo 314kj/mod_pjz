@@ -305,7 +305,8 @@ function ISVehicleMenu.showRadialMenu(playerObj)
     local ok, err = pcall(function()
         if not playerObj:getVehicle() then return end
         local menu = getPlayerRadialMenu(playerObj:getPlayerNum())
-        if not menu:isReallyVisible() then return end
+        -- the closing call leaves the menu cleared; isReallyVisible is not reliable right after addToUIManager
+        if not menu.slices or #menu.slices == 0 then return end
         local tex = getTexture("media/ui/COTW_Radial.png") or getTexture(RADIAL_TEX)
         menu:addSlice(getText("IGUI_COTW_Title"), tex, COTWPanel.open)
     end)

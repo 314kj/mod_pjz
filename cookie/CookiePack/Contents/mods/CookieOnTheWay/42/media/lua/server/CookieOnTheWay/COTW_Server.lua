@@ -31,7 +31,13 @@ local function DB()
     db.users = db.users or {}
     db.profiles = db.profiles or {}
     db.roads = db.roads or {}
-    db.open = db.open or {}       -- trips that held money, so a crash can refund them on boot
+    -- 0.1.0 kept recording after "stop" (a say() error skipped it) and through teleports: drop those once
+    if (db.roadsV or 1) < 2 then
+        if #db.roads > 0 then COTW.log("dropped " .. #db.roads .. " admin roads recorded by 0.1.0") end
+        db.roads = {}
+        db.roadsV = 2
+    end
+    db.open = db.open or {}      -- trips that held money, so a crash can refund them on boot
     db.nextId = db.nextId or 1
     return db
 end
@@ -514,6 +520,12 @@ function C.saveRoad(p, args)
     if not isAdmin(p) or type(args.p) ~= "table" or #args.p < 4 then return end
     local pts = {}
     for i = 1, #args.p do pts[i] = math.floor((tonumber(args.p[i]) or 0) * 2 + 0.5) / 2 end
+    for k = 3, #pts - 1, 2 do
+        if COTW.dist(pts[k - 2], pts[k - 1], pts[k], pts[k + 1]) > COTW.ROAD_GAP + 2 then   -- +2: points are floored
+            COTW.log("admin road rejected (teleport gap at point " .. ((k + 1) / 2) .. ") from " .. tostring(nameOf(p)))
+            return
+        end
+    end
     table.insert(DB().roads, { w = tonumber(args.w) or 8, p = pts, by = nameOf(p) })
     COTW.Graph.setExtra(DB().roads)
     COTW.log("admin road " .. #DB().roads .. " (" .. (#pts / 2) .. " points) saved by " .. tostring(nameOf(p)))

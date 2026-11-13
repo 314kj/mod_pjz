@@ -11,6 +11,8 @@ local G = COTW.Graph
 
 local CELL = 50
 local SNAP_END = 25
+local PART_GAP = 25          -- pin further than this from a cut-off start piece: route on the main network
+local PART_BIG = 500         -- tiles of road: a cut-off part this big is a town, not a parking lot
 local NARROW_COST = 1.15     -- prefer wide roads a little when two routes are close
 
 local base = { nx = {}, ny = {}, edges = {} }
@@ -91,7 +93,8 @@ local function project(px, py, x1, y1, x2, y2)
 end
 
 -- nearest point on a live road within maxR tiles: { e, k, t, x, y, d, pos }
-function G.nearest(x, y, maxR)
+-- part: only roads of that connected part (W.comp of a junction)
+function G.nearest(x, y, maxR, part)
     G.ensure()
     local best = nil
     for cx = math.floor((x - maxR) / CELL), math.floor((x + maxR) / CELL) do
@@ -101,7 +104,7 @@ function G.nearest(x, y, maxR)
                 for i = 1, #list, 2 do
                     local ei, k = list[i], list[i + 1]
                     local e = W.edges[ei]
-                    if not e.dead then
+                    if not e.dead and (not part or W.comp[e.a] == part) then
                         local p = e.p
                         local t, qx, qy, d = project(x, y, p[k * 2 - 1], p[k * 2], p[k * 2 + 1], p[k * 2 + 2])
                         if d <= maxR and (not best or d < best.d) then
@@ -180,6 +183,29 @@ function G.build()
             W.adj[e.b] = W.adj[e.b] or {}
             table.insert(W.adj[e.a], ei)
             table.insert(W.adj[e.b], ei)
+        end
+    end
+    -- connected parts: map mods leave small road pieces that lead nowhere (parking lots, cut-off streets)
+    W.comp, W.main, W.size = {}, nil, {}
+    local size = W.size
+    for n = 1, #W.nx do
+        if W.adj[n] and not W.comp[n] then
+            W.comp[n] = n
+            size[n] = 0
+            local stack = { n }
+            while #stack > 0 do
+                local u = table.remove(stack)
+                for _, ei in ipairs(W.adj[u]) do
+                    local e = W.edges[ei]
+                    local v = e.a == u and e.b or e.a
+                    if not W.comp[v] then
+                        W.comp[v] = n
+                        size[n] = size[n] + e.len
+                        stack[#stack + 1] = v
+                    end
+                end
+            end
+            if not W.main or size[n] > size[W.main] then W.main = n end
         end
     end
 end
@@ -277,8 +303,21 @@ function G.route(x1, y1, x2, y2)
     G.ensure()
     local s = G.nearest(x1, y1, 80)
     if not s then return nil, "noroad_start" end
-    local d = G.nearest(x2, y2, 400)
-    if not d then return nil, "noroad_dest" end
+    if not G.nearest(x2, y2, 400) then return nil, "noroad_dest" end
+    -- the pin snaps to a road that the start can reach. A start on a cut-off piece (parking lot) uses
+    -- the main network unless the pin is right on that piece too.
+    local part = W.comp[W.edges[s.e].a]
+    local d = G.nearest(x2, y2, 400, part)
+    if part ~= W.main and (not d or d.d > PART_GAP) then
+        local sm = G.nearest(x1, y1, 80, W.main)
+        local dm = sm and G.nearest(x2, y2, 400, W.main)
+        if dm then
+            s, d = sm, dm
+        elseif W.size[part] < PART_BIG then
+            d = nil      -- no main road near: a lap of the parking lot is no route
+        end              -- a whole town not linked yet (Raccoon City): route inside it as before
+    end
+    if not d then return nil, "unreachable" end
     local out = { x = {}, y = {}, w = {}, destX = x2, destY = y2, startGap = s.d, endGap = d.d }
 
     if s.e == d.e then

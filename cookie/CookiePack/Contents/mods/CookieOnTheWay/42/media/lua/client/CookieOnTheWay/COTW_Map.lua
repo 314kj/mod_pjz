@@ -1,7 +1,8 @@
 -- Cookie On the Way : world map (pick a place, draw the route, home and pins)
 -- Right-click on the world map: go here (opens the booking panel), navigate here (drive yourself),
 -- set My Home, save as My Pin 1-5, and for admins measure the reference fare / delete an admin road.
--- Admins keep the vanilla debug menu unless the map was opened from the booking panel (pick mode).
+-- Admins keep the vanilla debug menu with ours as a submenu, or ours alone when the map was opened
+-- from the booking panel (pick mode).
 
 require "CookieOnTheWay/COTW_Client"
 require "ISUI/Maps/ISWorldMap"
@@ -72,6 +73,7 @@ local function fillMenu(context, x, y)
     context:addOption(getText("IGUI_COTW_GoHere"), nil, onGoHere, x, y)
     context:addOption(getText("IGUI_COTW_NavHere"), nil, onNavHere, x, y)
     if COTW.C.nav then context:addOption(getText("IGUI_COTW_NavStop"), nil, function() COTW.stopNav() end) end
+    if COTW.C.dest and not COTW.C.trip then context:addOption(getText("IGUI_COTW_ClearDest"), nil, function() COTW.clearDest() end) end
     context:addOption(getText("IGUI_COTW_SetHome"), nil, onSetHome, x, y)
     local pinOpt = context:addOption(getText("IGUI_COTW_SetPin"))
     local sub = ISContextMenu:getNew(context)
@@ -89,9 +91,17 @@ end
 local origRightUp = ISWorldMap.onRightMouseUp
 function ISWorldMap:onRightMouseUp(x, y)
     if self.symbolsUI and self.symbolsUI:onRightMouseUpMap(x, y) then return true end
-    if COTW.isAdmin() and not M.picking and origRightUp then return origRightUp(self, x, y) end
     local wx = math.floor(self.mapAPI:uiToWorldX(x, y))
     local wy = math.floor(self.mapAPI:uiToWorldY(x, y))
+    if COTW.isAdmin() and not M.picking and origRightUp and origRightUp(self, x, y) then
+        -- admins keep the vanilla menu (teleport ...); ours goes at the end as a submenu
+        local context = getPlayerContextMenu(0)
+        local opt = context:addOption(getText("IGUI_COTW_Title"))
+        local sub = ISContextMenu:getNew(context)
+        context:addSubMenu(opt, sub)
+        fillMenu(sub, wx, wy)
+        return true
+    end
     local context = ISContextMenu.get(0, x + self:getAbsoluteX(), y + self:getAbsoluteY())
     fillMenu(context, wx, wy)
     return true

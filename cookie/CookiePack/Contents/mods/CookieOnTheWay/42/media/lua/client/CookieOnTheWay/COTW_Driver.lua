@@ -1,8 +1,10 @@
 -- Cookie On the Way : the autopilot (runs on the driver's client: vehicle physics live there)
 -- Speed: the vehicle's own cruise control (regulator), force brake when slower is needed.
--- Steering: wheels cannot be turned from Lua, so the car is yawed with an equal and opposite side
--- impulse at its front and rear (a pure turning couple) under a yaw-rate controller that follows a
--- point a little way ahead on the route (kept right of the centre line on two-lane roads).
+-- Steering: wheels cannot be turned from Lua, so the car is yawed with a side push on a long lever
+-- under a yaw-rate controller that follows a point a little way ahead on the route (kept right of the
+-- centre line on two-lane roads). B42 addImpulse keeps one push per frame (a second equal one is
+-- dropped) and gives it to Bullet as force + torque for that frame only, so the push is sized
+-- inertia * wanted yaw-rate change / frame time.
 -- Safety: the road ahead (as long as the braking distance) is sampled square by square for walls,
 -- cars, people and zombies. Obstacles brake the car; zombies only slow it (push through).
 -- Holding a drive key for 1 s hands the car back (counts as arrived); the HUD "stop here" button stops
@@ -22,6 +24,10 @@ local TUNE = {
     YAW_I       = 3.0,    -- integral gain on the yaw-rate error
     PROBE_TICKS = 12,     -- first trip: fixed push this many ticks to learn the steering sign
     PROBE_STEP  = 0.03,   -- rad/s per tick asked during that push
+    PROBE_MIN   = 0.02,   -- rad/s the push must change the yaw rate by, else the probe runs again
+    PROBE_WAIT  = 60,     -- ticks before a weak probe runs again
+    DW_MAX      = 0.15,   -- rad/s of yaw-rate change asked in one tick at most
+    LEVER       = 20,     -- m: lever of the side push (long = mostly turn, little sideways shove)
     ERR_SLOW    = 1.0,
     STOP_GAP    = 3,      -- tiles kept between the bumper and an obstacle
     BRAKE_OVER  = 3,      -- km/h over the target speed before the brakes come on (below: cruise control eases off)    -- rad of heading error at which the car is down to crawling speed
@@ -232,40 +238,46 @@ local function steer(v, tx, ty, speed, dt)
     local vms = math.abs(speed) / 3.6
     if vms < 0.5 then st.yawInt = 0; return err end
     local prof = st.prof
-    local L, Wd, mass = prof.l or 4, prof.w or 2, prof.mass or 1000
-    local arm = L / 2
-    local inertia = mass * (L * L + Wd * Wd) / 12
-    local unit = inertia / (2 * arm)            -- couple impulse that changes the yaw rate by 1 rad/s
-    local J
+    local dw   -- yaw-rate change (rad/s) asked this tick
     if not D.signLearnt then
-        -- which way a couple turns the car depends on the physics frame: on the first trip the car rolls
-        -- off straight, gets a short fixed push and we see which way the yaw rate goes (flip once if the
-        -- other way). No other steering until then, so nothing else moves the yaw rate.
-        if vms < 1.5 or (not st.probe and math.abs(yaw) > 0.05) then return err end
+        -- which way the push turns the car depends on the physics frame: the car rolls off straight,
+        -- gets a short fixed push and we see which way the yaw rate goes (flip once if the other way).
+        -- No other steering until then, so nothing else moves the yaw rate. Too small a change (grip,
+        -- a bump) teaches nothing: wait a moment and push again.
+        if vms < 1.5 or st.ticks < (st.probeWait or 0) or (not st.probe and math.abs(yaw) > 0.05) then return err end
         st.probe = st.probe or { n = 0, y0 = yaw }
         st.probe.n = st.probe.n + 1
         if st.probe.n <= TUNE.PROBE_TICKS then
-            J = TUNE.PROBE_STEP * unit
+            dw = TUNE.PROBE_STEP
         else
+            local got = yaw - st.probe.y0
+            st.probe = nil
+            if math.abs(got) < TUNE.PROBE_MIN then
+                st.probeTries = (st.probeTries or 0) + 1
+                st.probeWait = st.ticks + TUNE.PROBE_WAIT
+                if st.probeTries <= 3 then COTW.log("steering probe too weak (yaw " .. string.format("%.3f", got) .. "), again") end
+                return err
+            end
             D.signLearnt = true
-            if yaw - st.probe.y0 < 0 then D.steerSign = -D.steerSign end
-            COTW.log("steering sign " .. D.steerSign .. " (probe yaw " .. string.format("%.3f", yaw - st.probe.y0) .. ")")
+            if got < 0 then D.steerSign = -D.steerSign end
+            COTW.log("steering sign " .. D.steerSign .. " (probe yaw " .. string.format("%.3f", got) .. ")")
         end
     end
-    if not J then
+    if not dw then
         local maxYaw = math.min(1.2, TUNE.LAT_ACCEL / math.max(vms, 1))
         local want = math.max(-maxYaw, math.min(maxYaw, err * TUNE.HEAD_GAIN))
         -- PI on the yaw rate: the integral makes up for tyre grip that keeps pulling the turn back
         st.yawInt = math.max(-1, math.min(1, (st.yawInt or 0) + (want - yaw) * dt))
-        J = TUNE.STEER_GAIN * (prof.steer or 1) * ((want - yaw) + TUNE.YAW_I * st.yawInt) * unit
-        if vms < 3 then J = J * vms / 3 end
+        dw = TUNE.STEER_GAIN * (prof.steer or 1) * ((want - yaw) + TUNE.YAW_I * st.yawInt)
+        if vms < 3 then dw = dw * vms / 3 end
     end
-    J = J * D.steerSign
+    dw = math.max(-TUNE.DW_MAX, math.min(TUNE.DW_MAX, dw))
+    -- yaw inertia of the car (box) plus a towed trailer hanging off the back
+    local L, Wd = prof.l or 4, prof.w or 2
+    local inertia = (prof.cmass or prof.mass or 1000) * (L * L + Wd * Wd) / 12 + (prof.tmass or 0) * L * L / 4
+    local J = inertia * dw / dt / TUNE.LEVER * D.steerSign
     local rx, rz = -fz, fx
-    pcall(function()
-        v:addImpulse(Vector3f.new(rx * J, 0, rz * J), Vector3f.new(fx * arm, 0, fz * arm))
-        v:addImpulse(Vector3f.new(-rx * J, 0, -rz * J), Vector3f.new(-fx * arm, 0, -fz * arm))
-    end)
+    pcall(function() v:addImpulse(Vector3f.new(rx * J, 0, rz * J), Vector3f.new(fx * TUNE.LEVER, 0, fz * TUNE.LEVER)) end)
     return err
 end
 
@@ -330,7 +342,9 @@ local function tick()
         pcall(function() v:setRegulator(false); v:setForceBrake() end)
         if trailer then pcall(function() trailer:setForceBrake() end) end
     else
-        pcall(function() v:setRegulator(true); v:setRegulatorSpeed(target) end)
+        -- the dashboard prints the cruise speed as is: whole km/h only
+        local kmh = math.max(1, math.floor(target + 0.5))
+        pcall(function() v:setRegulator(true); v:setRegulatorSpeed(kmh) end)
     end
 
     -- steering toward a point ahead (further at speed, further still with a trailer)
@@ -379,7 +393,7 @@ function D.start(route)
         -- the pair brakes like the weaker of the two and is as long as both
         if tp then
             prof = { w = math.max(prof.w or 2, tp.w or 2), l = prof.l, mass = (prof.mass or 1000) + (tp.mass or 500),
-                     decel = math.min(prof.decel or 6, tp.decel or 6) * 0.8, steer = prof.steer, tl = tp.l }
+                     cmass = prof.mass or 1000, tmass = tp.mass or 500, decel = math.min(prof.decel or 6, tp.decel or 6) * 0.8, steer = prof.steer, tl = tp.l }
             st.prof = prof
         end
     end

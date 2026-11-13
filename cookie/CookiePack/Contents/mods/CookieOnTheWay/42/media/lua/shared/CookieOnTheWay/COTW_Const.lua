@@ -11,6 +11,7 @@ COTW.DB_KEY = "CookieOnTheWay"
 COTW.PINS   = 5
 COTW.HIGHWAY_WIDTH = 12      -- roads at least this wide use MaxSpeed, narrower ones CitySpeed
 COTW.REF_FROM = { 8137, 11746 }   -- Rosewood fire station (price reference)
+COTW.ROAD_GAP = 60           -- recorded roads keep a point every 6 tiles: a longer step is a teleport (a 2 s stall at 90 km/h is 50)
 
 COTW.OPT_DEFAULTS = {
     PricePerKm      = 136,   -- Rosewood -> Louisville General Hospital (14.7 km of road) = $2,000

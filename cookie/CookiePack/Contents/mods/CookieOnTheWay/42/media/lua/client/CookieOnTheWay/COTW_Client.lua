@@ -36,7 +36,7 @@ function COTW.say(key, a, b)
     local p = COTW.player()
     if not p then return end
     local text = getText(key, a, b)
-    HaloTextHelper.addText(p, text, HaloTextHelper.getColorWhite())
+    HaloTextHelper.addText(p, text)
 end
 
 -- driver seat of a running vehicle?
@@ -61,6 +61,13 @@ function COTW.setDest(x, y, name)
     if COTWPanel and COTWPanel.instance then COTWPanel.instance:refresh() end
 end
 
+-- the pin goes away with the trip / navigator it was for (and from the map menu)
+function COTW.clearDest()
+    C.dest = nil
+    C.quote = nil
+    if COTWPanel and COTWPanel.instance then COTWPanel.instance:layout() end
+end
+
 function COTW.startNav(x, y)
     local p = COTW.player()
     if not p then return false end
@@ -70,10 +77,16 @@ function COTW.startNav(x, y)
         return false
     end
     C.nav = { route = route, destX = x, destY = y }
+    C.navIdx = 1
     return true
 end
 
-function COTW.stopNav() C.nav = nil end
+-- the pin goes with the navigator only when it is that navigator's pin
+function COTW.stopNav()
+    local nav = C.nav
+    C.nav = nil
+    if nav and C.dest and C.dest.x == nav.destX and C.dest.y == nav.destY then COTW.clearDest() end
+end
 
 -- ------------------------------------------------------------------------------
 -- server -> client
@@ -122,11 +135,10 @@ function S.riding(args) C.riding = { id = args.id, booker = args.booker } end
 function S.ended(args)
     if C.trip and C.trip.id == args.id then
         COTW.Driver.stop()
-        -- destination off the road: the navigator takes over for the last bit
+        -- destination off the road: the navigator takes over for the last bit (the pin stays until it ends)
         local r = C.trip.route
-        if args.reason == "arrive" and r and r.destX and COTW.dist(r.x[#r.x], r.y[#r.y], r.destX, r.destY) > 15 then
-            COTW.startNav(r.destX, r.destY)
-        end
+        local handOff = args.reason == "arrive" and r and r.destX and COTW.dist(r.x[#r.x], r.y[#r.y], r.destX, r.destY) > 15
+        if not (handOff and COTW.startNav(r.destX, r.destY)) then COTW.clearDest() end
         C.trip = nil
     end
     if C.riding and C.riding.id == args.id then C.riding = nil end
