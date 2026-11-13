@@ -1,0 +1,13 @@
+{
+    "Sandbox_CookieExchange": "Cookie Exchange",
+    "Sandbox_CookieExchange_KillCashChance": "Kill cash chance (%)",
+    "Sandbox_CookieExchange_KillCashChance_tooltip": "Chance that one zombie kill pays cash straight into the killer's wallet. 0 turns kill cash off. Default 10.",
+    "Sandbox_CookieExchange_KillCashMin": "Kill cash minimum ($)",
+    "Sandbox_CookieExchange_KillCashMin_tooltip": "Smallest amount one kill can pay. Default 1.",
+    "Sandbox_CookieExchange_KillCashMax": "Kill cash maximum ($)",
+    "Sandbox_CookieExchange_KillCashMax_tooltip": "Largest amount one kill can pay. Default 20.",
+    "Sandbox_CookieExchange_AutoConvert": "Auto-convert vanilla money",
+    "Sandbox_CookieExchange_AutoConvert_tooltip": "Money and money bundles in a player's bags go into the wallet by themselves (every 3 seconds). Bills withdrawn from a wallet are left alone. Default on.",
+    "Sandbox_CookieExchange_MigratePhunMart": "Move PhunMart wallets",
+    "Sandbox_CookieExchange_MigratePhunMart_tooltip": "Moves every PhunMart wallet balance into Cookie Wallet (1 token = $100) and empties the PhunMart wallet, every boot and every minute. Also takes PhunMart coins and tokens. Turn on only when Cookie Shop replaces PhunMart. Default off. Turning it off later does not move money back. While PhunMart still drops Change from corpses, players earn from both."
+}

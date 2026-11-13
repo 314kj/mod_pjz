@@ -534,5 +534,6 @@
   "IGUI_CM_Weight": "น้ำหนัก %1",
   "IGUI_CM_Where": "ตึกอยู่ทิศ%1 · %2 ช่อง",
   "IGUI_CM_WhereS": "ตึกอยู่ทิศ%1 %2 ช่อง",
-  "IGUI_CM_YouGot": "ได้รับ:"
+  "IGUI_CM_YouGot": "ได้รับ:",
+  "IGUI_CM_Dock_cxshop": "Cookie Shop"
 }

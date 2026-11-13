@@ -170,6 +170,16 @@ KNOWN[#KNOWN + 1] = function(out)
     }
 end
 
+KNOWN[#KNOWN + 1] = function(out)
+    -- Cookie Shop (CookieExchange): no screen button of its own, opens from here and the character screen
+    if not (CX and CX.toggleShop) then return end
+    out[#out + 1] = {
+        id = "cxshop", name = T("IGUI_CM_Dock_cxshop"), def = "group", els = {}, where = "known",
+        tex = texOf("media/textures/CX_ShopButton.png"),
+        click = function() CX.toggleShop() end,
+    }
+end
+
 -- ===================================================================== scan
 local SKIP_TYPES = { "Window", "Toast", "Splash", "Tooltip", "Context", "Hud", "HUD", "Fade", "Panel_", "Modal",
     "Dialog", "Popup", "Menu", "Bar", "Loading" }

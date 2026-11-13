@@ -1,0 +1,8 @@
+name=Cookie Exchange - Wallet & Shop
+id=CookieExchange
+author=lookchinnoi (AKA)
+description=CookieCheetah wallet and Cookie Shop: one server-side wallet shown on the character screen. Zombie kills can pay cash straight into it, vanilla money is taken in 1:1, send money to online players, withdraw as bills. The shop sells items, packs, vehicle and animal slips and traits with per-season limits, buys back valuables (orange names, right-click to sell), and admins edit it in game.
+poster=poster.png
+icon=icon.png
+versionMin=42.13.0
+modversion=0.2.0

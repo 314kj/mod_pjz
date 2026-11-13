@@ -1,0 +1,51 @@
+module CookieExchange
+{
+    imports
+    {
+        Base
+    }
+
+    item Cash1000
+    {
+        DisplayName = Cookie Cash $1000,
+        DisplayCategory = Junk,
+        ItemType = base:normal,
+        Weight = 0.05,
+        Icon = CX_Cash1000,
+        WorldStaticModel = MoneyBundle,
+        Tags = base:ignorezombiedensity,
+    }
+
+    item Cash10000
+    {
+        DisplayName = Cookie Cash $10000,
+        DisplayCategory = Junk,
+        ItemType = base:normal,
+        Weight = 0.05,
+        Icon = CX_Cash10000,
+        WorldStaticModel = MoneyBundle,
+        Tags = base:ignorezombiedensity,
+    }
+
+    item VehicleSlip
+    {
+        DisplayName = Cookie Vehicle Slip,
+        DisplayCategory = Junk,
+        ItemType = base:normal,
+        Weight = 0.01,
+        Icon = CX_SlipCar,
+        WorldStaticModel = MoneyBundle,
+        Tags = base:ignorezombiedensity,
+    }
+
+    item AnimalSlip
+    {
+        DisplayName = Cookie Animal Slip,
+        DisplayCategory = Junk,
+        ItemType = base:normal,
+        Weight = 0.01,
+        Icon = CX_SlipPet,
+        WorldStaticModel = MoneyBundle,
+        Tags = base:ignorezombiedensity,
+    }
+}

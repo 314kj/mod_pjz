@@ -1,0 +1,13 @@
+{
+    "Sandbox_CookieExchange": "Cookie Exchange",
+    "Sandbox_CookieExchange_KillCashChance": "โอกาสได้เงินเมื่อฆ่าซอมบี้ (%)",
+    "Sandbox_CookieExchange_KillCashChance_tooltip": "โอกาสที่ฆ่าซอมบี้ 1 ตัวแล้วได้เงินเข้ากระเป๋าคนฆ่าทันที 0 = ปิด ค่าเริ่มต้น 10",
+    "Sandbox_CookieExchange_KillCashMin": "เงินต่ำสุดต่อการฆ่า ($)",
+    "Sandbox_CookieExchange_KillCashMin_tooltip": "จำนวนน้อยสุดที่ได้ต่อ 1 ตัว ค่าเริ่มต้น 1",
+    "Sandbox_CookieExchange_KillCashMax": "เงินสูงสุดต่อการฆ่า ($)",
+    "Sandbox_CookieExchange_KillCashMax_tooltip": "จำนวนมากสุดที่ได้ต่อ 1 ตัว ค่าเริ่มต้น 20",
+    "Sandbox_CookieExchange_AutoConvert": "แปลงเงิน vanilla อัตโนมัติ",
+    "Sandbox_CookieExchange_AutoConvert_tooltip": "เงินและปึกเงินในตัวผู้เล่นเข้ากระเป๋าเอง (ทุก 3 วินาที) แบงค์ที่ถอนออกมาจาก wallet ไม่ถูกแปลง ค่าเริ่มต้น เปิด",
+    "Sandbox_CookieExchange_MigratePhunMart": "ย้ายเงิน PhunMart",
+    "Sandbox_CookieExchange_MigratePhunMart_tooltip": "ย้ายยอด PhunMart ทุกคนเข้า Cookie Wallet (1 token = $100) แล้วล้าง PhunMart wallet ทุกครั้งที่บูตและทุก 1 นาที รวมเหรียญ/token ในตัว เปิดเมื่อ Cookie Shop พร้อมแทน PhunMart แล้วเท่านั้น ค่าเริ่มต้น ปิด ปิดทีหลังเงินไม่ย้อนกลับ ถ้า PhunMart ยังดรอป Change จากศพ ผู้เล่นจะได้เงินสองทาง"
+}

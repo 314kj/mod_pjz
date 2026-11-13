@@ -534,5 +534,6 @@
   "IGUI_CM_Weight": "weight %1",
   "IGUI_CM_Where": "Building is %1 · %2 tiles",
   "IGUI_CM_WhereS": "Building: %1, %2 tiles",
-  "IGUI_CM_YouGot": "You got:"
+  "IGUI_CM_YouGot": "You got:",
+  "IGUI_CM_Dock_cxshop": "Cookie Shop"
 }
