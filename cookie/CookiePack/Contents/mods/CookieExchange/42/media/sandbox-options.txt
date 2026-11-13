@@ -23,9 +23,3 @@ option CookieExchange.AutoConvert
     type = boolean, default = true,
     page = CookieExchange, translation = CookieExchange_AutoConvert,
 }
-
-option CookieExchange.MigratePhunMart
-{
-    type = boolean, default = false,
-    page = CookieExchange, translation = CookieExchange_MigratePhunMart,
-}

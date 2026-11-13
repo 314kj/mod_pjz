@@ -1,8 +1,8 @@
 {
   "IGUI_CSP_MythRepair": "ซ่อม Mythical เต็มหลอด",
-  "IGUI_CSP_MythRepair_Tip": "ความทนทาน หัวขวาน และความคม กลับมาเต็ม จ่ายจากเงินใน PhunMart wallet",
+  "IGUI_CSP_MythRepair_Tip": "ความทนทาน หัวขวาน และความคม กลับมาเต็ม จ่ายจาก Cookie Wallet",
   "IGUI_CSP_MythRepair_Wallet": "เงินใน wallet:",
-  "IGUI_CSP_MythRepair_NoMoney": "เงินใน PhunMart wallet ไม่พอ",
+  "IGUI_CSP_MythRepair_NoMoney": "เงินใน Cookie Wallet ไม่พอ",
   "IGUI_CSP_MythRepair_Confirm": "ซ่อมอาวุธ Mythical นี้ให้เต็มหลอด จ่าย",
   "IGUI_CSP_MythRepair_Done": "ซ่อมเสร็จ เต็มหลอดแล้ว",
   "IGUI_CSP_MythRepair_Full": "อาวุธนี้เต็มหลอดอยู่แล้ว",

@@ -1,8 +1,8 @@
 {
   "IGUI_CSP_MythRepair": "Repair Mythical to full",
-  "IGUI_CSP_MythRepair_Tip": "Condition, head and sharpness back to full. Paid from your PhunMart wallet.",
+  "IGUI_CSP_MythRepair_Tip": "Condition, head and sharpness back to full. Paid from your Cookie Wallet.",
   "IGUI_CSP_MythRepair_Wallet": "Wallet:",
-  "IGUI_CSP_MythRepair_NoMoney": "Not enough money in your PhunMart wallet",
+  "IGUI_CSP_MythRepair_NoMoney": "Not enough money in your Cookie Wallet",
   "IGUI_CSP_MythRepair_Confirm": "Repair this Mythical weapon to full for",
   "IGUI_CSP_MythRepair_Done": "Repaired to full",
   "IGUI_CSP_MythRepair_Full": "This weapon is already at full condition",

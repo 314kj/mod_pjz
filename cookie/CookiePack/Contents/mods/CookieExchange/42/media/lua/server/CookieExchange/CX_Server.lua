@@ -3,7 +3,7 @@
 -- withdraw (wallet -> bills), players (online names for the send list).
 -- Kill cash: a 1-second poll reads each online player's getZombieKills() (the counter
 -- KillerBoard trusts) and rolls once per new kill. No item ever drops on the floor.
--- PhunMart sweep (only while MigratePhunMart is on): every PhunMart wallet balance moves here
+-- PhunMart sweep (always on, PhunMart left the server): every PhunMart wallet balance moves here
 -- (change cents 1:1, 1 token = $100) and the PhunMart pools are zeroed, bound tokens included,
 -- so PhunMart cannot refill them on death.
 if isClient() and not isServer() then return end
@@ -192,7 +192,6 @@ local function sweepKey(key, rec)
 end
 
 local function sweepAll()
-    if not CX.opt("MigratePhunMart") then return end
     if not (ModData.exists and ModData.exists(PHUN_KEY)) then return end
     local data = ModData.get(PHUN_KEY)
     if type(data) ~= "table" then return end
@@ -260,7 +259,7 @@ local C = {}
 function C.hello(p)
     local n = nameOf(p)
     if not n then return end
-    if CX.opt("MigratePhunMart") and ModData.exists and ModData.exists(PHUN_KEY) then
+    if ModData.exists and ModData.exists(PHUN_KEY) then
         local data = ModData.get(PHUN_KEY)
         if type(data) == "table" and type(data[n]) == "table" then
             if sweepKey(n, data[n]) > 0 then phunSync(p) end

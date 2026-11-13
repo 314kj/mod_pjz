@@ -17,7 +17,6 @@ CX.OPT_DEFAULTS = {
     KillCashMin     = 1,
     KillCashMax     = 20,
     AutoConvert     = true,
-    MigratePhunMart = false,
 }
 
 function CX.opt(key)
@@ -48,7 +47,7 @@ CX.CASH = {
     ["CookieExchange.Cash10000"] = 1000000,
 }
 
--- PhunMart coins and tokens, only taken while MigratePhunMart is on (1 token = $100)
+-- PhunMart coins and tokens left in bags from last season, always taken (1 token = $100)
 CX.PHUN = {
     ["PhunMart.Nickel"]  = 5,
     ["PhunMart.Dime"]    = 10,
@@ -60,17 +59,14 @@ function CX.cents(ft)
     if not ft then return nil end
     local v = CX.CASH[ft]
     if v then return v end
-    if CX.opt("MigratePhunMart") then return CX.PHUN[ft] end
-    return nil
+    return CX.PHUN[ft]
 end
 
 -- every type the wallet would take right now
 function CX.cashTypes()
     local out = {}
     for ft in pairs(CX.CASH) do out[#out + 1] = ft end
-    if CX.opt("MigratePhunMart") then
-        for ft in pairs(CX.PHUN) do out[#out + 1] = ft end
-    end
+    for ft in pairs(CX.PHUN) do out[#out + 1] = ft end
     return out
 end
 

@@ -80,6 +80,33 @@ local function ensureKitCat()
     return true
 end
 
+-- files written before CX_Json escaped non-ASCII hold Thai default names cut to their low byte;
+-- a name that is exactly the cut form of its default goes back to the default
+local function lowBytes(s)
+    local t = {}
+    for i = 1, string.len(s) do t[i] = string.char(string.byte(s, i) % 256) end
+    return table.concat(t)
+end
+
+local function repairNames()
+    if not CX.json.WIDE then return false end
+    local fixed = false
+    local function fix(rows, defs)
+        local def = {}
+        for _, d in ipairs(defs) do def[d.id] = d.name end
+        for _, r in ipairs(rows) do
+            local d = def[r.id]
+            if d and d ~= r.name and lowBytes(d) ~= d and lowBytes(d) == r.name then
+                r.name = d
+                fixed = true
+            end
+        end
+    end
+    fix(cat.cats, CX.SHOP_DEFAULT.cats)
+    fix(cat.items, CX.SHOP_DEFAULT.items)
+    return fixed
+end
+
 local function load()
     local text = readFile(CX.SHOP_FILE)
     if text == nil or text == "" then
@@ -111,7 +138,10 @@ local function load()
     for _, b in ipairs(bad) do CX.log("shop: skipped " .. b) end
     cat = clean
     loadedOk = true
-    if ensureKitCat() then save() end
+    local kit = ensureKitCat()
+    local fixed = repairNames()
+    if fixed then CX.log("shop: repaired Thai names cut by an old save") end
+    if kit or fixed then save() end
     index()
     CX.log("shop: catalog loaded, " .. #cat.items .. " items, " .. #cat.sell .. " buy-back")
     return true, bad[1]
@@ -722,13 +752,12 @@ end
 Events.OnClientCommand.Add(onClientCommand)
 
 -- ------------------------------------------------------------------------------
--- Kuraya slips -> Cookie slips (only while MigratePhunMart is on and Kuraya is still loaded).
+-- Kuraya slips -> Cookie slips (only while Kuraya is still loaded).
 -- The new slip is made first and the old one removed after, so a failure keeps the old slip.
 -- ------------------------------------------------------------------------------
 local OLD_SLIPS = { ["Kuraya.CarSlip"] = "car", ["Kuraya.PetSlip"] = "pet" }
 
 local function convertOldSlips(p)
-    if not CX.opt("MigratePhunMart") then return 0 end
     local n = nameOf(p)
     local inv = n and p:getInventory()
     if not inv then return 0 end

@@ -12,8 +12,40 @@ local J = CX.json
 -- ------------------------------------------------------------------------------
 local ESC = { ['"'] = '\\"', ['\\'] = '\\\\', ['\n'] = '\\n', ['\r'] = '\\r', ['\t'] = '\\t' }
 
+-- Kahlua strings are Java strings (one char per letter), plain Lua strings are bytes
+local WIDE = string.len("ก") == 1
+J.WIDE = WIDE
+
+local HEX = "0123456789abcdef"
+local function hex4(n)
+    local t = {}
+    for i = 4, 1, -1 do
+        local d = n % 16
+        t[i] = string.sub(HEX, d + 1, d + 1)
+        n = math.floor(n / 16)
+    end
+    return table.concat(t)
+end
+
+-- getFileWriter keeps only the low byte of each char (Thai U+0E2D -> "-"), so in game every
+-- non-ASCII letter is written as \uXXXX and the file on disk stays plain ASCII
 local function str(s)
     local out = string.gsub(s, '["\\\n\r\t]', function(c) return ESC[c] end)
+    if WIDE then
+        local parts, from = {}, 1
+        for i = 1, string.len(out) do
+            local b = string.byte(out, i)
+            if b > 126 then
+                parts[#parts + 1] = string.sub(out, from, i - 1)
+                parts[#parts + 1] = "\\u" .. hex4(b)
+                from = i + 1
+            end
+        end
+        if from > 1 then
+            parts[#parts + 1] = string.sub(out, from)
+            out = table.concat(parts)
+        end
+    end
     return '"' .. out .. '"'
 end
 
@@ -87,9 +119,6 @@ end
 -- read  (returns value, or nil + "error at <pos>")
 -- ------------------------------------------------------------------------------
 local UNESC = { ['"'] = '"', ['\\'] = '\\', ['/'] = '/', b = '\b', f = '\f', n = '\n', r = '\r', t = '\t' }
-
--- Kahlua strings are Java strings (one char per letter), plain Lua strings are bytes
-local WIDE = string.len("ก") == 1
 
 local function utf8(cp)
     if cp < 0x80 or WIDE then return string.char(cp) end
