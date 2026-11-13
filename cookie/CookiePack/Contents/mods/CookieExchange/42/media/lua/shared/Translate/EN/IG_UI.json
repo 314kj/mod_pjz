@@ -93,5 +93,8 @@
     "IGUI_CX_Shop_Reloaded": "Shop file reloaded",
     "IGUI_CX_Shop_ReloadFailed": "Shop file has an error, nothing changed",
     "IGUI_CX_Shop_NotYourSlip": "This slip belongs to someone else, only the buyer can unpack it",
-    "IGUI_CX_Shop_SlipsMoved": "Your Kuraya slips were changed into Cookie slips"
+    "IGUI_CX_Shop_SlipsMoved": "Your Kuraya slips were changed into Cookie slips",
+    "IGUI_CX_Shop_KitGiven": "You got the starter kit",
+    "IGUI_CX_Shop_KitCat": "The Starter kit category cannot be deleted",
+    "IGUI_CX_KitRow": "Free kit"
 }

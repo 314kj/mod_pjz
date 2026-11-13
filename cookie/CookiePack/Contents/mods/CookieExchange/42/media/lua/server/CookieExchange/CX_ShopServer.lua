@@ -71,11 +71,21 @@ local function save()
     end
 end
 
+-- the kit category always exists, so admins can fill it from the shop's admin form
+local function ensureKitCat()
+    for _, c in ipairs(cat.cats) do
+        if c.id == CX.KIT_CAT then return false end
+    end
+    cat.cats[#cat.cats + 1] = { id = CX.KIT_CAT, name = "Starter kit" }
+    return true
+end
+
 local function load()
     local text = readFile(CX.SHOP_FILE)
     if text == nil or text == "" then
         cat = CX.cleanCatalog(CX.SHOP_DEFAULT)
         loadedOk = true
+        ensureKitCat()
         index()
         save()
         CX.log("shop: wrote default catalog to " .. CX.SHOP_FILE)
@@ -101,6 +111,7 @@ local function load()
     for _, b in ipairs(bad) do CX.log("shop: skipped " .. b) end
     cat = clean
     loadedOk = true
+    if ensureKitCat() then save() end
     index()
     CX.log("shop: catalog loaded, " .. #cat.items .. " items, " .. #cat.sell .. " buy-back")
     return true, bad[1]
@@ -360,12 +371,18 @@ end
 
 local function catalogFor(p, name)
     local c = C()
-    local items = {}
-    for i, r in ipairs(c.items) do
-        items[i] = { id = r.id, cat = r.cat, name = r.name, kind = r.kind, spec = r.spec,
-                     price = r.price, limit = r.limit, icon = iconOf(r) }
+    local admin = isAdmin(p)
+    local items, cats = {}, {}
+    for _, r in ipairs(c.items) do
+        if admin or r.cat ~= CX.KIT_CAT then
+            items[#items + 1] = { id = r.id, cat = r.cat, name = r.name, kind = r.kind, spec = r.spec,
+                                  price = r.price, limit = r.limit, icon = iconOf(r) }
+        end
     end
-    return { ver = ver, cats = c.cats, items = items, sell = c.sell, mine = counts(name), admin = isAdmin(p) }
+    for _, k in ipairs(c.cats) do
+        if admin or k.id ~= CX.KIT_CAT then cats[#cats + 1] = k end
+    end
+    return { ver = ver, cats = cats, items = items, sell = c.sell, mine = counts(name), admin = admin }
 end
 
 local function sendCatalog(p)
@@ -398,7 +415,7 @@ function S.buy(p, args)
     if not n or type(args) ~= "table" then return end
     C()
     local r = byId[tostring(args.id)]
-    if not r then res(p, "Gone"); sendCatalog(p); return end
+    if not r or r.cat == CX.KIT_CAT then res(p, "Gone"); sendCatalog(p); return end
     if math.floor(tonumber(args.price) or -1) ~= r.price then res(p, "PriceChanged"); sendCatalog(p); return end
     local mine = counts(n)
     if r.limit > 0 and (mine[r.id] or 0) >= r.limit then res(p, "Limit"); return end
@@ -636,6 +653,7 @@ end
 
 function A.delcat(p, args)
     local id = tostring(args.id)
+    if id == CX.KIT_CAT then res(p, "KitCat"); return end
     for _, r in ipairs(C().items) do
         if r.cat == id then res(p, "CatNotEmpty"); return end
     end
@@ -752,4 +770,111 @@ local function convertOldSlips(p)
     return done
 end
 
-CX.shopServer = { load = load, catalog = function() return C() end, convertOldSlips = convertOldSlips }
+-- ------------------------------------------------------------------------------
+-- Starter kit: every row in category "kit" is given once, free, to a player the server has never
+-- seen. The first run marks every name the save already knows as old (old PhunMart / Akacount /
+-- Kuraya data, Cookie Helper, Cookie Wallet). A character that survived 1 hour or more is old too.
+-- An empty kit gives nothing and marks nobody.
+-- ------------------------------------------------------------------------------
+local function kitDB()
+    local d = ModData.getOrCreate(CX.KIT_KEY)
+    d.got = d.got or {}
+    return d
+end
+
+local function oldNames(set, t)
+    if type(t) ~= "table" then return end
+    for k in pairs(t) do
+        if type(k) == "string" and k ~= "" then set[string.lower(k)] = true end
+    end
+end
+
+local function savedTable(key)
+    if ModData.exists and ModData.exists(key) then return ModData.get(key) end
+    return nil
+end
+
+local function seedKit(d)
+    if d.seeded then return end
+    local old = {}
+    oldNames(old, savedTable("PhunMart_Wallet"))
+    local ak = savedTable("Akacount_DB")
+    oldNames(old, type(ak) == "table" and ak.accounts or nil)
+    local kr = savedTable("Kuraya_DB")
+    oldNames(old, type(kr) == "table" and kr.players or nil)
+    local ch = savedTable("CookieHelper")
+    oldNames(old, type(ch) == "table" and ch.known or nil)
+    oldNames(old, W.all())
+    local n = 0
+    for k in pairs(old) do
+        if d.got[k] == nil then d.got[k] = "old" end
+        n = n + 1
+    end
+    d.seeded = true
+    H.audit("kit: first run, " .. n .. " known players marked old")
+end
+
+local function giveKit(p)
+    local n = nameOf(p)
+    if not n then return end
+    local d = kitDB()
+    seedKit(d)
+    local key = string.lower(n)
+    if d.got[key] ~= nil then return end
+    local rows = {}
+    for _, r in ipairs(C().items) do
+        if r.cat == CX.KIT_CAT then rows[#rows + 1] = r end
+    end
+    if #rows == 0 then return end
+    local hours = tonumber(call(p, "getHoursSurvived")) or 0
+    if hours >= 1 then
+        d.got[key] = "old"
+        return
+    end
+    local inv = p:getInventory()
+    if not inv then return end
+    -- marked before anything is given, so a second hello can never give it twice
+    local okT, ts = pcall(getTimestamp)
+    d.got[key] = (okT and ts) or true
+    local given = 0
+    for _, r in ipairs(rows) do
+        local ps = parsed[r.id]
+        local broken = deliverable(r.kind, ps)
+        if broken then
+            H.audit("kit: " .. n .. " row " .. r.id .. " skipped: " .. broken)
+        elseif r.kind == "item" then
+            for _, g in ipairs(ps.give) do given = given + giveN(inv, g.ft, g.n) end
+        elseif r.kind == "car" then
+            if makeSlip(p, CX.SLIP_CAR, { cxVeh = ps.veh }, r.name) then given = given + 1 end
+        elseif r.kind == "pet" then
+            if makeSlip(p, CX.SLIP_PET, { cxPet = ps.pet, cxBreed = ps.breed, cxN = ps.n }, r.name) then given = given + 1 end
+        elseif r.kind == "trait" then
+            local t = traitOf(ps.trait)
+            if hasTrait(p, t) ~= ps.add and not (ps.add and clash(p, t)) then
+                applyTrait(p, t, ps.add)
+                if hasTrait(p, t) == ps.add then
+                    tell(p, "trait", { id = ps.trait, add = ps.add })
+                    given = given + 1
+                end
+            end
+        end
+    end
+    if given == 0 then
+        d.got[key] = nil
+        H.audit("kit: " .. n .. " got nothing, will try again next login")
+        return
+    end
+    H.audit("kit: " .. n .. " got the starter kit (" .. given .. " things)")
+    res(p, "KitGiven", { ok = true })
+end
+
+-- seed the old-player list when the save loads, before anyone logs in
+-- (seeding on the first hello could count a brand-new player as old)
+if not isClient() then
+    Events.OnInitGlobalModData.Add(function()
+        local ok, err = pcall(function() seedKit(kitDB()) end)
+        if not ok then CX.log("kit seed error: " .. tostring(err)) end
+    end)
+end
+
+CX.shopServer = { load = load, catalog = function() return C() end, convertOldSlips = convertOldSlips, giveKit = giveKit }

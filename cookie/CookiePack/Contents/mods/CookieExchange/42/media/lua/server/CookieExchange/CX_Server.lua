@@ -270,6 +270,10 @@ function C.hello(p)
         local ok, err = pcall(CX.shopServer.convertOldSlips, p)
         if not ok then CX.log("kuraya slips error: " .. tostring(err)) end
     end
+    if CX.shopServer and CX.shopServer.giveKit then
+        local ok, err = pcall(CX.shopServer.giveKit, p)
+        if not ok then CX.log("starter kit error: " .. tostring(err)) end
+    end
     sync(p)
 end
 

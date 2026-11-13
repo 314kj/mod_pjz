@@ -13,6 +13,7 @@ CX.wallets = {}          -- admin list { {n, c}, ... }
 
 local sellPrice = {}     -- fullType -> dollars
 local sellNames = {}     -- display name -> true (orange in the inventory)
+local sellCount = 0      -- entries in sellNames (no global next(): another mod can break it)
 
 local function T(key, ...) return getText(key, ...) end
 
@@ -43,10 +44,11 @@ local R = {}
 function R.catalog(a)
     CX.shop = a
     CX.shop.mine = type(a.mine) == "table" and a.mine or {}
-    sellPrice, sellNames = {}, {}
+    sellPrice, sellNames, sellCount = {}, {}, 0
     for _, s in ipairs(type(a.sell) == "table" and a.sell or {}) do
         sellPrice[s.ft] = s.price
         sellNames[CX.itemName(s.ft)] = true
+        sellCount = sellCount + 1
     end
     if CX.shopWindow then CX.shopWindow:onCatalog() end
 end
@@ -178,19 +180,26 @@ local function hookPane()
     if hooked or not (ISInventoryPane and ISInventoryPane.renderdetails) then return end
     hooked = true
     local orig = ISInventoryPane.renderdetails
+    local broken = false   -- orange names are cosmetic: on any error stop recoloring, never block the list
     function ISInventoryPane:renderdetails(doDragged)
-        if next(sellNames) == nil then return orig(self, doDragged) end
+        local draw = rawget(self, "drawText") or ISInventoryPane.drawText
+        if broken or sellCount == 0 or type(draw) ~= "function" then
+            orig(self, doDragged)
+            return
+        end
         local had = rawget(self, "drawText")
-        local draw = had or ISInventoryPane.drawText
         self.drawText = function(s, text, x, y, r, g, b, a, font)
             if type(text) == "string" and isSellName(text) then
                 return draw(s, text, x, y, ORANGE.r, ORANGE.g, ORANGE.b, a, font)
             end
             return draw(s, text, x, y, r, g, b, a, font)
         end
-        local ok, err = pcall(orig, self, doDragged)
+        local ok = pcall(orig, self, doDragged)
         self.drawText = had
-        if not ok then error(err, 0) end
+        if not ok then
+            broken = true
+            orig(self, doDragged)
+        end
     end
 end
 

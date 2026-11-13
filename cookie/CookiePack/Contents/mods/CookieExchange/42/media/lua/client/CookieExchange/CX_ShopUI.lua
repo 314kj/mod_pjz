@@ -190,6 +190,8 @@ function CXShopList:drawItemRow(y, r)
     local by = y + (ROW_H - 4 - BTN_H) / 2
     if soldOut then
         self:drawTextCentre(T("IGUI_CX_SoldOut"), bx + BTN_W / 2, by + (BTN_H - FONT_S) / 2, 0.7, 0.7, 0.7, 1, UIFont.Small)
+    elseif r.cat == CX.KIT_CAT then
+        self:drawTextCentre(T("IGUI_CX_KitRow"), bx + BTN_W / 2, by + (BTN_H - FONT_S) / 2, GOLD.r, GOLD.g, GOLD.b, 1, UIFont.Small)
     else
         local armed = win:isArmed("buy:" .. r.id)
         self:button(bx, by, BTN_W, BTN_H, armed and T("IGUI_CX_Confirm") or T("IGUI_CX_Buy"), function()
