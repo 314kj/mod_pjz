@@ -10,8 +10,10 @@ goto :eof
 # [1] Install / update - one press, nothing else to do:
 #     - copies CookieSlicerHelper.jar + run.ps1 (they come with the Cookie Slicer mod
 #       Steam downloads) to %LOCALAPPDATA%\CookieSlicer
-#     - game RAM: when the game gets less than fits this PC (half its RAM, 4-16 GB,
-#       at least 4 GB left), sets that for the next start (heap.txt, read by run.ps1)
+#     - asks the mode: full, or compatible with other Java mods (ZombieBuddy / Viewpoint):
+#       then the helper is not started, only the game RAM is set (mode.txt, read by run.ps1)
+#     - game RAM: when the game gets less than fits this PC (see Get-RamPlan), sets that
+#       for the next start (heap.txt, read by run.ps1)
 #     - sets the game's Steam launch option to start through run.ps1 (your own options
 #       stay after it). Steam must be closed for that: it closes and opens again by itself.
 #     - turns the Cookie Slicer mod on for the MAIN MENU (Zomboid\mods\default.txt), so
@@ -198,22 +200,24 @@ function Close-Steam {
     throw 'Steam did not close (a download running?). Close Steam yourself, then run this again.'
 }
 
-# Game RAM (same rule as the helper, 1.2.1): what the game used at most in the last
-# sessions (heapstats.txt, written by the helper) x 1.5 + 1.5 GB, at least 6 GB; 8 GB
-# before there is any data; rounded up to a standard size (3 4 6 8 10 12 16 GB, as in the
-# window). Safe = the most this PC can spare: 6 GB left for the rest on PCs with 16 GB or
-# more (at most 16 GB for the game), 4 GB left on smaller ones, >= 3 GB. A suggestion above
-# Safe becomes the biggest standard size within it.
+# Game RAM: what the game used at most in the last sessions (heapstats.txt, written by
+# the helper) x 1.25 + 1 GB, at least 6 GB; 8 GB before there is any data; rounded up to
+# a standard size (3 4 6 8 10 12 16 GB, as in the window), at most 12 GB here (16 only by
+# hand in the window: the old x 1.5 + 1.5 GB put every PC with 22 GB+ on 16). Safe = the
+# most this PC can spare: 6 GB left for the rest on PCs with 16 GB or more (at most 16 GB
+# for the game), 4 GB left on smaller ones, >= 3 GB. A suggestion above Safe becomes the
+# biggest standard size within it.
 function Get-RamPlan([double]$total, [double]$peak) {
     if ($total -ge 16384) { $safe = [math]::Min(16384, [math]::Floor(($total - 6144) / 1024) * 1024) }
     else { $safe = [math]::Max(3072, [math]::Floor(($total - 4096) / 1024) * 1024) }
-    if ($peak -gt 0) { $need = [math]::Max(6144, [math]::Floor($peak * 1.5) + 1536) } else { $need = 8192 }
+    if ($peak -gt 0) { $need = [math]::Max(6144, [math]::Floor($peak * 1.25) + 1024) } else { $need = 8192 }
     $up = -1; $within = 3072
-    foreach ($gb in 3, 4, 6, 8, 10, 12, 16) {
+    foreach ($gb in 3, 4, 6, 8, 10, 12) {
         $mb = $gb * 1024
         if ($up -lt 0 -and $mb -ge $need) { $up = $mb }
         if ($mb -le $safe) { $within = $mb }
     }
+    if ($up -lt 0) { $up = 12288 }
     if ($up -gt 0 -and $up -le $safe) { $rec = $up } else { $rec = $within }
     return @{ Total = [int]$total; Rec = [int]$rec; Safe = [int]$safe }
 }
@@ -227,6 +231,39 @@ function Get-RecommendMB {
         if ($m.Success) { foreach ($x in $m.Groups[1].Value.Split(',')) { if ($x -and [int]$x -gt $peak) { $peak = [int]$x } } }
     }
     return Get-RamPlan $total $peak
+}
+
+# helper version from the jar (Implementation-Version in its manifest); '?' when unreadable
+function Get-HelperVersion([string]$jar) {
+    if (-not (Test-Path -LiteralPath $jar)) { return $null }
+    try {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $z = [System.IO.Compression.ZipFile]::OpenRead($jar)
+        try {
+            $e = $z.GetEntry('META-INF/MANIFEST.MF')
+            if (-not $e) { return '?' }
+            $r = New-Object System.IO.StreamReader($e.Open())
+            $t = $r.ReadToEnd(); $r.Close()
+            $m = [regex]::Match($t, 'Implementation-Version:\s*(\S+)')
+            if ($m.Success) { return $m.Groups[1].Value }
+            return '?'
+        } finally { $z.Dispose() }
+    } catch { return '?' }
+}
+
+# mode.txt: 'compat' = for other Java mods (ZombieBuddy / Viewpoint), else 'full'
+function Get-Mode {
+    $f = Join-Path $AppDir 'mode.txt'
+    if ((Test-Path -LiteralPath $f) -and ([System.IO.File]::ReadAllText($f) -match 'mode=compat')) { return 'compat' }
+    return 'full'
+}
+
+# ZombieBuddy on this PC: in the game's start settings or in Java's own options
+function Test-ZombieBuddy($libs) {
+    if ("$env:JAVA_TOOL_OPTIONS $env:_JAVA_OPTIONS" -match '(?i)ZombieBuddy|zbNative') { return $true }
+    $gj = Find-GameJson $libs
+    if ($gj -and ([System.IO.File]::ReadAllText($gj) -match '(?i)ZombieBuddy|zbNative')) { return $true }
+    return $false
 }
 
 # -Xmx the game starts with now (MB): heap.txt, else the game's own json, else 3072
@@ -390,12 +427,40 @@ try {
             return
         }
         Say ("helper from " + $src) DarkGray
+        $verOld = Get-HelperVersion (Join-Path $AppDir $JarName)
         New-Item -ItemType Directory -Force -Path $AppDir | Out-Null
         Copy-Item -LiteralPath $src -Destination (Join-Path $AppDir $JarName) -Force
         $runSrc = Join-Path (Split-Path -Parent $src) 'run.ps1'
         if (Test-Path -LiteralPath $runSrc) { Copy-Item -LiteralPath $runSrc -Destination $run -Force }
         if (-not (Test-Path -LiteralPath $run)) { throw 'run.ps1 is missing next to the helper file' }
-        Say '[ok] Helper installed' Green
+        $ver = Get-HelperVersion (Join-Path $AppDir $JarName)
+        if ($verOld -and $verOld -ne $ver) { Say ('[ok] Helper updated: v' + $verOld + ' -> v' + $ver) Green }
+        else { Say ('[ok] Helper v' + $ver + ' installed') Green }
+
+        # mode: full, or compatible with other Java mods (they and the helper both change
+        # the game's code while it loads, so they can clash)
+        $zb = (Test-ZombieBuddy $libs) -or ("$now" -match '(?i)ZombieBuddy|zbNative')
+        $modeNow = Get-Mode
+        Say ''
+        Say '  Mode:'
+        Say '  [1] Full - CPU / RAM numbers, sharper look, speed-ups, game RAM'
+        Say '  [2] Compatible with ZombieBuddy / Viewpoint - game RAM only (the helper is not started)'
+        if ($zb) { Say '  ZombieBuddy found on this PC: 2 is suggested' Yellow }
+        $def = '1'; if ($zb -or $modeNow -eq 'compat') { $def = '2' }
+        $m = ('' + (Read-Host ('  Type 1 or 2 and press Enter (Enter = ' + $def + ')'))).Trim()
+        if ($m -ne '1' -and $m -ne '2') { $m = $def }
+        Say ("mode " + $m) DarkGray
+        $mf = Join-Path $AppDir 'mode.txt'
+        if ($m -eq '2') {
+            [System.IO.File]::WriteAllText($mf, "mode=compat`n", $Utf8)
+            Say '[ok] Mode: compatible (ZombieBuddy / Viewpoint) - the Slicer window shows "--" for CPU / RAM' Green
+            Say 'Game RAM in this mode: change it by running this again (the window cannot change it)' DarkGray
+        } else {
+            if (Test-Path -LiteralPath $mf) { Remove-Item -LiteralPath $mf -Force }
+            Say '[ok] Mode: full' Green
+            if ($zb) { Say 'ZombieBuddy is on this PC: if the game or Viewpoint breaks, run this again and pick 2' Yellow }
+        }
+        Say ''
 
         $ram = Get-RecommendMB
         $cur = Get-CurrentHeapMB $libs
@@ -479,7 +544,7 @@ try {
             }
             Remove-Item -LiteralPath $jc -Force
         }
-        foreach ($n in $JarName, 'heap.txt', 'ramsave.txt') {
+        foreach ($n in $JarName, 'heap.txt', 'ramsave.txt', 'mode.txt') {
             $f = Join-Path $AppDir $n
             if (Test-Path -LiteralPath $f) { Remove-Item -LiteralPath $f -Force }
         }
@@ -491,8 +556,11 @@ try {
         Say 'DONE. Helper removed; the game starts as before.' Green
     } else {
         $jar = Join-Path $AppDir $JarName
-        if (Test-Path -LiteralPath $jar) { Say ("Helper: installed  (" + (Get-Item -LiteralPath $jar).LastWriteTime + ")") Green }
+        if (Test-Path -LiteralPath $jar) { Say ("Helper: v" + (Get-HelperVersion $jar) + " installed  (" + (Get-Item -LiteralPath $jar).LastWriteTime + ")") Green }
         else { Say 'Helper: not installed' Yellow }
+        if ((Get-Mode) -eq 'compat') { Say 'Mode: compatible (ZombieBuddy / Viewpoint) - helper not started, game RAM only' Green }
+        else { Say 'Mode: full' Green }
+        if (Test-ZombieBuddy $libs) { Say 'ZombieBuddy: found on this PC' DarkGray }
         Say ("Game RAM from next start: " + [math]::Round((Get-CurrentHeapMB $libs) / 1024, 1) + " GB")
         if ($null -eq $now) { Say 'Steam launch option: could not read' Yellow }
         elseif ($now -match 'CookieSlicer') { Say 'Steam launch option: set' Green }

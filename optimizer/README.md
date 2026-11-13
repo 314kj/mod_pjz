@@ -1,6 +1,6 @@
 # Cookie Slicer: ตัวช่วยให้เกมลื่น ของเซิฟ Cookie Cheetah
 
-**[⬇ ดาวน์โหลดตัวติดตั้ง (CookieSlicer-Setup.bat)](https://github.com/314kj/mod_pjz/releases/download/cookie-slicer-setup/CookieSlicer-Setup.bat)**  ·  ม็อด v1.1.0 · ตัวช่วย v1.1.0 · ฝั่งเซิฟ v4 · Project Zomboid Build 42.22.2
+**[⬇ ดาวน์โหลดตัวติดตั้ง (CookieSlicer-Setup.bat)](https://github.com/314kj/mod_pjz/releases/download/cookie-slicer-setup/CookieSlicer-Setup.bat)**  ·  ม็อด v1.4.0 · ตัวช่วย v1.4.0 · ฝั่งเซิฟ v4 · Project Zomboid Build 42.22.2
 
 > [!WARNING]
 > **ทำมาเพื่อใช้กับเซิฟ Cookie Cheetah (dedicated server) เท่านั้น**
@@ -72,14 +72,31 @@ Cookie Slicer มี 3 ส่วน:
 3. ดับเบิลคลิกไฟล์ที่โหลดมา
    - ถ้าขึ้นจอฟ้า *"Windows protected your PC"* → กด **More info** → **Run anyway** (Windows เตือนทุกไฟล์ที่โหลดจากเน็ตและไม่มีลายเซ็นบริษัท)
 4. กด **1** แล้วกด **Enter**
-5. รอ Steam ปิดแล้วเปิดเองอัตโนมัติ (ประมาณ 1 นาที) จนขึ้นว่า **เสร็จ**
-6. เปิด Project Zomboid → มุมขวาบนของหน้าเมนูหลักมีปุ่ม **Cookie Slicer** = ลงสำเร็จ
+   - ตัวติดตั้งจะบอกเวอร์ชันตัวช่วยที่ลง (เช่น `Helper v1.4.0 installed` หรือ `updated v1.3.0 -> v1.4.0`)
+5. ถามโหมด: กด **Enter** ได้เลย (ใช้ค่าที่แนะนำ)
+   - **1 เต็ม**: ตัวเลข CPU / RAM, Shader, ตัวเร่ง และ RAM เกม (ปกติใช้อันนี้)
+   - **2 เข้ากับ ZombieBuddy / Viewpoint**: ตั้งแค่ RAM เกม ไม่เปิดตัวช่วย (ดูหัวข้อถัดไป)
+6. รอ Steam ปิดแล้วเปิดเองอัตโนมัติ (ประมาณ 1 นาที) จนขึ้นว่า **เสร็จ**
+7. เปิด Project Zomboid → มุมขวาบนของหน้าเมนูหลักมีปุ่ม **Cookie Slicer** = ลงสำเร็จ
 
 | ตัวติดตั้ง | ทำอะไร |
 |---|---|
 | กด **1** | ลง / อัปเดต (ม็อดอัปเดตบน Workshop เมื่อไหร่ ให้กด 1 อีกรอบ) |
 | กด **2** | ถอนออก คืนทุกอย่างเป็นเหมือนเดิม |
 | กด **3** | เช็คว่าลงครบไหม |
+
+### ใช้คู่กับ ZombieBuddy / Viewpoint (มุมมองบุคคลที่ 1)
+
+ZombieBuddy เป็นม็อด Java ที่แก้โค้ดเกมตอนโหลดเหมือนตัวช่วยของเรา ถ้าเครื่องมี ZombieBuddy ตัวติดตั้งจะเจอเองและแนะนำโหมด 2
+
+1. ลง ZombieBuddy (และ Viewpoint) ให้เสร็จก่อน แล้วค่อยเปิดตัวติดตั้งของเรา
+2. กด **1** แล้วตอนถามโหมด ลองกด **1 (เต็ม)** ก่อน
+3. เปิดเกม ถ้าเข้าหน้าเมนูได้และ Viewpoint ใช้ได้ = จบ
+4. ถ้าเกมเด้งปิดเอง หรือ Viewpoint ใช้ไม่ได้ → เปิดตัวติดตั้งใหม่ กด **1** แล้วเลือกโหมด **2**
+5. ยังไม่ได้อีก → ส่ง `Zomboid\console.txt` และ `%TEMP%\CookieSlicer-setup.log` ให้แอดมินใน Discord
+
+โหมด 2: หน้าต่าง Cookie Slicer ขึ้น `--` แทนตัวเลข CPU / RAM, ไม่มี Shader จริง และเปลี่ยน RAM เกมจากหน้าต่างไม่ได้ (เปลี่ยนโดยเปิดตัวติดตั้งแล้วกด 1 ใหม่) หน้าประสิทธิภาพของม็อดยังใช้ได้ปกติ
+อยากกลับเป็นโหมดเต็ม: เปิดตัวติดตั้ง กด **1** เลือก **1**
 
 > ต้อง Subscribe ม็อด Cookie Slicer บน Workshop ไว้ก่อน (ถ้าเคยเข้าเซิฟแล้ว มีอยู่แล้ว)
 > โหลดตัวติดตั้งจาก**ลิงก์ในหน้านี้หรือใน Discord ของเซิฟเท่านั้น** ถ้ามีคนส่งไฟล์ชื่อเดียวกันมาจากที่อื่น อย่าเปิด
@@ -113,6 +130,8 @@ Cookie Slicer มี 3 ส่วน:
 | หน้า Shader ขึ้นว่าตัวช่วยเก่า | เปิดตัวติดตั้ง กด **1** |
 | หน้า Shader ขึ้นว่า "เกมเวอร์ชันนี้ยังไม่รองรับ" | เกมเพิ่งอัปเดต รอแอดมินอัปเดตตัวช่วย ระหว่างนี้ใช้โทนภาพพื้นฐาน |
 | ตัวติดตั้งบอกว่าเกมเปิดอยู่ | ปิดเกมก่อน (ดูใน Task Manager ว่าไม่มี ProjectZomboid64) |
+| ใช้ ZombieBuddy / Viewpoint แล้วเกมเด้งปิดตอนกด Play | อัปเดตม็อดใน Steam แล้วเปิดตัวติดตั้ง กด **1** ใหม่ ถ้ายังเด้ง เลือกโหมด **2** ([ดูวิธี](#ใช้คู่กับ-zombiebuddy--viewpoint-มุมมองบุคคลที่-1)) |
+| เช็คว่าลงเวอร์ชันไหน / โหมดไหน | เปิดตัวติดตั้ง กด **3** |
 | เปิดเกมไม่ขึ้นหลังลง | เปิดตัวติดตั้ง กด **2** (คืนทุกอย่าง) แล้วแจ้งแอดมินใน Discord |
 | ลง Shader แล้ว FPS ตก | หน้า Shader กด **แนะนำให้เข้ากับคอม** หรือเลือกคุณภาพ **ต่ำ** |
 | ส่งให้แอดมินดู | `%TEMP%\CookieSlicer-setup.log` และ `Zomboid\console.txt` |
@@ -126,7 +145,8 @@ Cookie Slicer มี 3 ส่วน:
 - ก๊อปไฟล์ 2 ไฟล์ (ตัวช่วย `.jar` กับ `run.ps1`) จากม็อดบน Workshop ไปไว้ที่ `%LOCALAPPDATA%\CookieSlicer`
 - ใส่ Launch Option ของ Project Zomboid ใน Steam ให้เกมเปิดผ่านตัวช่วย (ปิด Steam ก่อนแก้ และเก็บไฟล์ตั้งค่า Steam เดิมไว้เป็น backup)
 - ใส่ม็อด Cookie Slicer ในรายการม็อดของหน้าเมนูหลัก (`Zomboid\mods\default.txt`)
-- ตั้ง RAM ให้เกมให้พอดีกับเครื่อง (เฉพาะถ้าเดิมน้อยกว่าที่ควร)
+- ตั้ง RAM ให้เกมให้พอดีกับเครื่อง (เฉพาะถ้าเดิมน้อยกว่าที่ควร ตั้งเองได้สูงสุด 12 GB อยากได้ 16 GB เลือกเองในหน้าต่าง)
+- จำโหมดที่เลือก (`mode.txt` ในโฟลเดอร์เดียวกัน)
 - เขียนบันทึกการทำงานไว้ที่ `%TEMP%\CookieSlicer-setup.log`
 
 ตัวช่วยตอนเกมเปิดอยู่:
@@ -212,7 +232,7 @@ Cookie Slicer ทำมาสำหรับเซิฟเราเซิฟเ
 Cookie Slicer is the Cookie Cheetah server's own performance mod. In game press **F8**: *Performance* (levels Undo all / Balanced / Smooth / Max, one switch per setting, what to expect, FPS before / after, live PC numbers with explanations) and *Shader*.
 The optional **Helper** adds a real screen shader (8 styles, sliders, "Fit my PC", before / after compare), live RAM / CPU / GPU numbers and more RAM for the game.
 
-Install: close the game, run **[CookieSlicer-Setup.bat](https://github.com/314kj/mod_pjz/releases/download/cookie-slicer-setup/CookieSlicer-Setup.bat)**, press **1** (update: 1 again, remove: 2, check: 3). If Windows shows "Windows protected your PC", click *More info* then *Run anyway*. Only download it from this page or the server's Discord.
+Install: close the game, run **[CookieSlicer-Setup.bat](https://github.com/314kj/mod_pjz/releases/download/cookie-slicer-setup/CookieSlicer-Setup.bat)**, press **1** (update: 1 again, remove: 2, check: 3). It shows the helper version it installed, then asks the mode: **1 Full** (default) or **2 Compatible with ZombieBuddy / Viewpoint** (game RAM only, the helper is not started; suggested when ZombieBuddy is found). With ZombieBuddy: try 1 first; if the game closes right after Play, run it again and pick 2. If Windows shows "Windows protected your PC", click *More info* then *Run anyway*. Only download it from this page or the server's Discord.
 
 The installer copies two files to `%LOCALAPPDATA%\CookieSlicer`, sets the game's Steam launch option (Steam's config is backed up first), adds the mod to the main-menu mod list and sets the game's RAM. It changes no game file. The helper sends nothing anywhere; its numbers stay in `Zomboid\Lua\CookieSlicer_*.txt`. Option 2 undoes all of it.
 
