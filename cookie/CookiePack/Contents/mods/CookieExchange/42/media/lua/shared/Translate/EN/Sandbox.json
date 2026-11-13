@@ -9,5 +9,5 @@
     "Sandbox_CookieExchange_AutoConvert": "Auto-convert vanilla money",
     "Sandbox_CookieExchange_AutoConvert_tooltip": "Money and money bundles in a player's bags go into the wallet by themselves (every 3 seconds). Bills withdrawn from a wallet are left alone. Default on.",
     "Sandbox_CookieExchange_MigratePhunMart": "Move PhunMart wallets",
-    "Sandbox_CookieExchange_MigratePhunMart_tooltip": "Moves every PhunMart wallet balance into Cookie Wallet (1 token = $100) and empties the PhunMart wallet, every boot and every minute. Also takes PhunMart coins and tokens. Turn on only when Cookie Shop replaces PhunMart. Default off. Turning it off later does not move money back. While PhunMart still drops Change from corpses, players earn from both."
+    "Sandbox_CookieExchange_MigratePhunMart_tooltip": "Moves every PhunMart wallet balance into Cookie Wallet (1 token = $100) and empties the PhunMart wallet, every boot and every minute. Also takes PhunMart coins and tokens, and changes Kuraya vehicle/animal slips into Cookie slips when the player logs in. Turn on only when Cookie Shop replaces PhunMart. Default off. Turning it off later does not move money back. While PhunMart still drops Change from corpses, players earn from both."
 }

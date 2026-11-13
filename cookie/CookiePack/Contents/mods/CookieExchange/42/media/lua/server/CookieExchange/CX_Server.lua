@@ -266,6 +266,10 @@ function C.hello(p)
             if sweepKey(n, data[n]) > 0 then phunSync(p) end
         end
     end
+    if CX.shopServer and CX.shopServer.convertOldSlips then
+        local ok, err = pcall(CX.shopServer.convertOldSlips, p)
+        if not ok then CX.log("kuraya slips error: " .. tostring(err)) end
+    end
     sync(p)
 end
 

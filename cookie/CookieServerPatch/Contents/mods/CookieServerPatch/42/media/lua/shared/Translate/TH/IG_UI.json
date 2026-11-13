@@ -7,7 +7,7 @@
   "IGUI_CSP_MythRepair_Done": "ซ่อมเสร็จ เต็มหลอดแล้ว",
   "IGUI_CSP_MythRepair_Full": "อาวุธนี้เต็มหลอดอยู่แล้ว",
   "IGUI_CSP_MythRepair_NotFound": "หาอาวุธในตัวไม่เจอ",
-  "IGUI_CSP_MythRepair_NoWallet": "ระบบ wallet ของ PhunMart ยังไม่พร้อม",
+  "IGUI_CSP_MythRepair_NoWallet": "Cookie Wallet ยังไม่พร้อม",
   "IGUI_CSP_MythRepair_Failed": "ซ่อมไม่สำเร็จ คืนเงินแล้ว",
   "IGUI_CSP_VSkin": "เปลี่ยนสกินรถ",
   "IGUI_CSP_VSkin_Next": "สกินถัดไป",

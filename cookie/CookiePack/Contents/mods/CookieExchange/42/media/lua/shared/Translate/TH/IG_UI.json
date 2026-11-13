@@ -92,5 +92,6 @@
     "IGUI_CX_Shop_CatNotEmpty": "ย้ายหรือลบสินค้าในหมวดนี้ก่อน",
     "IGUI_CX_Shop_Reloaded": "โหลดไฟล์ร้านใหม่แล้ว",
     "IGUI_CX_Shop_ReloadFailed": "ไฟล์ร้านมี error ไม่ได้เปลี่ยนอะไร",
-    "IGUI_CX_Shop_NotYourSlip": "ใบนี้เป็นของคนอื่น แกะได้เฉพาะคนซื้อ"
+    "IGUI_CX_Shop_NotYourSlip": "ใบนี้เป็นของคนอื่น แกะได้เฉพาะคนซื้อ",
+    "IGUI_CX_Shop_SlipsMoved": "เปลี่ยนใบ Kuraya ที่ถืออยู่เป็นใบของ Cookie แล้ว"
 }

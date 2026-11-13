@@ -92,5 +92,6 @@
     "IGUI_CX_Shop_CatNotEmpty": "Move or delete the items in this category first",
     "IGUI_CX_Shop_Reloaded": "Shop file reloaded",
     "IGUI_CX_Shop_ReloadFailed": "Shop file has an error, nothing changed",
-    "IGUI_CX_Shop_NotYourSlip": "This slip belongs to someone else, only the buyer can unpack it"
+    "IGUI_CX_Shop_NotYourSlip": "This slip belongs to someone else, only the buyer can unpack it",
+    "IGUI_CX_Shop_SlipsMoved": "Your Kuraya slips were changed into Cookie slips"
 }

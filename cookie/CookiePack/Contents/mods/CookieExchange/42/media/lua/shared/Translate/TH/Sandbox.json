@@ -9,5 +9,5 @@
     "Sandbox_CookieExchange_AutoConvert": "แปลงเงิน vanilla อัตโนมัติ",
     "Sandbox_CookieExchange_AutoConvert_tooltip": "เงินและปึกเงินในตัวผู้เล่นเข้ากระเป๋าเอง (ทุก 3 วินาที) แบงค์ที่ถอนออกมาจาก wallet ไม่ถูกแปลง ค่าเริ่มต้น เปิด",
     "Sandbox_CookieExchange_MigratePhunMart": "ย้ายเงิน PhunMart",
-    "Sandbox_CookieExchange_MigratePhunMart_tooltip": "ย้ายยอด PhunMart ทุกคนเข้า Cookie Wallet (1 token = $100) แล้วล้าง PhunMart wallet ทุกครั้งที่บูตและทุก 1 นาที รวมเหรียญ/token ในตัว เปิดเมื่อ Cookie Shop พร้อมแทน PhunMart แล้วเท่านั้น ค่าเริ่มต้น ปิด ปิดทีหลังเงินไม่ย้อนกลับ ถ้า PhunMart ยังดรอป Change จากศพ ผู้เล่นจะได้เงินสองทาง"
+    "Sandbox_CookieExchange_MigratePhunMart_tooltip": "ย้ายยอด PhunMart ทุกคนเข้า Cookie Wallet (1 token = $100) แล้วล้าง PhunMart wallet ทุกครั้งที่บูตและทุก 1 นาที รวมเหรียญ/token ในตัว และเปลี่ยนใบรถ/ใบสัตว์ Kuraya เป็นใบของ Cookie ตอนผู้เล่นเข้าเกม เปิดเมื่อ Cookie Shop พร้อมแทน PhunMart แล้วเท่านั้น ค่าเริ่มต้น ปิด ปิดทีหลังเงินไม่ย้อนกลับ ถ้า PhunMart ยังดรอป Change จากศพ ผู้เล่นจะได้เงินสองทาง"
 }

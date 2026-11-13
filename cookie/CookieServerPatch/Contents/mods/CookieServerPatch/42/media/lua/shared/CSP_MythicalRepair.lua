@@ -1,5 +1,5 @@
 -- CookieServerPatch: Mythical Katana / Mythical Axe can break, and can be
--- repaired back to full for money from the PhunMart wallet.
+-- repaired back to full for money from the Cookie Wallet.
 --
 -- Mythical Items (3816156460) makes its weapons unbreakable in two ways:
 --   1. MI.applyGearParams sets ConditionLowerChanceOneIn = 1000000 on the
@@ -22,10 +22,10 @@
 -- stays in the inventory and can be repaired. The axe has no OnBreak.
 --
 -- Repair: right-click the weapon (only when condition or head is below full,
--- or it is broken) -> confirm -> the server checks the PhunMart wallet
--- ("change" pool, in cents), takes COST_CENTS, and sets condition, head
--- condition and sharpness to full. PhunMart writes the payment to
--- Zomboid/Lua/wallet.log like any other wallet change.
+-- or it is broken) -> confirm -> the server checks the Cookie Wallet
+-- (CookieExchange, in cents), takes COST_CENTS, and sets condition, head
+-- condition and sharpness to full. CookieExchange writes the payment to
+-- its own log like any other wallet change.
 --
 -- Log: "[CookieServerPatch] myth-repair on" at load, one line with the
 -- durability values, one line per repair.
@@ -33,8 +33,7 @@
 
 local TAG = "[CookieServerPatch] myth-repair"
 local MODULE = "CSPMythRepair"
-local COST_CENTS = 300000          -- $3,000 (the PhunMart wallet counts cents)
-local POOL = "change"
+local COST_CENTS = 300000          -- $3,000 (the Cookie Wallet counts cents)
 local BASE_ITEM = "FS.Frostburn"   -- break like this weapon ...
 local FACTOR = 1.2                 -- ... but this much tougher
 local FALLBACK_MAX, FALLBACK_ONEIN = 35, 50
@@ -227,17 +226,19 @@ local function needsRepair(it)
     return false
 end
 
+-- server: CX.server (CookieExchange). client: CX.bal is the synced balance of this player
 local function wallet()
-    local pm = PhunMart
-    if type(pm) == "table" and type(pm.wallet) == "table" then return pm.wallet end
+    if type(CX) == "table" and type(CX.server) == "table" then return CX.server end
     return nil
 end
 
 local function balance(p)
+    if type(CX) ~= "table" then return nil end
+    if CX.bal ~= nil then return tonumber(CX.bal) end
     local w = wallet()
     if not w then return nil end
-    local ok, b = pcall(function() return w:getBalance(p, POOL) end)
-    if ok then return tonumber(b) end
+    local ok, v = pcall(function() return w.balance(p:getUsername()) end)
+    if ok then return tonumber(v) end
     return nil
 end
 
@@ -259,14 +260,6 @@ local function repairFull(it)
     if it:hasSharpness() then it:setSharpness(it:getMaxSharpness()) end
 end
 
-local function syncWallet(p)
-    local pm, w = PhunMart, wallet()
-    if not w or not isServer() then return end
-    pcall(function()
-        sendServerCommand(p, pm.name, pm.commands.getWallet, { username = p:getUsername(), wallet = w:get(p) })
-    end)
-end
-
 local function onRepair(p, args)
     local id = args and tonumber(args.id)
     if not id then return end
@@ -285,22 +278,20 @@ local function onRepair(p, args)
         toClient(p, "result", { ok = false, key = "NoWallet" })
         return
     end
-    local bal = balance(p) or 0
-    if bal < COST_CENTS then
+    local name = p:getUsername()
+    local bal = tonumber(w.balance(name)) or 0
+    if not w.charge(name, COST_CENTS, "myth-repair " .. tostring(it:getFullType())) then
         toClient(p, "result", { ok = false, key = "NoMoney", balance = bal })
         return
     end
-    w:adjustByPool(p, "current", POOL, -COST_CENTS)
     local ok, err = pcall(repairFull, it)
     if not ok then
-        w:adjustByPool(p, "current", POOL, COST_CENTS)   -- give the money back
-        print(TAG .. ": repair failed for " .. tostring(p:getUsername()) .. ": " .. tostring(err))
-        syncWallet(p)
+        w.add(name, COST_CENTS, "myth-repair refund")   -- give the money back
+        print(TAG .. ": repair failed for " .. tostring(name) .. ": " .. tostring(err))
         toClient(p, "result", { ok = false, key = "Failed" })
         return
     end
     pcall(function() it:syncItemFields() end)
-    syncWallet(p)
     print(TAG .. ": " .. tostring(p:getUsername()) .. " repaired " .. tostring(it:getFullType()) .. " for "
         .. COST_CENTS .. " cents (balance " .. bal .. " -> " .. (bal - COST_CENTS) .. ")")
     toClient(p, "result", { ok = true, key = "Done", balance = bal - COST_CENTS })
@@ -389,5 +380,5 @@ if not isServer() then
     end)
 end
 
-print(TAG .. " on (cost " .. money(COST_CENTS) .. " from the PhunMart wallet, durability "
+print(TAG .. " on (cost " .. money(COST_CENTS) .. " from the Cookie Wallet, durability "
     .. BASE_ITEM .. " x" .. FACTOR .. ")")

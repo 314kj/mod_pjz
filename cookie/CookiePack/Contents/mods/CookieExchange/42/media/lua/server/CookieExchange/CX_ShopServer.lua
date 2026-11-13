@@ -703,4 +703,53 @@ end
 
 Events.OnClientCommand.Add(onClientCommand)
 
-CX.shopServer = { load = load, catalog = function() return C() end }
+-- ------------------------------------------------------------------------------
+-- Kuraya slips -> Cookie slips (only while MigratePhunMart is on and Kuraya is still loaded).
+-- The new slip is made first and the old one removed after, so a failure keeps the old slip.
+-- ------------------------------------------------------------------------------
+local OLD_SLIPS = { ["Kuraya.CarSlip"] = "car", ["Kuraya.PetSlip"] = "pet" }
+
+local function convertOldSlips(p)
+    if not CX.opt("MigratePhunMart") then return 0 end
+    local n = nameOf(p)
+    local inv = n and p:getInventory()
+    if not inv then return 0 end
+    local done = 0
+    for ft, kind in pairs(OLD_SLIPS) do
+        local ok, list = pcall(inv.getAllTypeRecurse, inv, ft)
+        if ok and list then
+            local items = {}
+            for i = 0, list:size() - 1 do items[#items + 1] = list:get(i) end
+            for _, it in ipairs(items) do
+                local md = it:getModData() or {}
+                local new, what = nil, nil
+                if kind == "car" and type(md.krVehicle) == "string" and md.krVehicle ~= "" then
+                    what = md.krVehicle
+                    new = makeSlip(p, CX.SLIP_CAR, { cxVeh = what }, tostring(md.krVehName or what))
+                elseif kind == "pet" and type(md.krPet) == "string" and md.krPet ~= "" then
+                    what = md.krPet
+                    local typ, breed = string.match(what, "^%s*([^:]-)%s*:%s*(.-)%s*$")
+                    if not typ or typ == "" then typ, breed = string.match(what, "^%s*(.-)%s*$"), nil end
+                    if breed == "" then breed = nil end
+                    typ = string.lower(typ)
+                    new = makeSlip(p, CX.SLIP_PET, { cxPet = typ, cxBreed = breed, cxN = 1 }, tostring(md.krPetName or what))
+                end
+                if new then
+                    if H.removeItem(it) then
+                        done = done + 1
+                        H.audit(n .. " kuraya " .. kind .. " slip " .. what .. " -> cookie slip")
+                    else
+                        H.removeItem(new)
+                        H.audit(n .. " kuraya " .. kind .. " slip " .. what .. " could not be removed, kept")
+                    end
+                else
+                    H.audit(n .. " kuraya " .. kind .. " slip " .. tostring(what) .. " not converted (empty or bad)")
+                end
+            end
+        end
+    end
+    if done > 0 then res(p, "SlipsMoved", { ok = true }) end
+    return done
+end
+
+CX.shopServer = { load = load, catalog = function() return C() end, convertOldSlips = convertOldSlips }
