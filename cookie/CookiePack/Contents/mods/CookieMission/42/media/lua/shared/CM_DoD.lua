@@ -17,6 +17,10 @@ CM.DOD = {
     STUCK = 90,                 -- seconds a soldier may stay dormant / never show before it is retired
     WIN_HOLD = 8,               -- seconds every soldier must stay down before the win
     ASSIST = 15,                -- seconds a hit counts as an assist
+    HIT_BATCH = 40,             -- A-Life hits a client sends on per message (once a second)
+    HIT_MAX = 10,               -- damage one client report may add (A-Life health units, the debrief shows x100)
+    HIT_CAP = 20,               -- damage client reports may add up to on one soldier
+    NOISE_DELAY = 3,            -- seconds after a group spawns before the noise at its spawn point
     AREA = 80,                  -- tiles around the safe area that count as the match area
     -- guard / assault split in % (guard first), per tier
     GUARD = { 70, 50, 30 },
@@ -42,6 +46,30 @@ CM.DOD = {
 
 CM.DOD.LOC = {}
 for _, l in ipairs(CM.DOD.LOCS) do CM.DOD.LOC[l.id] = l end
+
+-- Armory: gear an admin lists for sale before a deploy. An entry = 1-6 item types with counts, a slot, a price in $
+-- (0 = free). A member picks at most one entry per slot; both ammo slots take ammo entries.
+CM.DOD.GEAR_SLOTS = {
+    { id = "head", c = "head", n = "HEAD" }, { id = "face", c = "face", n = "FACE" }, { id = "body", c = "body", n = "VEST" },
+    { id = "top", c = "top", n = "TOP" }, { id = "arms", c = "arms", n = "ARMS" }, { id = "hands", c = "hands", n = "HANDS" },
+    { id = "legs", c = "legs", n = "LEGS" }, { id = "feet", c = "feet", n = "FEET" }, { id = "back", c = "back", n = "BACK" },
+    { id = "gun", c = "gun", n = "PRIMARY" }, { id = "side", c = "side", n = "SIDEARM" },
+    { id = "ammo1", c = "ammo", n = "AMMO 1" }, { id = "ammo2", c = "ammo", n = "AMMO 2" },
+}
+CM.DOD.GEAR_SLOT = {}
+CM.DOD.GEAR_CAT = {}
+CM.DOD.GEAR_CATS = {}
+for _, s in ipairs(CM.DOD.GEAR_SLOTS) do
+    CM.DOD.GEAR_SLOT[s.id] = s
+    if not CM.DOD.GEAR_CAT[s.c] then
+        CM.DOD.GEAR_CAT[s.c] = true
+        CM.DOD.GEAR_CATS[#CM.DOD.GEAR_CATS + 1] = s.c
+    end
+end
+CM.DOD.GEAR_MAX = 150           -- entries in the whole list
+CM.DOD.GEAR_ITEMS = 6           -- item types in one entry
+CM.DOD.PRESET_MAX = 8           -- admin presets
+CM.DOD.WEAR_DELAY = 3           -- seconds after the landing before the client starts putting the gear on
 
 function CM.dodOn() return CM.sv("DieOrDie") == true end
 

@@ -17,6 +17,7 @@ local TEAMS = {}           -- teamId -> team (memory only)
 local byKey = {}           -- ukey -> teamId
 local watch = {}           -- ukey -> true while the Die or Die window is open
 local hitLog = {}          -- npc uid -> { ukey -> ms of the last hit }
+local hitSrc = {}          -- npc uid -> "s" / "c": the side whose damage counts for it (see addHit)
 local ON = {}              -- ukey -> IsoPlayer (rebuilt every tick)
 local seq = 0
 local lastTick = 0
@@ -220,11 +221,126 @@ local function removeMember(t, k)
     toastTeam(t, "dodleft", { n })
 end
 
+-- ===================================================================== armory (gear bought before a deploy)
+-- An admin lists entries (see CM.DOD.GEAR_SLOTS) and named presets. A member picks in the room; the leader's DEPLOY
+-- charges every member's Cookie Wallet (all or nobody), the items are given at the landing and the client puts them
+-- on. They are the player's to keep. Paid but never given (dropped out before the landing, a restart): money back.
+local function wallet()
+    local w = CX and CX.server or nil
+    if w and type(w.add) == "function" and type(w.charge) == "function" and type(w.balance) == "function" then return w end
+    return nil
+end
+
+local function gearDB()
+    local d = store()
+    d.gear = d.gear or {}
+    local g = d.gear
+    g.list = g.list or {}
+    g.pre = g.pre or {}
+    g.seq = g.seq or 0
+    g.v = g.v or 1
+    return g
+end
+
+local function gearEntry(id)
+    for _, e in ipairs(gearDB().list) do
+        if e.id == id then return e end
+    end
+    return nil
+end
+
+local function slotOk(slot, e)
+    local s = D.GEAR_SLOT[slot]
+    return s ~= nil and e ~= nil and e.s == s.c
+end
+
+local function entryAll(e)
+    for _, it in ipairs(e.it or {}) do
+        if not CMS.itemExists(it.t) then return false end
+    end
+    return true
+end
+
+-- picks against the list as it is now (removed entries dropped): { slot -> id }, price in $
+local function cleanPicks(raw)
+    local pk, usd = {}, 0
+    if type(raw) ~= "table" then return pk, usd end
+    for _, s in ipairs(D.GEAR_SLOTS) do
+        local id = CM.int(raw[s.id], 0)
+        local e = id > 0 and gearEntry(id) or nil
+        if slotOk(s.id, e) then
+            pk[s.id] = id
+            usd = usd + e.p
+        end
+    end
+    return pk, usd
+end
+
+local function gearOf(t, k) return cleanPicks(t.gear and t.gear[k]) end
+
+-- all or nobody: a charge refused (the money moved since the check) gives the others back and stops the deploy
+local function chargeTeam(t)
+    t.paid, t.kit, t.given = {}, {}, {}
+    local w = wallet()
+    for _, k in ipairs(t.list) do
+        local pk = gearOf(t, k)
+        local kit, usd = {}, 0
+        for _, s in ipairs(D.GEAR_SLOTS) do
+            local e = pk[s.id] and gearEntry(pk[s.id])
+            if e and entryAll(e) then
+                kit[#kit + 1] = { s = s.id, it = CM.copy(e.it) }
+                usd = usd + e.p
+            elseif e then log("team " .. t.id .. ": armory entry " .. e.id .. " skipped, an item is gone from the game") end
+        end
+        t.kit[k] = kit
+        if usd > 0 then
+            local ok = w and w.charge(t.names[k], usd * 100, "Die or Die armory " .. t.loc) == true
+            if not ok then
+                for pk2, c in pairs(t.paid) do w.add(t.names[pk2], c, "Die or Die armory refund (deploy stopped)") end
+                t.paid, t.kit = {}, {}
+                return false, t.names[k]
+            end
+            t.paid[k] = usd * 100
+            log("team " .. t.id .. ": armory $" .. usd .. " charged to " .. tostring(t.names[k]))
+        end
+    end
+    return true
+end
+
+local function refund(name, cents, why)
+    local w = wallet()
+    if not w or not cents or cents <= 0 then return false end
+    local ok = pcall(w.add, name, cents, "Die or Die armory refund (" .. why .. ")")
+    log("armory refund $" .. math.floor(cents / 100) .. " to " .. tostring(name) .. " (" .. why .. ") " .. tostring(ok))
+    return ok
+end
+
 -- ===================================================================== match helpers
+-- pay = armory money not yet turned into items: a restart before the landing gives it back
 local function saveLive(t)
     local d = store()
     if not d or not t.cfg then return end
-    d.live[t.id] = { groups = CM.copy(t.groups), homes = CM.copy(t.homes), rect = areaRect(t.cfg) }
+    local pay = {}
+    for k, c in pairs(t.paid or {}) do
+        if not (t.given and t.given[k]) then pay[k] = { c = c, n = t.names[k] } end
+    end
+    d.live[t.id] = { groups = CM.copy(t.groups), homes = CM.copy(t.homes), rect = areaRect(t.cfg), pay = pay }
+end
+
+-- the bought gear, once, at the landing; the client puts on / holds what it can (ammo stays in the bag)
+local function giveKit(t, k, p)
+    if not t.kit or not t.kit[k] or t.given[k] then return end
+    t.given[k] = true
+    local wear = {}
+    for _, e in ipairs(t.kit[k]) do
+        for _, it in ipairs(e.it or {}) do
+            local got = CMS.giveTo(p, it.t, it.n or 1)
+            if got <= 0 then log("team " .. t.id .. ": armory item " .. tostring(it.t) .. " could not be given")
+            elseif e.s ~= "ammo1" and e.s ~= "ammo2" then wear[#wear + 1] = { t = it.t, s = e.s } end
+        end
+    end
+    saveLive(t)
+    if #wear > 0 then send(p, "dodwear", { w = wear }) end
 end
 
 -- god mode through the warp shield record (S.shield: prev + till): given back by the shield tick or at login
@@ -272,6 +388,9 @@ local function deployBlock(t)
         if not p or not alive(p) or inVehicle(p) or CMS.runOf(k) then return "dodnotready", t.names[k] end
         if not t.ready[k] then return "dodwait", t.names[k] end
         if coolLeft(k) > 0 then return "dodcool", t.names[k] end
+        local _, usd = gearOf(t, k)
+        local w = wallet()
+        if usd > 0 and (not w or w.balance(t.names[k]) < usd * 100) then return "dodbroke", t.names[k] end
     end
     return nil
 end
@@ -280,6 +399,8 @@ local function startWarp(t)
     local a = alife()
     local facs = a and militaryFactions(a) or {}
     if #facs == 0 then toastTeam(t, "nolife", {}); return end
+    local okC, broke = chargeTeam(t)
+    if not okC then toastTeam(t, "dodbroke", { broke or "" }); return end
     local fac = facs[rand(#facs) + 1]
     local d = store()
     t.phase = "warp"
@@ -313,6 +434,8 @@ local function landOne(t, k, p)
     godOn(k, p, D.SHIELD + D.WARP)
     send(p, "tp", { x = x, y = y, z = s.z or 0, why = "dod" })
     t.landed[k] = true
+    local ok, err = pcall(giveKit, t, k, p)
+    if not ok then CM.log("dod armory give error: " .. tostring(err)) end
 end
 
 local function landTeam(t)
@@ -340,6 +463,33 @@ local function queueSpawns(t)
     t.nextTry = 0
 end
 
+-- a noise at a spawn point a moment after a group lands there (once per point and wave): A-Life hears world
+-- sounds on the server (OnWorldSound), so its soldiers wake up and look around instead of standing still
+-- under fire; the server passes the sound on to the clients' zombies too
+local function queueNoise(t, sp)
+    t.noise = t.noise or {}
+    local x, y, z = sp.x, sp.y, sp.z or 0
+    for _, n in ipairs(t.noise) do
+        if n.x == x and n.y == y and n.z == z then return end
+    end
+    t.noise[#t.noise + 1] = { x = x, y = y, z = z, at = now() + D.NOISE_DELAY }
+end
+
+local function noiseTick(t)
+    if not t.noise or #t.noise == 0 then return end
+    local rad = CM.int(CM.sv("DodSpawnNoise"), 25, 0, 100)
+    if rad > 0 and rad < 5 then rad = 5 end
+    local keep = {}
+    for _, n in ipairs(t.noise) do
+        if now() < n.at then keep[#keep + 1] = n
+        elseif rad > 0 then
+            local ok, err = pcall(function() getWorldSoundManager():addSound(nil, n.x, n.y, n.z, rad, rad) end)
+            if not ok then CM.log("dod noise error: " .. tostring(err)) end
+        end
+    end
+    t.noise = keep
+end
+
 local function spawnTick(t, a)
     if #t.pend == 0 or now() < (t.nextTry or 0) then return end
     local asker = nil
@@ -363,6 +513,7 @@ local function spawnTick(t, a)
         if ok and type(res) == "table" and res.ok == true and res.groupId ~= nil then
             t.groups[tostring(res.groupId)] = true
             done = true
+            queueNoise(t, g.sp)
         else
             g.tries = g.tries + 1
             g.why = ok and type(res) == "table" and tostring(res.reason or "?") or tostring(res)
@@ -487,14 +638,67 @@ local function record(t, res, mvp)
     while #d.hist > HIST do table.remove(d.hist, 1) end
 end
 
+-- bounty into the Cookie Wallet (Cookie Exchange): per kill plus the MVP bonus, win or lose, not for the ones who
+-- gave up. Paid once (finish runs once per team); without Cookie Exchange nothing is paid.
+local function payBounty(t, mvp)
+    t.cash = {}
+    local w = CX and CX.server or nil
+    if not w or type(w.add) ~= "function" then return end
+    local perKill = CM.int(CM.sv("DodBountyKill"), 100, 0, 100000)
+    local bonus = CM.int(CM.sv("DodBountyMvp"), 150, 0, 100000)
+    for _, k in ipairs(t.list) do
+        local s = t.stats[k]
+        if s and t.st[k] ~= "left" then
+            local usd = s.k * perKill + (k == mvp and bonus or 0)
+            if usd > 0 then
+                local ok, err = pcall(w.add, t.names[k], usd * 100, "Die or Die bounty " .. t.loc .. " " .. s.k .. " kills" .. (k == mvp and " MVP" or ""))
+                if ok then
+                    t.cash[k] = usd
+                    log("team " .. t.id .. ": bounty $" .. usd .. " to " .. tostring(t.names[k]))
+                else CM.log("dod bounty error: " .. tostring(err)) end
+            end
+        end
+    end
+end
+
+-- the end of the countdown after a match: everyone still standing warps home together (offline ones get the
+-- return record for their login; a dead body online never: its new character must not go to the old home)
+local function goHome(t)
+    if t.homeSent then return end
+    t.homeSent = true
+    for _, k in ipairs(t.list) do
+        local p = ON[k]
+        if t.st[k] == "in" and p and not alive(p) then t.st[k] = "dead" end
+        if t.st[k] == "in" then
+            pcall(sendHome, t, k, "home")
+            t.st[k] = "home"
+        end
+    end
+    -- kept until now: a restart during the countdown still sends them home on login
+    local d = store()
+    if d then d.live[t.id] = nil end
+end
+
 local function finish(t, res)
     if t.phase == "over" then return end
     local a = alife()
     if a and t.groups then pcall(retireGroups, a, t.groups, "cookie_mission_dod") end
-    for uid in pairs(t.npcs or {}) do hitLog[uid] = nil end
+    for uid in pairs(t.npcs or {}) do hitLog[uid] = nil; hitSrc[uid] = nil end
     t.phase = "over"
     t.res = res
-    t.overAt = now() + 12
+    -- armory money for gear never handed out (out before the landing): back
+    for _, k in ipairs(t.list) do
+        local c = t.paid and t.paid[k]
+        if c and c > 0 and not (t.given and t.given[k]) then
+            if refund(t.names[k], c, "no landing") then toast(k, "dodrefund", { math.floor(c / 100) }) end
+            t.paid[k] = nil
+        end
+    end
+    -- the restart record must not give it back a second time
+    if t.cfg then saveLive(t) end
+    -- the countdown only after a real fight (win / lose): a failed or empty match sends everyone home at once
+    t.homeAt = now() + ((res == "win" or res == "lose") and CM.int(CM.sv("DodReturn"), 30, 0, 300) or 0)
+    t.overAt = t.homeAt + 12
     -- MVP = most kills (ties: more damage)
     local mvp, best, bestD = nil, 0, 0
     for _, k in ipairs(t.list) do
@@ -508,6 +712,8 @@ local function finish(t, res)
     if res == "win" or res == "lose" then
         local ok, err = pcall(record, t, res, mvp)
         if not ok then CM.log("dod board error: " .. tostring(err)) end
+        ok, err = pcall(payBounty, t, mvp)
+        if not ok then CM.log("dod bounty error: " .. tostring(err)) end
     end
     t.rw = {}
     for _, k in ipairs(t.list) do
@@ -533,18 +739,15 @@ local function finish(t, res)
             if not ok then CM.log("dod reward error: " .. tostring(err)) end
         end
         pcall(godOff, k)
-        if t.st[k] == "in" then
-            pcall(sendHome, t, k, "home")
-            t.st[k] = "home"
-        end
     end
     local d = store()
     if d then
-        d.live[t.id] = nil
         -- the system failed (A-Life gone / refused everything / soldiers never came): cooldown given back;
         -- a team that left or went down by itself ("quit") keeps it
         if res == "abort" or res == "nofight" then for _, k in ipairs(t.list) do d.cool[k] = nil end end
     end
+    -- the ones still standing stay for the countdown (sandbox DodReturn, 0 = at once), then all warp home
+    if now() >= t.homeAt then goHome(t) end
     local n, dead = counts(t)
     log("team " .. t.id .. " " .. res .. " at " .. t.loc .. " (" .. dead .. "/" .. n .. " soldiers down)")
 end
@@ -611,6 +814,7 @@ local function matchTick(t, a)
         end
     elseif t.phase == "live" then
         spawnTick(t, a)
+        noiseTick(t)
         scanNpcs(t, a)
         -- client kill reports waiting for the server to see that soldier down
         for uid in pairs(t.claims or {}) do
@@ -639,7 +843,8 @@ end
 
 local function snap(k)
     local p = ON[k]
-    local o = { on = CMDoD.blocked() == nil, why = CMDoD.blocked(), cool = coolLeft(k), admin = CMS.isAdmin(p) }
+    local o = { on = CMDoD.blocked() == nil, why = CMDoD.blocked(), cool = coolLeft(k), admin = CMS.isAdmin(p),
+        gearN = #gearDB().list, gearV = gearDB().v }
     local locs = {}
     for _, l in ipairs(D.LOCS) do
         local c = locCfg(l.id)
@@ -669,9 +874,16 @@ local function snap(k)
         me.members = {}
         for _, mk in ipairs(t.list) do
             local s = t.stats and t.stats[mk] or nil
+            local _, usd = 0, nil
+            if t.phase == "room" then _, usd = gearOf(t, mk) end
             me.members[#me.members + 1] = { k = mk, n = t.names[mk], lead = mk == t.lead, ready = t.ready[mk] == true,
                 st = t.st and t.st[mk] or nil, kills = s and s.k or 0, dmg = s and math.floor(s.d * 100 + 0.5) or 0,
-                ast = s and s.a or 0, on = ON[mk] ~= nil }
+                ast = s and s.a or 0, on = ON[mk] ~= nil, cash = t.cash and t.cash[mk] or nil, gear = usd }
+        end
+        if t.phase == "room" then
+            me.gear = gearOf(t, k)
+            local w = wallet()
+            me.wallet = w and w.balance(t.names[k]) or nil
         end
         if t.phase == "room" and t.lead == k and #t.list < t.size then
             local free = {}
@@ -689,6 +901,7 @@ local function snap(k)
             local n, dead = counts(t)
             me.spawned, me.dead, me.reinf = n, dead, #(t.pend or {}) > 0
             me.res = t.res
+            me.homeLeft = t.phase == "over" and not t.homeSent and math.max(0, (t.homeAt or tn) - tn) or nil
             me.mvp = t.mvp and t.names[t.mvp] or nil
             me.rw = t.rw and t.rw[k] or nil
             local list = {}
@@ -788,6 +1001,9 @@ local function recoverTick()
             for k, h in pairs(live.homes or {}) do
                 S.returns[k] = { x = h.x, y = h.y, z = h.z, t = now(), why = "back", site = live.rect }
             end
+            -- armory money paid before a landing that never came
+            for _, e in pairs(live.pay or {}) do refund(e.n, e.c, "restart") end
+            live.pay = nil
             log("team " .. tostring(tid) .. " was in a match at boot: players go home on login")
         end
     end
@@ -939,6 +1155,109 @@ function H.dodDeploy(p, args)
     startWarp(t)
 end
 
+-- ===================================================================== armory commands
+function H.dodGearGet(p)
+    local g = gearDB()
+    send(p, "dodgear", { v = g.v, list = g.list, pre = g.pre })
+end
+
+-- my picks while the team is in the room (checked again at the deploy)
+function H.dodGearPick(p, args)
+    local k = keyOf(p)
+    local t = teamOf(k)
+    if not t or t.phase ~= "room" then return end
+    t.gear = t.gear or {}
+    t.gear[k] = cleanPicks(args.pk)
+end
+
+-- a name typed by an admin (Thai is 3 bytes a letter): at most max bytes, never half a letter at the end
+local function cut(s, max)
+    s = CM.trim(tostring(s or ""))
+    if #s <= max then return s end
+    s = string.sub(s, 1, max)
+    local i = #s
+    while i > 1 and string.byte(s, i) >= 128 and string.byte(s, i) < 192 do i = i - 1 end
+    local b = string.byte(s, i)
+    local need = (b >= 240 and 4) or (b >= 224 and 3) or (b >= 192 and 2) or 1
+    if #s - i + 1 < need then s = string.sub(s, 1, i - 1) end
+    return s
+end
+
+-- "Base.Helmet, Base.Bullets9mm x30" -> { { t, n } }; nil when a type does not exist
+local function parseItems(s)
+    local out = {}
+    for part in string.gmatch(CM.str(s, 400), "[^,]+") do
+        local ft, n = string.match(CM.trim(part), "^(%S+)%s*[xX]?%s*(%d*)$")
+        if not ft or not CMS.itemExists(ft) then return nil, CM.trim(part) end
+        out[#out + 1] = { t = ft, n = CM.int(n, 1, 1, 200) }
+        if #out > D.GEAR_ITEMS then return nil, CM.trim(part) end
+    end
+    if #out == 0 then return nil, "" end
+    return out
+end
+
+-- add (no id) or change an entry: slot category, items, price, name
+function A.dodGearSet(p, args)
+    local g = gearDB()
+    local c = tostring(args.s or "")
+    if not D.GEAR_CAT[c] then return end
+    local it, bad = parseItems(args.it)
+    if not it then send(p, "toast", { k = "dodgearbad", a = { bad or "" } }); return end
+    local e = args.id and gearEntry(CM.int(args.id, 0)) or nil
+    if not e then
+        if #g.list >= D.GEAR_MAX then send(p, "toast", { k = "full", a = {} }); return end
+        g.seq = g.seq + 1
+        e = { id = g.seq }
+        g.list[#g.list + 1] = e
+    end
+    e.s, e.it, e.p, e.n = c, it, CM.int(args.p, 0, 0, 1000000), cut(args.n, 90)
+    g.v = g.v + 1
+    log("armory entry " .. e.id .. " (" .. c .. ", $" .. e.p .. ") set by " .. nameOf(p))
+    H.dodGearGet(p)
+end
+
+function A.dodGearDel(p, args)
+    local g = gearDB()
+    local id = CM.int(args.id, 0)
+    for i = #g.list, 1, -1 do
+        if g.list[i].id == id then table.remove(g.list, i) end
+    end
+    for _, pr in ipairs(g.pre) do pr.pk = cleanPicks(pr.pk) end
+    g.v = g.v + 1
+    log("armory entry " .. id .. " removed by " .. nameOf(p))
+    H.dodGearGet(p)
+end
+
+-- the picks given become a named preset (same name = replaced)
+function A.dodPresetSave(p, args)
+    local g = gearDB()
+    local n = cut(args.n, 60)
+    local pk = cleanPicks(args.pk)
+    if n == "" or not CM.any(pk) then return end
+    local hit = nil
+    for _, pr in ipairs(g.pre) do if pr.n == n then hit = pr end end
+    if not hit then
+        if #g.pre >= D.PRESET_MAX then send(p, "toast", { k = "full", a = {} }); return end
+        g.seq = g.seq + 1
+        hit = { id = g.seq, n = n }
+        g.pre[#g.pre + 1] = hit
+    end
+    hit.pk = pk
+    g.v = g.v + 1
+    log("armory preset " .. hit.id .. " saved by " .. nameOf(p))
+    H.dodGearGet(p)
+end
+
+function A.dodPresetDel(p, args)
+    local g = gearDB()
+    local id = CM.int(args.id, 0)
+    for i = #g.pre, 1, -1 do
+        if g.pre[i].id == id then table.remove(g.pre, i) end
+    end
+    g.v = g.v + 1
+    H.dodGearGet(p)
+end
+
 -- ===================================================================== admin: spot setup (stand on the spot)
 local function admLoc(p, args)
     local id = tostring(args.loc or "")
@@ -1049,16 +1368,31 @@ local function playerKey(c)
     return nil
 end
 
--- damage and assists: every player hit on one of our soldiers
+-- damage and assists: every player hit on one of our soldiers. A-Life lets the client that runs a soldier settle
+-- the hits on it, so in multiplayer its hit event fires on that client (sent on with dodHit, src "c") and not
+-- here (src "s"): the first side that reports damage on a soldier is the only one counted for it.
+local function addHit(t, uid, k, damage, src)
+    local s = k and t.stats[k]
+    if not s or t.st[k] ~= "in" then return end
+    if damage and damage > 0 then
+        hitSrc[uid] = hitSrc[uid] or src
+        local e = t.npcs[uid]
+        if hitSrc[uid] == src then
+            if src == "c" and e then
+                damage = math.min(damage, math.max(0, D.HIT_CAP - (e.cd or 0)))
+                e.cd = (e.cd or 0) + damage
+            end
+            s.d = s.d + damage
+        end
+    end
+    hitLog[uid] = hitLog[uid] or {}
+    hitLog[uid][k] = nowMs()
+end
+
 local function noteHit(uid, attacker, damage)
     local t = teamOfUid(uid)
     if not t or t.phase ~= "live" then return end
-    local k = playerKey(attacker)
-    local s = k and t.stats[k]
-    if not s or t.st[k] ~= "in" then return end
-    if damage then s.d = s.d + math.max(0, CM.num(damage, 0)) end
-    hitLog[uid] = hitLog[uid] or {}
-    hitLog[uid][k] = nowMs()
+    addHit(t, uid, playerKey(attacker), damage and math.max(0, CM.num(damage, 0)) or nil, "s")
 end
 
 -- one soldier down: counted dead once, the kill credited once (A-Life's killer, else the server's own guess,
@@ -1132,6 +1466,22 @@ function H.dodKill(p, args)
     if e.dead then credit(t, uid, nil) end
 end
 
+-- client report of the A-Life hits it settled (see addHit), once a second: only from a member of the team, only on
+-- soldiers the scan already listed for it (no registry search per report), only by its players still in; numbers
+-- clamped per report and per soldier
+function H.dodHit(p, args)
+    local t = teamOf(keyOf(p))
+    if not t or t.phase ~= "live" or not t.npcs or type(args.h) ~= "table" then return end
+    for i, e in ipairs(args.h) do
+        if i > D.HIT_BATCH then break end
+        -- a soldier already down still counts: the killing hit reaches us up to a second later
+        if type(e) == "table" and type(e.u) == "string" and t.npcs[e.u] then
+            local d = CM.num(e.d, 0)
+            if d > 0 and d < math.huge then addHit(t, e.u, CM.ukey(e.w), math.min(d, D.HIT_MAX), "c") end
+        end
+    end
+end
+
 -- seen by the missions and the squads: one queue at a time
 function CMS.inDod(k)
     local t = teamOf(k)
@@ -1164,6 +1514,13 @@ local function onTick()
                 for k, at in pairs(t.inv) do if now() - at > 60 then t.inv[k] = nil end end
             end
         elseif t and t.phase == "over" then
+            -- the match tick no longer runs: a death during the countdown is caught here (out, no warp home)
+            if not t.homeSent then
+                for _, k in ipairs(t.list) do
+                    if t.st[k] == "in" and ON[k] and not alive(ON[k]) then died(t, k) end
+                end
+            end
+            if now() >= (t.homeAt or 0) then goHome(t) end
             if now() >= t.overAt then dropTeam(t) end
         elseif t and not a then
             finish(t, "abort")

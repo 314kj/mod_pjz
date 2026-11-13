@@ -431,3 +431,27 @@ option CookieMission.DodMvpHard
     type = integer, min = 0, max = 100, default = 50,
     page = CookieMission, translation = CookieMission_DodMvpHard,
 }
+
+option CookieMission.DodSpawnNoise
+{
+    type = integer, min = 0, max = 100, default = 25,
+    page = CookieMission, translation = CookieMission_DodSpawnNoise,
+}
+
+option CookieMission.DodReturn
+{
+    type = integer, min = 0, max = 300, default = 30,
+    page = CookieMission, translation = CookieMission_DodReturn,
+}
+
+option CookieMission.DodBountyKill
+{
+    type = integer, min = 0, max = 100000, default = 100,
+    page = CookieMission, translation = CookieMission_DodBountyKill,
+}
+
+option CookieMission.DodBountyMvp
+{
+    type = integer, min = 0, max = 100000, default = 150,
+    page = CookieMission, translation = CookieMission_DodBountyMvp,
+}

@@ -75,6 +75,7 @@ local function mbtn(win, x, y, w, h, label, fn, kind, opts)
     return over
 end
 CMDoDc.btn = mbtn
+CMDoDc.tex = tex
 
 -- crosshair drawn with lines (no texture needed)
 local function crosshair(win, cx, cy, r, c, th)
@@ -101,6 +102,8 @@ local function backdrop(win, x, y, w, h, op)
     for i = 0, 5 do rect(win, x, y + h - h * 0.3 * (i + 1) / 6, w, h * 0.05 + 1, K.bg, 0.12 * op) end
     for yy = y, y + h, S(4) do rect(win, x, yy, w, 1, K.g, 0.025 * op) end
 end
+CMDoDc.backdrop = backdrop
+CMDoDc.crosshair = crosshair
 
 -- background opacity of the Die or Die window (per player, this machine)
 local BG_FILE = "CookieMission_dod.txt"
@@ -406,6 +409,11 @@ function DW:drawRoom(sn, tm, x, y, w, h)
         if m.lead then CMUI.text(self, T("IGUI_CM_Dod_leadTag"), rx + rh + S(4), ry + S(4) + CMUI.fh(UIFont.Medium), K.g, 1, fs) end
         CMUI.textR(self, ok and "READY" or T("IGUI_CM_Dod_notReady"), rx + rw - (lead and not m.lead and S(64) or S(12)),
             ry + (rh - CMUI.fh(fs)) / 2, ok and K.g or K.amber, 1, fs)
+        -- what the member's armory kit costs (charged at the deploy)
+        if (m.gear or 0) > 0 then
+            CMUI.textR(self, "$" .. tostring(m.gear), rx + rw - (lead and not m.lead and S(64) or S(12)) - CMUI.tw(fs, "READY") - S(14),
+                ry + (rh - CMUI.fh(fs)) / 2, K.amber, 1, fs)
+        end
         if lead and not m.lead then
             mbtn(self, rx + rw - S(56), ry + S(9), S(48), rh - S(18), T("IGUI_CM_Sq_kick"), function() CMC.send("dodKick", { who = m.k }) end, "ghost")
         end
@@ -421,15 +429,21 @@ function DW:drawRoom(sn, tm, x, y, w, h)
         ry = ry + CMUI.fh(fs) + S(4)
         for _, f in ipairs(free) do
             local cy = ry + math.floor(i / cols) * S(30)
-            if cy + S(26) > y + h - S(64) then break end
+            if cy + S(26) > y + h - S(64) - (sn.gearN and sn.gearN > 0 and S(52) or 0) then break end
             mbtn(self, rx + CM.mod(i, cols) * (bw + S(6)), cy, bw, S(26), (f.inv and (f.n .. " - " .. T("IGUI_CM_Sq_sent")) or ("+ " .. f.n)),
                 function() CMC.send("dodInvite", { who = f.k }) end, "ghost", { disabled = f.inv })
             i = i + 1
         end
         if #free == 0 then CMUI.text(self, T("IGUI_CM_Sq_nofree"), rx, ry, K.faint, 1, fs) end
     end
-    -- actions
+    -- actions (the armory over them when an admin listed gear)
     local by = y + h - S(48)
+    if (sn.gearN or 0) > 0 then
+        local usd = 0
+        for _, m in ipairs(tm.members) do if m.k == myKey then usd = m.gear or 0 end end
+        mbtn(self, rx, by - S(52), rw, S(44), "ARMORY  -  " .. (usd > 0 and ("$" .. tostring(usd)) or T("IGUI_CM_Dod_gearPickShort")),
+            function() if CMDoDc.openArmory then CMDoDc.openArmory(false) end end, "on", { font = UIFont.Medium })
+    end
     if lead then
         mbtn(self, rx, by, S(120), S(48), T("IGUI_CM_Dod_disband"), function() CMC.send("dodDisband", {}) end, "ghost")
         mbtn(self, rx + S(128), by, rw - S(128), S(48), "DEPLOY", function() CMC.send("dodDeploy", {}) end, "go", { font = UIFont.Large })
@@ -452,6 +466,7 @@ local function num(n)
     end
     return out
 end
+CMDoDc.num = num
 
 -- epoch seconds -> "dd/mm hh:mm" in the server's time zone
 local function stamp(ts)
@@ -677,6 +692,9 @@ function DW:drawAdmin(sn, x, y, w, h)
         CMUI.textR(self, tag, x + lw - S(10), ly + (rh - CMUI.fh(fs)) / 2, col, 1, fs)
         ly = ly + rh + S(6)
     end
+    mbtn(self, x, ly + S(6), lw, S(40), "ARMORY  -  " .. T("IGUI_CM_Dod_gearEdit"), function()
+        if CMDoDc.openArmory then CMDoDc.openArmory(true) end
+    end, "on")
     -- the selected spot
     local st = locState(sn, self.admLoc) or {}
     local rx, rw = x + lw + S(24), w - lw - S(24)
@@ -961,66 +979,102 @@ function SC:render()
     end
 end
 
--- ===================================================================== HUD (recon banner + right panel)
+-- ===================================================================== HUD (recon banner + right rail)
+-- The rail is fixed on the right edge and takes no mouse at all (like the game's tooltips): aiming and shooting
+-- pass through it, it can not be dragged.
 CMDoDc.Hud = ISPanel:derive("CMDoD_Hud")
 local HU = CMDoDc.Hud
 
 function HU:new()
-    local w = S(300)
-    local sw = getCore():getScreenWidth()
-    -- left of the floating button's column so it never covers it
-    local o = ISPanel.new(self, sw - w - S(76), S(110), w, S(420))
+    local w = S(236)
+    local o = ISPanel.new(self, getCore():getScreenWidth() - w - S(8), S(64), w, S(300))
     o.background = false
-    o.moveWithMouse = true
+    o.moveWithMouse = false
     return o
 end
 
+function HU:instantiate()
+    ISPanel.instantiate(self)
+    pcall(function() self.javaObject:setConsumeMouseEvents(false) end)
+end
+
 function HU:prerender() end
+function HU:onMouseDown() return false end
+
+-- under the game clock on the right edge; beside the Die or Die button when that one sits in the way
+function HU:place(h)
+    local sw = getCore():getScreenWidth()
+    local x, y = sw - self.width - S(8), S(64)
+    local f = CMDoDc.fab
+    if f and f:isVisible() then
+        local fy = f:getY()
+        if fy < y + h and fy + f:getHeight() > y then x = f:getX() - self.width - S(8) end
+    end
+    if self:getX() ~= x then self:setX(x) end
+    if self:getY() ~= y then self:setY(y) end
+    if self:getHeight() ~= h then self:setHeight(h) end
+end
 
 function HU:render()
     local tm = team()
     if not tm then return end
     local w = self.width
     local fs = UIFont.Small
-    local pad = S(14)
-    local y = 0
-    local hh = S(40)
-    rect(self, 0, 0, w, hh, K.ink, 0.88)
-    border(self, 0, 0, w, hh, K.line, 1)
-    crosshair(self, pad + S(8), hh / 2, S(8), K.g, 2)
-    CMUI.text(self, "DIE OR DIE", pad + S(22), (hh - CMUI.fh(fs)) / 2, K.text, 1, fs)
+    local pad = S(12)
+    local lh = CMUI.fh(fs) + S(5)
+    local hint = (tm.reinf and tm.phase == "live") or tm.phase == "recon"
+    local h = S(30) + S(64) + (hint and lh or 0) + lh * #(tm.members or {}) + S(10) + S(26)
+    self:place(h)
+    rect(self, 0, 0, w, h, K.ink, 0.80)
+    border(self, 0, 0, w, h, K.line2, 0.9)
+    -- the cut corners
+    rect(self, 0, 0, S(10), S(2), K.g, 1); rect(self, 0, 0, S(2), S(10), K.g, 1)
+    rect(self, w - S(10), h - S(2), S(10), S(2), K.g, 1); rect(self, w - S(2), h - S(10), S(2), S(10), K.g, 1)
+    -- header: name + clock (amber while it is the recon)
+    crosshair(self, pad + S(6), S(15), S(7), K.g, 2)
+    CMUI.text(self, "DIE OR DIE", pad + S(18), (S(30) - CMUI.fh(fs)) / 2, K.text, 1, fs)
     local clock = tm.phase == "recon" and CM.clock(left(tm.phaseLeft)) or CM.clock(left(tm.left))
-    CMUI.textR(self, clock, w - pad, (hh - CMUI.fh(UIFont.Medium)) / 2, tm.phase == "recon" and K.amber or K.text, 1, UIFont.Medium)
-    y = hh
-    local bodyH = S(80)
-    rect(self, 0, y, w, bodyH, K.ink, 0.82)
-    border(self, 0, y, w, bodyH, K.line, 1)
+    CMUI.textR(self, clock, w - pad, (S(30) - CMUI.fh(UIFont.Medium)) / 2, tm.phase == "recon" and K.amber or K.text, 1, UIFont.Medium)
+    rect(self, 0, S(30), w, 1, K.line, 1)
+    -- enemies left: skull, the big red number, one segment per soldier
+    local y = S(30)
     local target = tm.phase == "live" and math.max(tm.spawned or 0, tm.target or 0) or (tm.target or 0)
     local remain = tm.phase == "live" and math.max(0, target - (tm.dead or 0)) or target
-    CMUI.text(self, T("IGUI_CM_Dod_remain"), pad, y + S(10), K.faint, 1, fs)
-    local big = tostring(remain)
-    CMUI.textR(self, "/ " .. target, w - pad, y + S(14), K.faint, 1, fs)
-    CMUI.textR(self, big, w - pad - CMUI.tw(fs, "/ " .. target) - S(6), y + S(4), K.red, 1, UIFont.Large)
+    if not tex(self, "cm_skull", pad, y + S(12), S(22), S(22), 1, K.red) then CMUI.text(self, "x", pad, y + S(14), K.red, 1, UIFont.Medium) end
+    CMUI.text(self, "ENEMY LEFT", pad + S(30), y + S(18), K.faint, 1, fs)
+    local of = "/ " .. target
+    CMUI.textR(self, of, w - pad, y + S(20), K.faint, 1, fs)
+    CMUI.textR(self, tostring(remain), w - pad - CMUI.tw(fs, of) - S(6), y + S(8), K.red, 1, UIFont.Large)
     local segs = math.max(1, target)
     local sw2 = (w - pad * 2) / segs
     for i = 1, segs do
-        rect(self, pad + (i - 1) * sw2, y + S(46), math.max(1, sw2 - 2), S(6), i <= (tm.dead or 0) and K.line2 or K.red, 1)
+        rect(self, pad + (i - 1) * sw2, y + S(46), math.max(1, sw2 - 2), S(5), i <= (tm.dead or 0) and K.line2 or K.red, 1)
     end
-    if tm.reinf and tm.phase == "live" then CMUI.text(self, T("IGUI_CM_Dod_reinf"), pad, y + S(58), K.amber, 1, fs)
-    elseif tm.phase == "recon" then CMUI.text(self, T("IGUI_CM_Dod_reconHint"), pad, y + S(58), K.amber, 1, fs) end
-    y = y + bodyH
-    local lh = CMUI.fh(fs) + S(6)
-    local teamH = pad + lh * #(tm.members or {}) + S(8)
-    rect(self, 0, y, w, teamH, K.ink, 0.82)
-    border(self, 0, y, w, teamH, K.line, 1)
-    local ty = y + S(8)
+    y = y + S(64)
+    if tm.reinf and tm.phase == "live" then CMUI.text(self, T("IGUI_CM_Dod_reinf"), pad, y, K.amber, 1, fs); y = y + lh
+    elseif tm.phase == "recon" then CMUI.text(self, CMUI.fit(T("IGUI_CM_Dod_reconHint"), fs, w - pad * 2), pad, y, K.amber, 1, fs); y = y + lh end
+    -- the squad: mine lit green, down ones red
+    local p = CMC.player()
+    local me = p and CM.ukey(p:getUsername()) or ""
+    local myKills = 0
     for _, m in ipairs(tm.members or {}) do
         local on = m.st == "in"
-        CMUI.text(self, CMUI.fit(m.n, fs, w - S(140)), pad, ty, on and K.text or K.faint, 1, fs)
-        local right = on and (m.kills .. " kill") or T("IGUI_CM_Dod_st_" .. tostring(m.st))
-        CMUI.textR(self, right, w - pad, ty, on and K.g or K.faint, 1, fs)
-        ty = ty + lh
+        if m.k == me then
+            myKills = m.kills or 0
+            rect(self, S(4), y - S(2), w - S(8), lh, K.g, 0.12)
+        end
+        rect(self, pad, y + (CMUI.fh(fs) - S(7)) / 2, S(7), S(7), on and K.g or K.faint, 1)
+        CMUI.text(self, CMUI.fit(m.n, fs, w - S(110)), pad + S(14), y, on and K.text or K.faint, 1, fs)
+        local right = on and ((m.kills or 0) .. " KILL") or T("IGUI_CM_Dod_st_" .. tostring(m.st))
+        CMUI.textR(self, right, w - pad, y, on and K.g or K.red, 1, fs)
+        y = y + lh
     end
+    -- footer: tier and spot, my bounty so far (paid at the end)
+    y = h - S(26)
+    rect(self, pad, y, w - pad * 2, 1, K.line2, 1)
+    CMUI.text(self, CMUI.fit(D.TIER_TAG[tm.tier] .. "  -  " .. string.upper(locName(tm.loc)), fs, w - S(90)), pad, y + S(5), K.faint, 1, fs)
+    local per = CM.int(CM.sv("DodBountyKill"), 100, 0, 100000)
+    if per > 0 and myKills > 0 then CMUI.textR(self, "$" .. tostring(per * myKills), w - pad, y + S(5), K.amber, 1, fs) end
 end
 
 -- top centre: RECON countdown, then "ENEMY INBOUND" for a few seconds
@@ -1033,6 +1087,11 @@ function BN:new()
     o.background = false
     o.moveWithMouse = false
     return o
+end
+
+function BN:instantiate()
+    ISPanel.instantiate(self)
+    pcall(function() self.javaObject:setConsumeMouseEvents(false) end)
 end
 
 function BN:prerender() end
@@ -1060,6 +1119,18 @@ function BN:render()
         rect(self, 0, S(74), w, S(2), K.red, a)
         CMUI.textC(self, "ENEMY INBOUND", w / 2, S(20) + (S(56) - CMUI.fh(UIFont.Large)) / 2, K.red, a, UIFont.Large)
         CMUI.textC(self, T("IGUI_CM_Dod_inboundSub", tm.target or 0), w / 2, S(82), { 1, 1, 1 }, a, UIFont.Small)
+    elseif tm.phase == "over" and tm.homeLeft then
+        -- the countdown before everyone still standing warps home (the RECON look, green)
+        local label, clock = "EXTRACTION", CM.clock(left(tm.homeLeft))
+        local lw = CMUI.tw(UIFont.Small, label) + S(30)
+        local cw = CMUI.tw(UIFont.Large, clock) + S(40)
+        local x = (w - lw - cw) / 2
+        rect(self, x, 0, lw, S(42), K.ink, 0.88)
+        border(self, x, 0, lw + cw, S(42), K.line2, 1)
+        CMUI.textC(self, label, x + lw / 2, (S(42) - CMUI.fh(UIFont.Small)) / 2, K.g, 1, UIFont.Small)
+        rect(self, x + lw, 0, cw, S(42), K.g, 1)
+        CMUI.textC(self, clock, x + lw + cw / 2, (S(42) - CMUI.fh(UIFont.Large)) / 2, K.ink, 1, UIFont.Large)
+        CMUI.textC(self, T("IGUI_CM_Dod_homeSub"), w / 2, S(48), { 1, 1, 1 }, 1, UIFont.Small)
     end
 end
 
@@ -1130,7 +1201,8 @@ local function card(win, x, y, w, h, m, mvp, tm)
     rect(win, x, y, w, h, mvp and { 0.09, 0.13, 0.06 } or K.panel, 0.95)
     border(win, x, y, w, h, mvp and K.g or K.line, 1)
     if mvp then border(win, x + 1, y + 1, w - 2, h - 2, K.g, 1) end
-    local ph = math.floor(h * 0.56)
+    -- one more row (the bounty): a smaller picture
+    local ph = math.floor(h * (m.cash and 0.5 or 0.56))
     rect(win, x + S(1), y + S(1), w - S(2), ph, mvp and { 0.14, 0.22, 0.09 } or { 0.08, 0.10, 0.07 }, 1)
     if down or not win:model(m, x + S(1), y + S(1), w - S(2), ph) then
         tex(win, "dod_avatar", x + w * 0.2, y + ph * 0.12, w * 0.6, ph * 0.88, down and 0.35 or 0.9, mvp and K.g or (down and K.faint or K.dim))
@@ -1151,9 +1223,11 @@ local function card(win, x, y, w, h, m, mvp, tm)
         cy = cy + CMUI.fh(UIFont.Medium) + S(4)
     end
     local rows = { { T("IGUI_CM_Dod_kill"), m.kills or 0 }, { "Damage", m.dmg or 0 }, { "Assist", m.ast or 0 } }
+    -- the bounty paid into the Cookie Wallet (amber: money)
+    if m.cash then rows[#rows + 1] = { T("IGUI_CM_Dod_bounty"), "$" .. num(m.cash), K.amber } end
     for _, r in ipairs(rows) do
         CMUI.text(win, r[1], px, cy + (CMUI.fh(fv) - CMUI.fh(UIFont.Medium)) / 2, K.dim, 1, UIFont.Medium)
-        CMUI.textR(win, tostring(r[2]), px + iw, cy, mvp and K.g or K.text, 1, fv)
+        CMUI.textR(win, tostring(r[2]), px + iw, cy, r[3] or (mvp and K.g or K.text), 1, fv)
         cy = cy + CMUI.fh(fv) + S(4)
     end
 end
@@ -1201,6 +1275,17 @@ function DB:drawBody()
     local rs = #names > 0 and (T("IGUI_CM_Dod_got") .. "  " .. table.concat(names, " - ")) or (win and "" or T("IGUI_CM_Dod_noReward"))
     CMUI.textC(self, CMUI.fit(rs, UIFont.Medium, w - S(320)), w / 2 - S(130), h - S(52), K.dim, 1, UIFont.Medium)
     mbtn(self, w - S(260), h - S(62), S(220), S(44), T("IGUI_CM_Dod_close"), function() self:close() end, "go", { font = UIFont.Medium })
+    -- the countdown before the warp home, over the button (live snapshot, only while I am still standing)
+    local cur = team()
+    local p = CMC.player()
+    if cur and cur.id == tm.id and cur.homeLeft and p then
+        local me = CM.ukey(p:getUsername())
+        for _, m in ipairs(cur.members or {}) do
+            if m.k == me and m.st == "in" then
+                CMUI.textC(self, T("IGUI_CM_Dod_homeIn", CM.clock(left(cur.homeLeft))), w - S(150), h - S(84), K.amber, 1, UIFont.Small)
+            end
+        end
+    end
 end
 
 function DB:onClosed()
@@ -1256,6 +1341,45 @@ local function myState(tm)
     return nil
 end
 
+-- ===================================================================== A-Life hits settled on this client
+-- A-Life lets the client that runs a soldier settle the hits on it, so in multiplayer its hit event fires here and
+-- never on the server: player hits seen during our live match go to the server once a second (it checks the team,
+-- the soldier and the numbers). SP / host: the server side hears the event itself.
+local hitBuf, hitN, hitHooked = {}, 0, false
+local function onNpcHit(body, attacker, damage)
+    if not isClient() then return end
+    local tm = team()
+    if not tm or tm.phase ~= "live" then return end
+    if type(damage) ~= "number" or damage ~= damage or damage <= 0 or damage == math.huge then return end
+    if not attacker or not instanceof(attacker, "IsoPlayer") then return end
+    local uid = body:getModData().ProjectALifeUID
+    local who = attacker:getUsername()
+    if type(uid) ~= "string" or uid == "" or not who then return end
+    hitBuf[uid] = hitBuf[uid] or {}
+    local e = hitBuf[uid][who]
+    if not e then
+        if hitN >= D.HIT_BATCH then return end
+        e = { u = uid, w = who, d = 0 }
+        hitBuf[uid][who] = e
+        hitN = hitN + 1
+    end
+    e.d = e.d + damage
+end
+
+local function hitTick()
+    if not hitHooked and Events.ProjectALife_NpcHit then
+        hitHooked = true
+        Events.ProjectALife_NpcHit.Add(function(body, attacker, damage) pcall(onNpcHit, body, attacker, damage) end)
+    end
+    if hitN == 0 then return end
+    local list = {}
+    for _, byWho in pairs(hitBuf) do
+        for _, e in pairs(byWho) do list[#list + 1] = e end
+    end
+    hitBuf, hitN = {}, 0
+    CMC.send("dodHit", { h = list })
+end
+
 local lastPhase, lastTeam = nil, nil
 local function sync()
     local tm = team()
@@ -1287,7 +1411,8 @@ local function sync()
     local ok1, scr = pcall(showPanel, "screen", SC, (mine and phase == "warp") or arriving)
     if ok1 and scr then scr.mode = (mine and phase == "warp") and "warp" or "arrive"; if scr.mode == "warp" then scr.frac = scr.frac or 0 end end
     pcall(showPanel, "hud", HU, mine and (phase == "recon" or phase == "live"))
-    pcall(showPanel, "banner", BN, mine and (phase == "recon" or phase == "live"))
+    local homing = phase == "over" and (tm.homeLeft or 0) > 0
+    pcall(showPanel, "banner", BN, mine and (phase == "recon" or phase == "live" or homing))
 end
 
 -- ===================================================================== invite popup (the squad one, other answer)
@@ -1342,6 +1467,8 @@ Events.OnTick.Add(function()
     lastCheck = t
     local ok, err = pcall(fabTick)
     if not ok then CM.log("dod button error: " .. tostring(err)) end
+    ok, err = pcall(hitTick)
+    if not ok then CM.log("dod hit error: " .. tostring(err)) end
     if CMDoDc.snap and CMDoDc.snap.team and t - CMDoDc.at > 6000 then
         CMDoDc.snap.team = nil
         pcall(sync)

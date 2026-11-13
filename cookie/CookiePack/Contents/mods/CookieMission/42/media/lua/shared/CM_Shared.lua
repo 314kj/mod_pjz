@@ -7,8 +7,8 @@
 
 CM = CM or {}
 CM.MOD = "CookieMission"
-CM.VERSION = "1.3.0"
-CM.BUILD = "cm-261112-dod2"
+CM.VERSION = "1.4.0"
+CM.BUILD = "cm-261114-dod3"
 CM.CACHE_TYPE = "CookieMission.SupplyCache"
 
 -- ===================================================================== env
@@ -217,6 +217,7 @@ CM.DEFAULTS = {
     EasyCure = 0, MediumCure = 0, HardCure = 100,
     DieOrDie = false, DodCooldown = 3, DodMinutes = 30, DodEasy = 20, DodMedium = 30, DodHard = 40,
     DodLegendEasy = 0, DodLegendMedium = 10, DodLegendHard = 25, DodMvpEasy = 10, DodMvpMedium = 25, DodMvpHard = 50,
+    DodSpawnNoise = 25, DodReturn = 30, DodBountyKill = 100, DodBountyMvp = 150,
 }
 
 function CM.sv(name, def)
