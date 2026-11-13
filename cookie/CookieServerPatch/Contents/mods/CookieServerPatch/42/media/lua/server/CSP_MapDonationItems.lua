@@ -1,4 +1,5 @@
--- CookieServerPatch: six items of the new maps become donation only.
+-- CookieServerPatch: six items of the new maps and the Tomb's Wardrobe bags
+-- become donation only.
 -- Server side (multiplayer server, or the game itself in solo). ASCII only.
 --
 -- Pie 12 Nov 2026: these items of Raccoon City (3388468313) and AnruisiTown
@@ -7,6 +8,8 @@
 --   Base.ResidentEvilBackPack, Base.ResidentEvilSuspenders,
 --   Base.BiochemicalVaccines, Base.dabaojian          (Raccoon City)
 --   Base.MilitaryStorageBackpack, Base.WoodChainsaw   (AnruisiTown)
+-- Pie 13 Nov 2026: plus the 26 bags of Tomb's Wardrobe - Alternative
+-- (TombAlternative.*, list below), which also come on its goth/rocker zombies.
 --
 -- What it does:
 --   * loot tables: the six items are taken out of every loot list
@@ -49,24 +52,39 @@ local SWEEP_MS = 5000   -- how often online players are checked
 local SWEEP_R = 2       -- squares around the player (5x5, the player's floor)
 
 local TYPES = {
-    "ResidentEvilBackPack",
-    "ResidentEvilSuspenders",
-    "BiochemicalVaccines",
-    "dabaojian",
-    "MilitaryStorageBackpack",
-    "WoodChainsaw",
+    "Base.ResidentEvilBackPack",
+    "Base.ResidentEvilSuspenders",
+    "Base.BiochemicalVaccines",
+    "Base.dabaojian",
+    "Base.MilitaryStorageBackpack",
+    "Base.WoodChainsaw",
 }
+
+-- Pie 13 Nov 2026: every bag of Tomb's Wardrobe - Alternative (3616536783,
+-- TombWardrobeALT 2.1.0) is donation only too: backpacks, satchels, duffels,
+-- chest rigs and fanny packs, Tight and Loose. Its clothes are not touched.
+local TOMB_BAGS = {
+    "Bag_Small_Loose", "Bag_Small_Tight", "Bag_Small_Satchel_Loose", "Bag_Small_Satchel_Tight",
+    "Bag_Coffin_Loose", "Bag_Coffin_Tight", "Bag_Coffin_Satchel_Loose", "Bag_Coffin_Satchel_Tight",
+    "Bag_Goth_Loose", "Bag_Goth_Tight", "Bag_L_Loose", "Bag_L_Tight",
+    "Bag_XLCoffin_Loose", "Bag_XLCoffin_Tight",
+    "Bag_Duffel_Loose", "Bag_Duffel_Tight", "Bag_Duffel_Satchel_Loose", "Bag_Duffel_Satchel_Tight",
+    "Goth_ChestRig_Loose", "Goth_ChestRig_Tight", "Goth_ChestRigFull_Loose", "Goth_ChestRigFull_Tight",
+    "Goth_Fanny_Front_Loose", "Goth_Fanny_Front_Tight", "Goth_Fanny_Back_Loose", "Goth_Fanny_Back_Tight",
+}
+for _, t in ipairs(TOMB_BAGS) do TYPES[#TYPES + 1] = "TombAlternative." .. t end
 
 CSP_MapDonationItems = CSP_MapDonationItems or {}
 local M = CSP_MapDonationItems
 M.removed = M.removed or 0
 
--- "Base.X" and "X" (loot lists use either form)
+-- full type, plus "X" for Base items (loot lists use either form)
 local NAMES, FULL = {}, {}
 for _, t in ipairs(TYPES) do
     NAMES[t] = true
-    NAMES["Base." .. t] = true
-    FULL["Base." .. t] = true
+    FULL[t] = true
+    local short = string.match(t, "^Base%.(.+)$")
+    if short then NAMES[short] = true end
 end
 
 -- one of the six, whoever gave it
