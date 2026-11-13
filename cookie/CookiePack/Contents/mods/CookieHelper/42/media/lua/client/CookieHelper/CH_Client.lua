@@ -22,6 +22,9 @@ C.hl = C.hl or {}               -- shKey -> true : light up one house
 C.marks = C.marks or {}         -- temporary world highlights
 C.listeners = C.listeners or {}
 C.asks = C.asks or {}           -- open guest-request popups by id
+C.meta = C.meta or { dep = {}, inv = {} }   -- deputies + pending invites from the server
+C.invWins = C.invWins or {}     -- open invite popups by shKey
+C.invShown = C.invShown or {}   -- shKey -> true : already popped up this session (closing = answer later)
 C.hasAny = CHelp.hasAny
 
 -- ------------------------------------------------------------------ tiny event bus for windows
@@ -89,6 +92,22 @@ function C.roleIn(sh, user)
     if C.guestOf(user, CHelp.shKey(sh)) then return "guest" end
     if sh:playerAllowed(user) then return "member" end
     return nil
+end
+
+-- deputy = member the owner picked; may add members while the owner is away
+function C.isDeputy(sh, user)
+    user = user or C.me()
+    local list = sh and user and C.meta.dep[CHelp.shKey(sh)]
+    if not list then return false end
+    for _, n in pairs(list) do
+        if n == user then return true end
+    end
+    return false
+end
+
+-- names invited to a house that have not answered yet
+function C.invitesOf(sh)
+    return (sh and C.meta.inv[CHelp.shKey(sh)]) or {}
 end
 
 -- every house I belong to: owned first, then member, then guest. The order picks the colour.
@@ -198,7 +217,8 @@ end
 -- ------------------------------------------------------------------ network in
 local GOOD = { ReqSent = true, Added = true, AddedFromGuest = true, YouWereAdded = true, ZoneSaved = true,
     HostGuestLeft = true, GuestEnded_left = true, ClaimOk = true, Removed = true, YouLeft = true,
-    Transferred = true, YouOwnNow = true, Renamed = true }
+    Transferred = true, YouOwnNow = true, Renamed = true, Invited = true, InviteAccepted = true,
+    InviteCancelled = true, DeputyOn = true, DeputyOff = true, YouAreDeputy = true }
 
 local handlers = {}
 
@@ -302,6 +322,42 @@ function handlers.msg(args)
     C.emit("msg", k)
 end
 
+function handlers.houseMeta(args)
+    local dep, inv = {}, {}
+    for key, list in pairs(args.dep or {}) do
+        local l = {}
+        for _, n in pairs(list) do l[#l + 1] = n end
+        dep[key] = l
+    end
+    for key, set in pairs(args.inv or {}) do inv[key] = set end
+    C.meta = { dep = dep, inv = inv }
+    C.invalidateHouses()
+    C.emit("meta")
+    C.checkInvites()
+end
+
+-- invites for me: pop up once per session; closed without answering = asked again next login.
+-- Also runs when the safehouse list changes, in case it was not loaded yet when the invite came.
+function C.checkInvites()
+    local me = C.me()
+    if not me then return end
+    local inv = C.meta.inv
+    local stale = {}
+    for key, _ in pairs(C.invWins) do
+        if not (inv[key] and inv[key][me]) then stale[#stale + 1] = key end
+    end
+    for _, key in ipairs(stale) do C.invWins[key]:close() end
+    local gone = {}
+    for key, _ in pairs(C.invShown) do
+        if not (inv[key] and inv[key][me]) then gone[#gone + 1] = key end
+    end
+    for _, key in ipairs(gone) do C.invShown[key] = nil end   -- invited again later = pop up again
+    if not C.openInvite then return end
+    for key, set in pairs(inv) do
+        if set[me] and not C.invShown[key] then C.openInvite(key, set[me]) end
+    end
+end
+
 function handlers.guestAsk(args)
     if C.openAsk then C.openAsk(args) end
 end
@@ -350,6 +406,7 @@ Events.OnCreatePlayer.Add(function() sayHello() end)
 Events.OnSafehousesChanged.Add(function()
     C.invalidateHouses()
     C.emit("safehouses")
+    C.checkInvites()
 end)
 
 -- ------------------------------------------------------------------ actions
@@ -402,10 +459,26 @@ end
 local Ask = UI.Window:derive("CHelpAsk")
 local ROLE_PX = { doctor = "medkit", builder = "hammer", keeper = "wcan" }
 
+local MAX_GUEST_MINUTES = 1440   -- same cap as the server
+local TIME_ROW_H = UI.BTN_H + 12
+
 function Ask:createChildren()
     UI.Window.createChildren(self)
     local y = UI.HEAD_H + 6 + UI.HS * 2 + 14
     local w = self.width - UI.PAD * 2
+    -- how long the guest may stay: the host types it (prefilled with the server default)
+    local labelW = T.tw(t("AskStay")) + 12
+    self.timeY = y
+    self.timeEntry = UI.entry(self, UI.PAD + labelW, y, 80, tostring(self.args.minutes or 10))
+    pcall(function() self.timeEntry:setOnlyNumbers(true) end)
+    local ux = UI.PAD + labelW + 88
+    local uw = floor((w - labelW - 88 - 8) / 2)
+    self.minBtn = UI.button(self, ux, y, uw, t("UnitMin"), self, Ask.onUnit, "pri")
+    self.minBtn.hours = false
+    self.hourBtn = UI.button(self, ux + uw + 8, y, uw, t("UnitHour"), self, Ask.onUnit, "sec")
+    self.hourBtn.hours = true
+    self.hours = false
+    y = y + TIME_ROW_H
     for _, role in ipairs(CHelp.ROLES) do
         local b = UI.button(self, UI.PAD, y, w, C.roleName(role), self, Ask.onRole, "sec", UI.BTN_H + 8)
         b:setIcon(ROLE_PX[role], true)
@@ -417,8 +490,31 @@ function Ask:createChildren()
     d.role = "deny"
 end
 
+function Ask:onUnit(btn)
+    self.hours = btn.hours
+    self.minBtn:setKind(self.hours and "sec" or "pri")
+    self.hourBtn:setKind(self.hours and "pri" or "sec")
+end
+
+-- minutes from the time row, nil when the number is empty / out of range
+function Ask:minutes()
+    local n = tonumber(CHelp.trim(self.timeEntry:getInternalText() or ""))
+    if not n or n ~= n then return nil end
+    local m = floor(n * (self.hours and 60 or 1))
+    if m < 1 or m > MAX_GUEST_MINUTES then return nil end
+    return m
+end
+
 function Ask:onRole(btn)
-    CHelp.toServer("guestAnswer", { id = self.args.id, role = btn.role })
+    local args = { id = self.args.id, role = btn.role }
+    if btn.role ~= "deny" then
+        args.minutes = self:minutes()
+        if not args.minutes then
+            UI.toast(t("AskBadTime", MAX_GUEST_MINUTES / 60), false)
+            return
+        end
+    end
+    CHelp.toServer("guestAnswer", args)
     self:close()
 end
 
@@ -432,13 +528,14 @@ function Ask:drawBody()
     if left <= 0 then self:close() return end
     local y = UI.HEAD_H + 6
     T.text(self, T.fit(t("AskLine1", self.args.guest), self.width - UI.PAD * 2 - 60), UI.PAD, y, K.text)
-    T.text(self, T.fit(t("AskLine2", self.args.title or "", self.args.minutes or 10), self.width - UI.PAD * 2), UI.PAD, y + UI.HS + 4, K.text3)
+    T.text(self, T.fit(t("AskLine2", self.args.title or ""), self.width - UI.PAD * 2), UI.PAD, y + UI.HS + 4, K.text3)
     T.pill(self, self.width - UI.PAD - T.pillW(tostring(left) .. "s"), y, tostring(left) .. "s", K.warn, K.warnD)
+    T.text(self, t("AskStay"), UI.PAD, self.timeY + floor((UI.BTN_H - UI.HS) / 2), K.text2)
 end
 
 function C.openAsk(args)
     if C.asks[args.id] then return end
-    local w, h = 380, UI.HEAD_H + 6 + UI.HS * 2 + 14 + (UI.BTN_H + 14) * 3 + 4 + UI.BTN_H + UI.PAD
+    local w, h = 380, UI.HEAD_H + 6 + UI.HS * 2 + 14 + TIME_ROW_H + (UI.BTN_H + 14) * 3 + 4 + UI.BTN_H + UI.PAD
     local x, y = UI.center(w, h)
     local win = Ask:new(x, y - 80, w, h, t("AskTitle"))
     win.args = args
@@ -446,6 +543,56 @@ function C.openAsk(args)
     win:show()
     C.asks[args.id] = win
     C.emit("asks")
+    getSoundManager():playUISound("UISelectListItem")
+end
+
+-- ------------------------------------------------------------------ house invite popup (for the invitee)
+local Inv = UI.Window:derive("CHelpInvite")
+
+function Inv:createChildren()
+    UI.Window.createChildren(self)
+    local w = floor((self.width - UI.PAD * 2 - 8) / 2)
+    local by = self.height - UI.BTN_H - 8 - UI.PAD
+    UI.button(self, UI.PAD, by, w, t("InviteNo"), self, Inv.onNo, "bad", UI.BTN_H + 8)
+    UI.button(self, UI.PAD + w + 8, by, w, t("InviteYes"), self, Inv.onYes, "pri", UI.BTN_H + 8)
+end
+
+function Inv:onYes()
+    CHelp.toServer("inviteAnswer", { sh = self.key, accept = true })
+    self:close()
+end
+
+function Inv:onNo()
+    CHelp.toServer("inviteAnswer", { sh = self.key, accept = false })
+    self:close()
+end
+
+function Inv:onClose()
+    if C.invWins[self.key] == self then C.invWins[self.key] = nil end
+end
+
+function Inv:drawBody()
+    local pw = self.width - UI.PAD * 2
+    local y = UI.HEAD_H + 10
+    T.textC(self, T.fit(t("InviteLine1", tostring(self.iv.by or "?")), pw, T.FM), self.width / 2, y, K.text, T.FM)
+    y = y + UI.HM + 8
+    T.textC(self, T.fit(self.title, pw, T.FM), self.width / 2, y, K.acc, T.FM)
+    y = y + UI.HM + 12
+    T.textC(self, T.fit(t("InviteLine3"), pw), self.width / 2, y, K.text3)
+end
+
+function C.openInvite(key, iv)
+    if C.invWins[key] then return end
+    local sh = CHelp.shByKey(key)
+    if not sh then return end
+    C.invShown[key] = true
+    local w, h = 460, UI.HEAD_H + 10 + (UI.HM + 8) + (UI.HM + 12) + UI.HS + 20 + UI.BTN_H + 8 + UI.PAD
+    local x, y = UI.center(w, h)
+    local win = Inv:new(x, y - 60, w, h, t("InviteTitle"))
+    win.key, win.iv, win.title = key, iv or {}, sh:getTitle()
+    win:show()
+    pcall(function() win:setAlwaysOnTop(true) end)
+    C.invWins[key] = win
     getSoundManager():playUISound("UISelectListItem")
 end
 

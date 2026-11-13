@@ -19,6 +19,10 @@ local MAX_KNOWN = 400
 local MAX_VEH_MODELS = 600
 local MAX_VEH_ITEMS = 160
 local MAX_VEH_EXTRA = 40
+local MAX_DEPUTIES = 3
+local MAX_INVITES = 10              -- pending invites per house
+local INVITE_SECONDS = 7 * 24 * 3600
+local MAX_GUEST_MINUTES = 1440      -- the host picks the visit length, capped at 24 h
 
 local D = nil
 local pending = {}       -- reqId -> { guest, sh, ts, title }
@@ -27,6 +31,7 @@ local reqSeq = 0
 local started = false
 local startMs = 0
 local lastTick = 0
+local lastMeta = 0
 
 -- ------------------------------------------------------------------ data
 local function data()
@@ -37,6 +42,8 @@ local function data()
     D.vparts = D.vparts or {}
     D.vextra = D.vextra or {}
     D.zseq = D.zseq or 0
+    D.deputies = D.deputies or {}   -- shKey -> { name, ... } (max 3, may add members)
+    D.invites = D.invites or {}     -- shKey -> { name = { by, ts } } waiting for the invitee to answer
     return D
 end
 
@@ -220,6 +227,69 @@ local function sendZonesToMembers(sh)
     for _, p in ipairs(membersOnline(sh)) do sendZonesTo(p, key) end
 end
 
+-- ------------------------------------------------------------------ deputies + invites
+local function isDeputy(sh, user)
+    local list = sh and data().deputies[CHelp.shKey(sh)]
+    if not list then return false end
+    for _, n in ipairs(list) do
+        if n == user then return true end
+    end
+    return false
+end
+
+local function metaPayload()
+    local inv = {}
+    for key, set in pairs(data().invites) do
+        local t = {}
+        for name, iv in pairs(set) do t[name] = { by = iv.by, ts = iv.ts } end
+        inv[key] = t
+    end
+    return { dep = CHelp.copy(data().deputies), inv = inv }
+end
+
+local function broadcastMeta()
+    CHelp.toAll("houseMeta", metaPayload())
+end
+
+-- drop deputies who are no longer real members and invites that are stale. true = something changed
+local function cleanMeta()
+    local now = CHelp.now()
+    local depSet, invDrop = {}, {}
+    local changed = false
+    for key, list in pairs(data().deputies) do
+        local sh = CHelp.shByKey(key)
+        local keep = {}
+        for _, n in ipairs(list) do
+            if sh and n ~= sh:getOwner() and sh:playerAllowed(n) and not guestOf(n, key) and #keep < MAX_DEPUTIES then
+                keep[#keep + 1] = n
+            end
+        end
+        if #keep ~= #list then depSet[key] = keep end
+    end
+    for key, set in pairs(data().invites) do
+        local sh = CHelp.shByKey(key)
+        for name, iv in pairs(set) do
+            local stale = (not sh) or (now - (tonumber(iv.ts) or 0) > INVITE_SECONDS)
+                or (sh:playerAllowed(name) and not guestOf(name, key))
+                or not (sh:getOwner() == iv.by or isDeputy(sh, iv.by))
+            if stale then invDrop[#invDrop + 1] = { key, name } end
+        end
+    end
+    for key, keep in pairs(depSet) do
+        data().deputies[key] = (#keep > 0) and keep or nil
+        changed = true
+    end
+    for _, kn in ipairs(invDrop) do
+        local set = data().invites[kn[1]]
+        if set then
+            set[kn[2]] = nil
+            if not next(set) then data().invites[kn[1]] = nil end
+        end
+        changed = true
+    end
+    return changed
+end
+
 -- ------------------------------------------------------------------ guests
 local function endGuest(user, reason, by)
     local g = data().guests[user]
@@ -262,6 +332,7 @@ local function startupCleanup()
         if not CHelp.shByKey(key) then gone[#gone + 1] = key end
     end
     for _, key in ipairs(gone) do data().zones[key] = nil end
+    cleanMeta()
     CHelp.log("ready v" .. CHelp.VERSION .. " (" .. tostring(#drop) .. " expired guests cleared)")
 end
 
@@ -294,6 +365,10 @@ local function tick()
         saveGuestFile()
         broadcastGuests()
     end
+    if ms - lastMeta > 30000 then
+        lastMeta = ms
+        if cleanMeta() then broadcastMeta() end
+    end
     for id, r in pairs(pending) do
         if ms - r.ts > ASK_TIMEOUT_MS then
             pending[id] = nil
@@ -318,6 +393,7 @@ function H.hello(p, user, args)
         if oldestU then data().known[oldestU] = nil end
     end
     CHelp.toClient(p, "guests", guestPayload())
+    CHelp.toClient(p, "houseMeta", metaPayload())   -- pending invites pop up on the client right after login
     for _, sh in ipairs(CHelp.shListFor(user)) do
         if isRealMember(sh, user) then sendZonesTo(p, CHelp.shKey(sh)) end
     end
@@ -412,10 +488,11 @@ function H.addMember(p, user, args)
     local sh = CHelp.shByKey(args.sh)
     local name = trim(args.name)
     if not sh then return msg(p, "NoSafehouse") end
-    if not (CHelp.isOwner(sh, user) or isAdmin(p)) then return msg(p, "OwnerOnly") end
+    local admin = isAdmin(p)
+    if not (CHelp.isOwner(sh, user) or admin or isDeputy(sh, user)) then return msg(p, "OwnerOrDeputy") end
     if name == "" or string.len(name) > 64 then return msg(p, "BadName") end
     -- offline add off: owners can still add players who are online (the vanilla invite rule)
-    if not CHelp.sv("AllowOfflineAdd") and not isAdmin(p) and not playerByName(name) then return msg(p, "AddDisabled") end
+    if not CHelp.sv("AllowOfflineAdd") and not admin and not playerByName(name) then return msg(p, "AddDisabled") end
     if sh:getOwner() == name then return msg(p, "AlreadyMember", name) end
     local key = CHelp.shKey(sh)
     local cap = maxMember()
@@ -432,6 +509,26 @@ function H.addMember(p, user, args)
     end
     if sh:getPlayers():contains(name) then return msg(p, "AlreadyMember", name) end
     if cap > 0 and membershipCount(name) >= cap then return msg(p, "MemberCap", name, cap) end
+    if not admin then
+        -- owners and deputies send an invite; the player joins only after accepting it in game.
+        -- the invite is matched by exact username, so fix the case from names the server has seen
+        local lower = string.lower(name)
+        for known, _ in pairs(data().known) do
+            if string.lower(known) == lower then name = known break end
+        end
+        if sh:getOwner() == name or sh:getPlayers():contains(name) then return msg(p, "AlreadyMember", name) end
+        local set = data().invites[key] or {}
+        if set[name] then return msg(p, "InviteAlready", name) end
+        local n = 0
+        for _ in pairs(set) do n = n + 1 end
+        if n >= MAX_INVITES then return msg(p, "InviteCap", MAX_INVITES) end
+        set[name] = { by = user, ts = CHelp.now() }
+        data().invites[key] = set
+        broadcastMeta()
+        msg(p, "Invited", name)
+        CHelp.log(tostring(user) .. " invited " .. tostring(name) .. " to safehouse " .. key)
+        return
+    end
     sh:addPlayer(name)
     syncSafehouse(sh)
     msg(p, "Added", name)
@@ -485,7 +582,11 @@ function H.guestAnswer(p, user, args)
     end
     if sh:playerAllowed(r.guest) then return msg(p, "AlreadyMember", r.guest) end
     if data().guests[r.guest] then return msg(p, "GuestBusy", r.guest) end
-    local minutes = CHelp.svInt("GuestMinutes", 1, 240)
+    -- the host types the length; the sandbox value is only the fallback
+    local minutes = tonumber(args.minutes)
+    if minutes and minutes == minutes then minutes = math.floor(minutes) else minutes = nil end
+    if not minutes or minutes < 1 then minutes = CHelp.svInt("GuestMinutes", 1, 240) end
+    if minutes > MAX_GUEST_MINUTES then minutes = MAX_GUEST_MINUTES end
     sh:addPlayer(r.guest)
     syncSafehouse(sh)
     data().guests[r.guest] = { sh = r.sh, role = role, exp = CHelp.now() + minutes * 60, host = user, title = sh:getTitle(),
@@ -505,6 +606,66 @@ function H.guestEnd(p, user, args)
     local sh = CHelp.shByKey(g.sh)
     if target ~= user and not (isAdmin(p) or (sh and isRealMember(sh, user))) then return msg(p, "OwnerOnly") end
     endGuest(target, target == user and "left" or "kicked", user)
+end
+
+function H.inviteAnswer(p, user, args)
+    local key = tostring(args.sh or "")
+    local set = data().invites[key]
+    local iv = set and set[user]
+    if not iv then return msg(p, "InviteGone") end
+    set[user] = nil
+    if not next(set) then data().invites[key] = nil end
+    local sh = CHelp.shByKey(key)
+    if not sh then broadcastMeta() return msg(p, "NoSafehouse") end
+    if CHelp.now() - (tonumber(iv.ts) or 0) > INVITE_SECONDS
+        or not (sh:getOwner() == iv.by or isDeputy(sh, iv.by)) then
+        broadcastMeta()
+        return msg(p, "InviteGone")
+    end
+    local bp = playerByName(iv.by)
+    if args.accept ~= true then
+        broadcastMeta()
+        if bp then msg(bp, "InviteDeclined", user) end
+        CHelp.log(tostring(user) .. " declined invite to safehouse " .. key)
+        return
+    end
+    if sh:getOwner() == user or (sh:playerAllowed(user) and not guestOf(user, key)) then
+        broadcastMeta()
+        return msg(p, "AlreadyMember", user)
+    end
+    local cap = maxMember()
+    if cap > 0 and membershipCount(user) >= cap then
+        broadcastMeta()
+        return msg(p, "MemberCap", user, cap)
+    end
+    if guestOf(user, key) then
+        -- visiting right now: keep the membership, drop the timer
+        data().guests[user] = nil
+        saveGuestFile()
+        broadcastGuests()
+    else
+        sh:addPlayer(user)
+        syncSafehouse(sh)
+    end
+    broadcastMeta()
+    msg(p, "YouWereAdded", sh:getTitle())
+    sendZonesTo(p, key)
+    for _, h in ipairs(membersOnline(sh, user)) do msg(h, "InviteAccepted", user) end
+    CHelp.log(tostring(user) .. " accepted invite to safehouse " .. key .. " (from " .. tostring(iv.by) .. ")")
+end
+
+function H.inviteCancel(p, user, args)
+    local sh = CHelp.shByKey(args.sh)
+    if not sh then return msg(p, "NoSafehouse") end
+    if not (CHelp.isOwner(sh, user) or isAdmin(p) or isDeputy(sh, user)) then return msg(p, "OwnerOrDeputy") end
+    local key = CHelp.shKey(sh)
+    local name = trim(args.name)
+    local set = data().invites[key]
+    if not set or not set[name] then return end
+    set[name] = nil
+    if not next(set) then data().invites[key] = nil end
+    broadcastMeta()
+    msg(p, "InviteCancelled", name)
 end
 
 local function cleanName(s, fallback)
@@ -604,6 +765,36 @@ local function ownerOrAdmin(p, user, sh)
     return sh ~= nil and (sh:getOwner() == user or isAdmin(p))
 end
 
+-- owner (or admin) names up to 3 deputies among the real members; deputies may add members
+function H.setDeputy(p, user, args)
+    local sh = CHelp.shByKey(args.sh)
+    if not sh then return msg(p, "NoSafehouse") end
+    if not ownerOrAdmin(p, user, sh) then return msg(p, "OwnerOnly") end
+    local key = CHelp.shKey(sh)
+    local name = trim(args.name)
+    local list = data().deputies[key] or {}
+    local idx = nil
+    for i, n in ipairs(list) do
+        if n == name then idx = i end
+    end
+    if args.on == true then
+        if idx then return end
+        if name == "" or name == sh:getOwner() or not isRealMember(sh, name) then return msg(p, "BadName") end
+        if #list >= MAX_DEPUTIES then return msg(p, "DeputyCap", MAX_DEPUTIES) end
+        list[#list + 1] = name
+        msg(p, "DeputyOn", name)
+        local tp = playerByName(name)
+        if tp then msg(tp, "YouAreDeputy", sh:getTitle()) end
+    else
+        if not idx then return end
+        table.remove(list, idx)
+        msg(p, "DeputyOff", name)
+    end
+    data().deputies[key] = (#list > 0) and list or nil
+    broadcastMeta()
+    CHelp.log(tostring(user) .. " set deputy " .. name .. "=" .. tostring(args.on == true) .. " (" .. key .. ")")
+end
+
 function H.claim(p, user, args)
     local x, y, z = math.floor(tonumber(args.x) or 0), math.floor(tonumber(args.y) or 0), math.floor(tonumber(args.z) or 0)
     if not CHelp.claimAllowed(p) and not isAdmin(p) then return msg(p, "ClaimDisabled") end
@@ -644,6 +835,7 @@ function H.removeMember(p, user, args)
     msg(p, "Removed", name)
     local tp = playerByName(name)
     if tp then msg(tp, "YouWereRemoved", sh:getTitle()) end
+    if cleanMeta() then broadcastMeta() end
 end
 
 function H.leave(p, user, args)
@@ -656,6 +848,7 @@ function H.leave(p, user, args)
     if not ok then sh:removePlayer(user) syncSafehouse(sh) end
     msg(p, "YouLeft", sh:getTitle())
     for _, o in ipairs(membersOnline(sh, user)) do msg(o, "MemberLeft", user) end
+    if cleanMeta() then broadcastMeta() end
 end
 
 function H.transfer(p, user, args)
@@ -679,6 +872,7 @@ function H.transfer(p, user, args)
     msg(p, "Transferred", name)
     local tp = playerByName(name)
     if tp then msg(tp, "YouOwnNow", sh:getTitle()) end
+    if cleanMeta() then broadcastMeta() end
     CHelp.log(tostring(user) .. " gave safehouse " .. CHelp.shKey(sh) .. " to " .. name)
 end
 

@@ -25,6 +25,8 @@ local Win = UI.Window:derive("CHelpHouses")
 local ROLE_STYLE = {
     owner  = { fg = K.acc,   bg = K.accD,   px = "crown" },
     member = { fg = K.info,  bg = K.infoD,  px = "key" },
+    deputy = { fg = K.warn,  bg = K.warnD,  px = "flag" },
+    pending = { fg = K.text3, bg = K.surf2, px = "house" },
     guest  = { fg = K.peach, bg = K.peachD, px = "medkit" },
     admin  = { fg = K.text2, bg = K.surf2,  px = "search" },
 }
@@ -97,8 +99,16 @@ function Win:createChildren()
     self.people.onMouseDown = function(l, mx, my)
         local row = l:rowAt(mx, my)
         local it = l.items[row]
+        if it and it.item.deputyHit and mx >= it.item.deputyHit and mx < it.item.deputyEnd then
+            CHelp.toServer("setDeputy", { sh = it.item.key, name = it.item.name, on = it.item.role ~= "deputy" })
+            return true
+        end
         if it and it.item.removeHit and mx >= it.item.removeHit then
-            self:askRemove(it.item.name)
+            if it.item.role == "pending" then
+                CHelp.toServer("inviteCancel", { sh = it.item.key, name = it.item.name })
+            else
+                self:askRemove(it.item.name)
+            end
             return true
         end
         return ISScrollingListBox.onMouseDown(l, mx, my)
@@ -124,6 +134,7 @@ function Win:createChildren()
 
     C.on("safehouses", self, Win.refresh)
     C.on("guests", self, Win.refresh)
+    C.on("meta", self, Win.refresh)
     C.on("msg", self, Win.refresh)
     C.on("highlight", self, Win.layout)
     self:refresh()
@@ -175,7 +186,18 @@ function Win:fillPeople()
     local players = sh:getPlayers()
     for i = 0, players:size() - 1 do
         local n = players:get(i)
-        if n ~= owner then add(n, "member") end
+        if n ~= owner then add(n, C.isDeputy(sh, n) and "deputy" or "member") end
+    end
+    -- invited, not answered yet
+    local pend = {}
+    for n, _ in pairs(C.invitesOf(sh)) do
+        if not sh:playerAllowed(n) then pend[#pend + 1] = n end
+    end
+    table.sort(pend, function(a, b) return string.lower(a) < string.lower(b) end)
+    for _, n in ipairs(pend) do
+        local d = { name = n, role = "pending", baseRole = "pending", key = h.key, baseExtra = t("PendingExtra") }
+        liveInfo(d)
+        self.people:addItem(n, d)
     end
     for i, row in ipairs(self.people.items) do
         if row.item.name == keepName then self.people.selected = i end
@@ -192,6 +214,20 @@ function Win:canManage()
     local h = self.sel
     if not h then return false end
     return h.role == "owner" or C.isAdmin()
+end
+
+-- owner, admin or one of the owner's deputies may invite people
+function Win:canAdd()
+    local h = self.sel
+    if not h then return false end
+    return self:canManage() or (h.role == "member" and C.isDeputy(h.sh))
+end
+
+-- what the title pill / "you can" line shows for me in the selected house
+function Win:shownRole()
+    local h = self.sel
+    if h and h.role == "member" and C.isDeputy(h.sh) then return "deputy" end
+    return h and h.role or nil
 end
 
 function Win:selectedPerson()
@@ -222,7 +258,7 @@ function Win:layout()
     self.renameBtn:setX(px) self.renameBtn:setY(y)
     self.transferBtn:setX(px + 150) self.transferBtn:setY(y)
     local person = self:selectedPerson()
-    local canGive = person and person.role == "member"
+    local canGive = person and (person.role == "member" or person.role == "deputy")
     self.transferBtn:setTitle(canGive and t("TransferTo", person.name) or t("TransferPick"))
     self.transferBtn:setEnable(canGive == true)
     local dangerKey = (role == "owner" or (role == "admin" and C.isAdmin())) and "Release" or (role == "guest" and "EndGuest" or "Leave")
@@ -248,7 +284,7 @@ function Win:layout()
 
     -- add member row
     local addY = y - UI.BTN_H - 12
-    local canAdd = manage
+    local canAdd = self:canAdd()
     self.addEntry:setVisible(canAdd)
     self.addBtn:setVisible(canAdd)
     self.listBtn:setVisible(canAdd)
@@ -371,7 +407,7 @@ function Win:drawPanel()
     -- title row
     local d = UI.HM - 6
     T.circle(self, px, cy + 3, d, h.color)
-    local pillW = rolePill(self, px + pw, cy + floor((UI.HM - UI.HS - 4) / 2), h.role, t("YouAre"), true)
+    local pillW = rolePill(self, px + pw, cy + floor((UI.HM - UI.HS - 4) / 2), self:shownRole(), t("YouAre"), true)
     T.text(self, T.fit(sh:getTitle(), pw - pillW - d - 20, T.FM), px + d + 10, cy, K.text, T.FM)
     cy = cy + UI.HM + 10
     -- info grid
@@ -403,7 +439,7 @@ function Win:drawPanel()
         end
     end
     -- what you may do here
-    local can = t("Can_" .. (h.role or "admin"))
+    local can = t("Can_" .. (self:shownRole() or "admin"))
     local lines = T.wrap(t("YouCan") .. " " .. can, pw, T.FS, 2)
     for _, l in ipairs(lines) do
         T.text(self, l, px, cy, K.text2)
@@ -416,8 +452,14 @@ function Win:drawPanel()
     end
     -- people header
     local online = 0
-    for _, it in ipairs(self.people.items) do if it.item.online then online = online + 1 end end
-    T.text(self, t("PeopleN", #self.people.items), px, cy, K.text2)
+    local people = 0
+    for _, it in ipairs(self.people.items) do
+        if it.item.role ~= "pending" then
+            people = people + 1
+            if it.item.online then online = online + 1 end
+        end
+    end
+    T.text(self, t("PeopleN", people), px, cy, K.text2)
     T.textR(self, t("OnlineN", online), px + pw, cy, K.text3)
     cy = cy + UI.HS + 6
     if self.peopleTop ~= cy then
@@ -479,18 +521,34 @@ function Win.drawPerson(self, list, d, x, y, w, h, hover, sel)
     local pw = rolePill(list, nx, y + floor((h - UI.HS - 4) / 2), d.role)
     local ex = nx + pw + 10
     d.removeHit = nil
+    d.deputyHit = nil
     local right = x + w - 10
-    if self:canManage() and d.role ~= "owner" then
-        local label = t("Remove")
+    local mx = list:getMouseX()
+    local pending = d.role == "pending"
+    if (pending and self:canAdd()) or (not pending and self:canManage() and d.role ~= "owner") then
+        local label = pending and t("CancelInvite") or t("Remove")
         local bw = T.tw(label) + 20
         local bh = UI.HS + 8
         local bx = right - bw
         local by = y + floor((h - bh) / 2)
-        local mx = list:getMouseX()
         local hov = hover and mx >= bx
         T.rrect(list, bx, by, bw, bh, floor(bh / 2), hov and T.rgb("5A2C33") or K.badD)
         T.textC(list, label, bx + bw / 2, by + 4, K.bad)
         d.removeHit = bx
+        right = bx - 8
+    end
+    -- owner / admin: make a member deputy (max 3) or take it back
+    if self:canManage() and (d.role == "member" or d.role == "deputy") then
+        local label = d.role == "deputy" and t("DeputyOff") or t("DeputyOn")
+        local bw = T.tw(label) + 20
+        local bh = UI.HS + 8
+        local bx = right - bw
+        local by = y + floor((h - bh) / 2)
+        local hov = hover and mx >= bx and mx < right
+        T.rrect(list, bx, by, bw, bh, floor(bh / 2), hov and K.surf2 or K.warnD)
+        T.textC(list, label, bx + bw / 2, by + 4, K.warn)
+        d.deputyHit = bx
+        d.deputyEnd = right
         right = bx - 8
     end
     if d.extra ~= "" then T.text(list, T.fit(d.extra, right - ex), ex, y + floor((h - UI.HS) / 2), K.text3) end
@@ -591,7 +649,7 @@ end
 
 function Win:onTransfer()
     local person = self:selectedPerson()
-    if not self.sel or not person or person.role ~= "member" then return end
+    if not self.sel or not person or (person.role ~= "member" and person.role ~= "deputy") then return end
     local key, name = self.sel.key, person.name
     UI.confirm(t("TransferTitle"), t("TransferText", self.sel.sh:getTitle(), name), t("TransferOk"), true, self, function()
         CHelp.toServer("transfer", { sh = key, name = name })
@@ -707,7 +765,7 @@ function A:fill()
         self.total = self.total + 1
         if e.on then self.online = self.online + 1 end
         if q == "" or string.find(string.lower(e.n), q, 1, true) then
-            e.inHouse = self.sh:playerAllowed(e.n)
+            e.inHouse = self.sh:playerAllowed(e.n) or C.invitesOf(self.sh)[e.n] ~= nil
             rows[#rows + 1] = e
         end
     end

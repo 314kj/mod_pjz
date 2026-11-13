@@ -1,8 +1,8 @@
 name=Cookie Helper - Safehouse Tools
 id=CookieHelper
 author=lookchinnoi (AKA)
-description=CookieCheetah safehouse helper: own up to 3 houses and join up to 5, a My Houses window with colours per house, add members while offline, timed guest visits (Doctor / Builder / House Keeper), Workshop zones that count boxes, find workstations and craft with amount, queue and Link, Garage zones for car parts, and a lag-free Cookie Finder.
+description=CookieCheetah safehouse helper: own up to 3 houses and join up to 5, a My Houses window with colours per house, invite members (owner or up to 3 deputies, accepted in game), timed guest visits (Doctor / Builder / House Keeper), Workshop zones that count boxes, find workstations and craft with amount, queue and Link, Garage zones for car parts, and a lag-free Cookie Finder.
 poster=poster.png
 icon=icon.png
 versionMin=42.13.0
-modversion=1.3.3
+modversion=1.4.0
