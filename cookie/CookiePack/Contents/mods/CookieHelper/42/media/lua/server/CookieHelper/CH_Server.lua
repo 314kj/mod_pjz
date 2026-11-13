@@ -283,7 +283,7 @@ local function cleanMeta()
         local set = data().invites[kn[1]]
         if set then
             set[kn[2]] = nil
-            if not next(set) then data().invites[kn[1]] = nil end
+            if not CHelp.hasAny(set) then data().invites[kn[1]] = nil end
         end
         changed = true
     end
@@ -614,7 +614,7 @@ function H.inviteAnswer(p, user, args)
     local iv = set and set[user]
     if not iv then return msg(p, "InviteGone") end
     set[user] = nil
-    if not next(set) then data().invites[key] = nil end
+    if not CHelp.hasAny(set) then data().invites[key] = nil end
     local sh = CHelp.shByKey(key)
     if not sh then broadcastMeta() return msg(p, "NoSafehouse") end
     if CHelp.now() - (tonumber(iv.ts) or 0) > INVITE_SECONDS
@@ -663,7 +663,7 @@ function H.inviteCancel(p, user, args)
     local set = data().invites[key]
     if not set or not set[name] then return end
     set[name] = nil
-    if not next(set) then data().invites[key] = nil end
+    if not CHelp.hasAny(set) then data().invites[key] = nil end
     broadcastMeta()
     msg(p, "InviteCancelled", name)
 end
