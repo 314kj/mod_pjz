@@ -166,6 +166,11 @@ function DW:new(x, y, w, h)
     o.newSize = 4
     o.admLoc = D.LOCS[1].id
     o.boardWeek = false
+    o.boardView = "rank"
+    o.boardSort = "w"
+    o.histMine = false
+    o.histPage = 1
+    o.histSel = nil
     return o
 end
 
@@ -209,7 +214,19 @@ end
 
 function DW:setTab(tab)
     self.tab = tab
-    if tab == "board" then CMC.send("dodBoard", { week = self.boardWeek }) end
+    if tab == "board" then self:askBoard() end
+end
+
+-- the scoreboard page in view (ranking / match history); old data is dropped so it never shows under the wrong filter
+function DW:askBoard()
+    self.histPage, self.histSel = 1, nil
+    if self.boardView == "hist" then
+        CMDoDc.hist = nil
+        CMC.send("dodBoard", { view = "hist", week = self.boardWeek, mine = self.histMine })
+    else
+        CMDoDc.board = nil
+        CMC.send("dodBoard", { week = self.boardWeek, sort = self.boardSort })
+    end
 end
 
 local function locState(sn, id)
@@ -424,55 +441,220 @@ function DW:drawRoom(sn, tm, x, y, w, h)
     end
 end
 
+-- 12345 -> "12,345"
+local function num(n)
+    local s = tostring(math.floor(tonumber(n) or 0))
+    local out = s
+    while true do
+        local k
+        out, k = string.gsub(out, "^(-?%d+)(%d%d%d)", "%1,%2")
+        if k == 0 then break end
+    end
+    return out
+end
+
+-- epoch seconds -> "dd/mm hh:mm" in the server's time zone
+local function stamp(ts)
+    local lt = math.floor(CM.num(ts, 0)) + math.floor(CM.num(CM.sv("UtcOffset", 7), 7) * 3600)
+    local day = math.floor(lt / 86400)
+    local _, m, d = CM.civil(day)
+    local sec = lt - day * 86400
+    return CM.pad2(d) .. "/" .. CM.pad2(m) .. " " .. CM.pad2(math.floor(sec / 3600)) .. ":" .. CM.pad2(math.floor(CM.mod(sec, 3600) / 60))
+end
+
+-- one table row: cols = { { label, share, right aligned } }; returns the x of each column
+local function tableRow(win, cols, vals, x, iw, yy, colors, font)
+    local xx = x
+    for i, c in ipairs(cols) do
+        local cwid = iw * c[2]
+        local v = tostring(vals[i] or "")
+        if c[3] then CMUI.textR(win, v, xx + cwid - S(8), yy, colors[i] or K.text, 1, font)
+        else CMUI.text(win, CMUI.fit(v, font, cwid - S(6)), xx, yy, colors[i] or K.text, 1, font) end
+        xx = xx + cwid
+    end
+end
+
 function DW:drawBoard(x, y, w, h)
+    -- page (ranking / match history) on the left, all time / this week on the right
+    local function view(v) return function() self.boardView = v; self:askBoard() end end
+    mbtn(self, x, y - S(4), S(140), S(28), T("IGUI_CM_Dod_sbRank"), view("rank"), self.boardView == "rank" and "on" or "ghost")
+    mbtn(self, x + S(146), y - S(4), S(160), S(28), T("IGUI_CM_Dod_sbHist"), view("hist"), self.boardView == "hist" and "on" or "ghost")
+    if self.boardView == "hist" then
+        mbtn(self, x + S(330), y - S(4), S(110), S(28), T("IGUI_CM_Dod_sbAll"), function() self.histMine = false; self:askBoard() end,
+            self.histMine and "ghost" or "on")
+        mbtn(self, x + S(446), y - S(4), S(140), S(28), T("IGUI_CM_Dod_sbMyMatches"), function() self.histMine = true; self:askBoard() end,
+            self.histMine and "on" or "ghost")
+    end
+    mbtn(self, x + w - S(250), y - S(4), S(120), S(28), T("IGUI_CM_Dod_allTime"), function() self.boardWeek = false; self:askBoard() end,
+        self.boardWeek and "ghost" or "on")
+    mbtn(self, x + w - S(124), y - S(4), S(124), S(28), T("IGUI_CM_Dod_thisWeek"), function() self.boardWeek = true; self:askBoard() end,
+        self.boardWeek and "on" or "ghost")
+    if self.boardView == "hist" then
+        if self.histSel then self:drawMatch(self.histSel, x, y + S(36), w, h - S(36))
+        else self:drawHist(x, y + S(36), w, h - S(36)) end
+    else
+        self:drawRank(x, y + S(36), w, h - S(36))
+    end
+end
+
+function DW:drawRank(x, y, w, h)
     local fs = UIFont.Small
     local b = CMDoDc.board
-    mbtn(self, x + w - S(250), y - S(4), S(120), S(28), T("IGUI_CM_Dod_allTime"), function() self.boardWeek = false; self:setTab("board") end,
-        self.boardWeek and "ghost" or "on")
-    mbtn(self, x + w - S(124), y - S(4), S(124), S(28), T("IGUI_CM_Dod_thisWeek"), function() self.boardWeek = true; self:setTab("board") end,
-        self.boardWeek and "on" or "ghost")
+    -- a late answer for the filter clicked before counts as not loaded yet
+    if b and (b.week ~= (self.boardWeek == true) or b.sort ~= self.boardSort) then b = nil end
     if not b then CMUI.text(self, T("IGUI_CM_Loading"), x, y, K.dim); return end
-    local cw = (w - S(20)) / 3
-    local stats = { { T("IGUI_CM_Dod_sbTotal"), tostring(b.total or 0), K.text }, { T("IGUI_CM_Dod_sbMatches"), tostring(b.matches or 0), K.text },
-        { T("IGUI_CM_Dod_sbMine"), b.mine and ("#" .. b.mine) or "-", K.g } }
-    local sy = y + S(30)
+    local cw = (w - S(30)) / 4
+    local stats = { { T("IGUI_CM_Dod_sbTotal"), num(b.total), K.text }, { T("IGUI_CM_Dod_sbMatches"), num(b.matches), K.text },
+        { T("IGUI_CM_Dod_sbDmg"), num(b.dmg), K.amber }, { T("IGUI_CM_Dod_sbMine"), b.mine and ("#" .. b.mine) or "-", K.g } }
     for i, st in ipairs(stats) do
         local sx = x + (i - 1) * (cw + S(10))
-        rect(self, sx, sy, cw, S(64), K.panel, 0.92)
-        border(self, sx, sy, cw, S(64), i == 3 and K.g or K.line, 1)
-        CMUI.text(self, st[1], sx + S(12), sy + S(8), i == 3 and K.g or K.faint, 1, fs)
-        CMUI.text(self, st[2], sx + S(12), sy + S(8) + CMUI.fh(fs), st[3], 1, UIFont.Large)
+        rect(self, sx, y, cw, S(64), K.panel, 0.92)
+        border(self, sx, y, cw, S(64), i == 4 and K.g or K.line, 1)
+        CMUI.text(self, st[1], sx + S(12), y + S(8), i == 4 and K.g or K.faint, 1, fs)
+        CMUI.text(self, st[2], sx + S(12), y + S(8) + CMUI.fh(fs), st[3], 1, UIFont.Large)
     end
-    local ty = sy + S(78)
-    local cols = { { "#", 0.07 }, { T("IGUI_CM_Dod_sbPlayer"), 0.33 }, { "RECRUIT", 0.12 }, { "VETERAN", 0.12 }, { "ELITE", 0.12 }, { T("IGUI_CM_Dod_sbSum"), 0.12 }, { "MVP", 0.12 } }
+    local ty = y + S(78)
+    -- { label, share, right aligned, sort key }
+    local cols = { { "#", 0.05 }, { T("IGUI_CM_Dod_sbPlayer"), 0.24 }, { T("IGUI_CM_Dod_sbWins"), 0.13, true },
+        { T("IGUI_CM_Dod_sbSum"), 0.08, true, "w" }, { "KILL", 0.08, true, "k" }, { "DAMAGE", 0.12, true, "d" },
+        { "ASSIST", 0.09, true }, { "MVP R/V/E", 0.13, true }, { "MVP", 0.08, true, "mvp" } }
     rect(self, x, ty, w, h - (ty - y), K.panel, 0.9)
     border(self, x, ty, w, h - (ty - y), K.line, 1)
     local cx = x + S(14)
     local iw = w - S(28)
     local rowH = S(34)
-    local function row(vals, yy, colsC, font)
-        local xx = cx
-        for i, c in ipairs(cols) do
-            local cwid = iw * c[2]
-            local v = tostring(vals[i])
-            if i <= 2 then CMUI.text(self, CMUI.fit(v, font, cwid - S(6)), xx, yy, colsC[i] or K.text, 1, font)
-            else CMUI.textR(self, v, xx + cwid - S(8), yy, colsC[i] or K.text, 1, font) end
-            xx = xx + cwid
+    -- header: the green ones sort the table (the one in use is underlined)
+    local hdr, hc = {}, {}
+    local hx = cx
+    local hy = ty + S(10)
+    for i, c in ipairs(cols) do
+        hdr[i] = c[1]
+        local cwid = iw * c[2]
+        if c[4] then
+            local on = self.boardSort == c[4]
+            local over = self:hit(hx, hy - S(4), cwid, CMUI.fh(fs) + S(8), function() self.boardSort = c[4]; self:askBoard() end)
+            hc[i] = (on or over) and K.g or K.gDim
+            if on then rect(self, hx + S(8), hy + CMUI.fh(fs) + S(2), cwid - S(16), S(2), K.g, 1) end
+        else
+            hc[i] = K.faint
         end
+        hx = hx + cwid
     end
-    local hdr = {}
-    for i, c in ipairs(cols) do hdr[i] = c[1] end
-    row(hdr, ty + S(10), { K.faint, K.faint, K.faint, K.faint, K.red, K.faint, K.g }, fs)
-    local ry = ty + S(10) + CMUI.fh(fs) + S(8)
-    for i, r in ipairs(b.rows or {}) do
-        if ry + rowH > y + h then break end
+    tableRow(self, cols, hdr, cx, iw, hy, hc, fs)
+    local function line(i, r, ry)
         if r.me then rect(self, x + 1, ry - S(6), w - 2, rowH, K.g, 0.10); rect(self, x + 1, ry - S(6), S(3), rowH, K.g, 1) end
         local top = i <= 3
-        row({ CM.pad2(i), r.n, r.w[1], r.w[2], r.w[3], r.t, r.mvp }, ry,
-            { top and K.g or K.dim, K.text, K.text, K.text, K.red, K.text, K.g }, top and UIFont.Medium or fs)
+        local mt = r.mt or { 0, 0, 0 }
+        tableRow(self, cols, { CM.pad2(i), r.n, r.w[1] .. "/" .. r.w[2] .. "/" .. r.w[3], r.t, num(r.kills), num(r.dmg), num(r.ast),
+            mt[1] .. "/" .. mt[2] .. "/" .. mt[3], r.mvp }, cx, iw, ry,
+            { top and K.g or K.dim, K.text, K.dim, K.text, K.text, K.amber, K.dim, K.dim, K.g }, top and UIFont.Medium or fs)
+    end
+    local ry = hy + CMUI.fh(fs) + S(12)
+    -- my row stays at the bottom when I am not in the top 20
+    local bottom = y + h - (b.meRow and rowH or 0)
+    for i, r in ipairs(b.rows or {}) do
+        if ry + rowH > bottom then break end
+        line(i, r, ry)
         ry = ry + rowH
     end
+    if b.meRow then
+        rect(self, x + S(14), bottom - S(8), w - S(28), 1, K.line2, 1)
+        line(b.mine or 0, b.meRow, bottom)
+    end
     if #(b.rows or {}) == 0 then CMUI.text(self, T("IGUI_CM_Dod_sbEmpty"), cx, ry, K.faint) end
+end
+
+local function resText(res) return res == "win" and "WIN" or "LOSE" end
+local function resCol(res) return res == "win" and K.g or K.red end
+
+function DW:drawHist(x, y, w, h)
+    local fs = UIFont.Small
+    local hb = CMDoDc.hist
+    if hb and (hb.week ~= (self.boardWeek == true) or hb.mineOnly ~= (self.histMine == true)) then hb = nil end
+    if not hb then CMUI.text(self, T("IGUI_CM_Loading"), x, y, K.dim); return end
+    local list = hb.hist or {}
+    local cols = { { T("IGUI_CM_Dod_sbTime"), 0.14 }, { T("IGUI_CM_Dod_sbPlace"), 0.22 }, { T("IGUI_CM_Dod_sbTier"), 0.11 },
+        { T("IGUI_CM_Dod_sbRes"), 0.09 }, { T("IGUI_CM_Dod_sbDur"), 0.10, true }, { "MVP (KILL / DAMAGE)", 0.30 }, { "", 0.04, true } }
+    rect(self, x, y, w, h, K.panel, 0.9)
+    border(self, x, y, w, h, K.line, 1)
+    local cx, iw = x + S(14), w - S(28)
+    local hdr = {}
+    for i, c in ipairs(cols) do hdr[i] = c[1] end
+    local hy = y + S(10)
+    tableRow(self, cols, hdr, cx, iw, hy, { K.faint, K.faint, K.faint, K.faint, K.faint, K.g, K.faint }, fs)
+    if #list == 0 then CMUI.text(self, T("IGUI_CM_Dod_sbNoHist"), cx, hy + S(40), K.faint); return end
+    local rowH = S(40)
+    local top = hy + CMUI.fh(fs) + S(12)
+    local per = math.max(1, math.floor((y + h - S(44) - top) / rowH))
+    local pages = math.max(1, math.ceil(#list / per))
+    self.histPage = math.max(1, math.min(self.histPage or 1, pages))
+    local ry = top
+    for i = (self.histPage - 1) * per + 1, math.min(#list, self.histPage * per) do
+        local e = list[i]
+        local mv = nil
+        for _, m in ipairs(e.m or {}) do if m.mvp then mv = m end end
+        local over = self:hit(x + 1, ry - S(8), w - 2, rowH - S(2), function() self.histSel = e end)
+        if over then rect(self, x + 1, ry - S(8), w - 2, rowH - S(2), K.panel2, 1) end
+        if e.mine then rect(self, x + 1, ry - S(8), S(3), rowH - S(2), K.g, 1) end
+        tableRow(self, cols, { stamp(e.ts), D.LOC[e.loc] and D.LOC[e.loc].n or "?", D.TIER_TAG[e.tier] or "?", resText(e.res), CM.clock(e.dur),
+            mv and (mv.n .. "  (" .. mv.kills .. " / " .. num(mv.dmg) .. ")") or "-", ">" }, cx, iw, ry,
+            { K.dim, K.text, TIER_COL[e.tier] or K.dim, resCol(e.res), K.dim, mv and K.g or K.faint, over and K.g or K.faint }, fs)
+        ry = ry + rowH
+    end
+    -- pages
+    local py = y + h - S(38)
+    mbtn(self, cx, py, S(44), S(28), "<", function() self.histPage = self.histPage - 1 end, "ghost", { disabled = self.histPage <= 1 })
+    CMUI.textC(self, self.histPage .. " / " .. pages, cx + S(90), py + (S(28) - CMUI.fh(fs)) / 2, K.dim, 1, fs)
+    mbtn(self, cx + S(136), py, S(44), S(28), ">", function() self.histPage = self.histPage + 1 end, "ghost", { disabled = self.histPage >= pages })
+end
+
+-- one match: everyone's numbers, the MVP on top
+function DW:drawMatch(e, x, y, w, h)
+    local fs = UIFont.Small
+    mbtn(self, x, y, S(110), S(30), T("IGUI_CM_Dod_sbBack"), function() self.histSel = nil end, "ghost")
+    local hx = x + S(126)
+    local hy = y + (S(30) - CMUI.fh(UIFont.Medium)) / 2
+    local loc = D.LOC[e.loc] and D.LOC[e.loc].n or "?"
+    CMUI.text(self, loc, hx, hy, K.text, 1, UIFont.Medium)
+    hx = hx + CMUI.tw(UIFont.Medium, loc) + S(16)
+    local tag = D.TIER_TAG[e.tier] or "?"
+    CMUI.text(self, tag, hx, hy, TIER_COL[e.tier] or K.dim, 1, UIFont.Medium)
+    hx = hx + CMUI.tw(UIFont.Medium, tag) + S(16)
+    CMUI.text(self, resText(e.res), hx, hy, resCol(e.res), 1, UIFont.Medium)
+    CMUI.textR(self, stamp(e.ts) .. "   " .. T("IGUI_CM_Dod_sbDur") .. " " .. CM.clock(e.dur), x + w, hy, K.dim, 1, fs)
+    local ty = y + S(44)
+    rect(self, x, ty, w, h - (ty - y), K.panel, 0.9)
+    border(self, x, ty, w, h - (ty - y), K.line, 1)
+    local cols = { { T("IGUI_CM_Dod_sbPlayer"), 0.36 }, { T("IGUI_CM_Dod_sbStatus"), 0.16 }, { "KILL", 0.14, true },
+        { "DAMAGE", 0.18, true }, { "ASSIST", 0.16, true } }
+    local cx, iw = x + S(14), w - S(28)
+    local hdr = {}
+    for i, c in ipairs(cols) do hdr[i] = c[1] end
+    local ry = ty + S(10)
+    tableRow(self, cols, hdr, cx, iw, ry, { K.faint, K.faint, K.faint, K.faint, K.faint }, fs)
+    ry = ry + CMUI.fh(fs) + S(14)
+    local ms = {}
+    for _, m in ipairs(e.m or {}) do ms[#ms + 1] = m end
+    table.sort(ms, function(a, b)
+        if a.mvp ~= b.mvp then return a.mvp == true end
+        if a.kills ~= b.kills then return a.kills > b.kills end
+        return a.dmg > b.dmg
+    end)
+    local rowH = S(40)
+    for _, m in ipairs(ms) do
+        if ry + rowH > y + h then break end
+        if m.mvp then
+            rect(self, x + 1, ry - S(8), w - 2, rowH - S(2), { 0.09, 0.13, 0.06 }, 1)
+            border(self, x + 1, ry - S(8), w - 2, rowH - S(2), K.g, 1)
+        elseif m.me then
+            rect(self, x + 1, ry - S(8), w - 2, rowH - S(2), K.g, 0.10)
+        end
+        local f = m.mvp and UIFont.Medium or fs
+        local name = m.mvp and ("MVP  " .. m.n) or m.n
+        tableRow(self, cols, { name, T("IGUI_CM_Dod_st_" .. tostring(m.st)), m.kills, num(m.dmg), m.ast }, cx, iw, ry,
+            { m.mvp and K.g or K.text, m.st == "in" and K.dim or K.faint, K.text, K.amber, K.dim }, f)
+        ry = ry + rowH
+    end
 end
 
 function DW:drawAdmin(sn, x, y, w, h)
@@ -1134,7 +1316,7 @@ Events.OnServerCommand.Add(function(module, command, args)
         local ok, err = pcall(sync)
         if not ok then CM.log("dod sync error: " .. tostring(err)) end
     elseif command == "dodboard" then
-        CMDoDc.board = args
+        if args.view == "hist" then CMDoDc.hist = args else CMDoDc.board = args end
     elseif command == "dodinv" then
         CMUI.k = CMUI.fontScale()
         local w, h = CMUI.size(420, 200)

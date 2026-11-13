@@ -442,19 +442,49 @@ local function rollList(lines)
     return out
 end
 
--- scoreboard: wins per tier and MVPs, all time and this week
-local function boardWin(k, name, tier, mvp, kills)
+-- scoreboard: per player all time and this week (wins and MVPs per tier, kills, damage, assists, matches)
+-- plus the last HIST matches with everyone's numbers. Kills / damage / assists count every match played
+-- (a loss too); wins and MVPs only the ones still standing at a win. Older records lack the new fields: 0.
+local HIST = 50
+local function addTo(b, s, tier, won, mvp)
+    b.w = b.w or { 0, 0, 0 }
+    b.mt = b.mt or { 0, 0, 0 }
+    b.pl = (b.pl or 0) + 1
+    b.kills = (b.kills or 0) + s.k
+    b.dmg = (b.dmg or 0) + s.d
+    b.ast = (b.ast or 0) + s.a
+    if won then b.w[tier] = (b.w[tier] or 0) + 1 end
+    if mvp then
+        b.mvp = (b.mvp or 0) + 1
+        b.mt[tier] = (b.mt[tier] or 0) + 1
+    end
+end
+
+local function record(t, res, mvp)
     local d = store()
-    local b = d.board[k] or { n = name, w = { 0, 0, 0 }, mvp = 0, kills = 0 }
-    d.board[k] = b
-    b.n = name
-    b.w[tier] = (b.w[tier] or 0) + 1
-    b.kills = (b.kills or 0) + (kills or 0)
-    if mvp then b.mvp = (b.mvp or 0) + 1 end
+    if not d then return end
     local wk = CM.dodWeek()
-    if not b.wk or b.wk.week ~= wk then b.wk = { week = wk, w = { 0, 0, 0 }, mvp = 0 } end
-    b.wk.w[tier] = (b.wk.w[tier] or 0) + 1
-    if mvp then b.wk.mvp = b.wk.mvp + 1 end
+    local e = { ts = now(), wk = wk, loc = t.loc, tier = t.tier, res = res,
+        dur = t.liveAt and math.max(0, now() - t.liveAt) or 0, m = {} }
+    for _, k in ipairs(t.list) do
+        local s0 = t.stats[k]
+        if s0 then
+            -- damage kept the way the debrief shows it
+            local s = { k = s0.k, d = math.floor(s0.d * 100 + 0.5), a = s0.a }
+            local stand = res == "win" and t.st[k] == "in"
+            local b = d.board[k] or {}
+            d.board[k] = b
+            b.n = t.names[k]
+            addTo(b, s, t.tier, stand, stand and k == mvp)
+            if not b.wk or b.wk.week ~= wk then b.wk = { week = wk } end
+            addTo(b.wk, s, t.tier, stand, stand and k == mvp)
+            e.m[#e.m + 1] = { k = k, n = t.names[k], kills = s.k, dmg = s.d, ast = s.a, st = t.st[k], mvp = k == mvp }
+        end
+    end
+    if #e.m == 0 then return end
+    d.hist = d.hist or {}
+    d.hist[#d.hist + 1] = e
+    while #d.hist > HIST do table.remove(d.hist, 1) end
 end
 
 local function finish(t, res)
@@ -474,6 +504,11 @@ local function finish(t, res)
         end
     end
     t.mvp = mvp
+    -- before the loop below sends everyone home (the scoreboard needs who was still standing)
+    if res == "win" or res == "lose" then
+        local ok, err = pcall(record, t, res, mvp)
+        if not ok then CM.log("dod board error: " .. tostring(err)) end
+    end
     t.rw = {}
     for _, k in ipairs(t.list) do
         local p = ON[k]
@@ -494,7 +529,6 @@ local function finish(t, res)
                     S.pend[k] = S.pend[k] or {}
                     for _, e in ipairs(rw) do S.pend[k][#S.pend[k] + 1] = e end
                 end
-                if t.st[k] == "in" then boardWin(k, t.names[k], t.tier, k == mvp, t.stats[k] and t.stats[k].k or 0) end
             end)
             if not ok then CM.log("dod reward error: " .. tostring(err)) end
         end
@@ -569,6 +603,7 @@ local function matchTick(t, a)
         end
         if tn >= t.phaseAt then
             t.phase = "live"
+            t.liveAt = tn
             t.endAt = tn + CM.int(CM.sv("DodMinutes"), 30, 5, 120) * 60
             queueSpawns(t)
             spawnTick(t, a)
@@ -682,33 +717,63 @@ end
 CMDoD.flush = flush
 
 -- the scoreboard (asked for when its tab opens)
-local function board(k, week)
+local SORT = { w = "t", k = "kills", d = "dmg", mvp = "mvp" }
+local function board(k, week, sortBy)
     local d = store()
     local wk = CM.dodWeek()
+    sortBy = SORT[sortBy] and sortBy or "w"
+    local f = SORT[sortBy]
     local rows = {}
     for bk, b in pairs(d.board) do
-        local w, mvp = b.w, b.mvp or 0
-        if week then
-            if b.wk and b.wk.week == wk then w, mvp = b.wk.w, b.wk.mvp else w = nil end
-        end
-        if w then
-            local total = (w[1] or 0) + (w[2] or 0) + (w[3] or 0)
-            if total > 0 then rows[#rows + 1] = { k = bk, n = b.n, w = { w[1] or 0, w[2] or 0, w[3] or 0 }, t = total, mvp = mvp } end
+        local src = b
+        if week then src = (b.wk and b.wk.week == wk) and b.wk or nil end
+        if src then
+            local w, mt = src.w or {}, src.mt or {}
+            local r = { k = bk, n = b.n or "?", w = { w[1] or 0, w[2] or 0, w[3] or 0 }, mvp = src.mvp or 0,
+                mt = { mt[1] or 0, mt[2] or 0, mt[3] or 0 }, kills = src.kills or 0, dmg = src.dmg or 0, ast = src.ast or 0 }
+            r.t = r.w[1] + r.w[2] + r.w[3]
+            if r.t > 0 or (src.pl or 0) > 0 then rows[#rows + 1] = r end
         end
     end
     table.sort(rows, function(x, y)
+        if x[f] ~= y[f] then return x[f] > y[f] end
         if x.t ~= y.t then return x.t > y.t end
         if x.w[3] ~= y.w[3] then return x.w[3] > y.w[3] end
         if x.mvp ~= y.mvp then return x.mvp > y.mvp end
         return x.n < y.n
     end)
-    local out, mine, total = {}, nil, 0
+    local out, mine, meRow, total, dmg = {}, nil, nil, 0, 0
     for i, r in ipairs(rows) do
         total = total + r.t
-        if r.k == k then mine = i end
-        if i <= 20 then r.me = r.k == k; r.k = nil; out[#out + 1] = r end
+        dmg = dmg + r.dmg
+        local me = r.k == k
+        if me then mine = i end
+        r.me, r.k = me, nil
+        if i <= 20 then out[#out + 1] = r elseif me then meRow = r end
     end
-    return { week = week == true, rows = out, mine = mine, total = total, matches = CMS.state().stats.dodMatches or 0 }
+    return { view = "rank", week = week == true, sort = sortBy, rows = out, mine = mine, meRow = meRow, total = total, dmg = dmg,
+        matches = CMS.state().stats.dodMatches or 0 }
+end
+
+-- the last matches, newest first (this week only / mine only on request)
+local function history(k, week, mineOnly)
+    local d = store()
+    local wk = CM.dodWeek()
+    local out = {}
+    local h = d.hist or {}
+    for i = #h, 1, -1 do
+        local e = h[i]
+        local ms, mine = {}, false
+        for _, m in ipairs(e.m or {}) do
+            local me = m.k == k
+            mine = mine or me
+            ms[#ms + 1] = { n = m.n, kills = m.kills, dmg = m.dmg, ast = m.ast, st = m.st, mvp = m.mvp, me = me }
+        end
+        if (not week or e.wk == wk) and (not mineOnly or mine) then
+            out[#out + 1] = { ts = e.ts, loc = e.loc, tier = e.tier, res = e.res, dur = e.dur, m = ms, mine = mine }
+        end
+    end
+    return { view = "hist", week = week == true, mineOnly = mineOnly == true, hist = out }
 end
 
 -- ===================================================================== crash recovery
@@ -756,7 +821,11 @@ end
 
 function H.dodOpen(p) watch[keyOf(p)] = true; rebuild(); send(p, "dod", snap(keyOf(p))) end
 function H.dodClose(p) watch[keyOf(p)] = nil end
-function H.dodBoard(p, args) send(p, "dodboard", board(keyOf(p), args.week == true)) end
+function H.dodBoard(p, args)
+    local k, week = keyOf(p), args.week == true
+    if args.view == "hist" then send(p, "dodboard", history(k, week, args.mine == true))
+    else send(p, "dodboard", board(k, week, tostring(args.sort or "w"))) end
+end
 
 -- make a team: book a free, set up spot
 function H.dodNew(p, args)
