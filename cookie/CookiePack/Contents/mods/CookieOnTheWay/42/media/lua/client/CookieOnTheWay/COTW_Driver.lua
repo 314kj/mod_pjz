@@ -5,8 +5,13 @@
 -- centre line on two-lane roads). B42 addImpulse keeps one push per frame (a second equal one is
 -- dropped) and gives it to Bullet as force + torque for that frame only, so the push is sized
 -- inertia * wanted yaw-rate change / frame time.
--- Safety: the road ahead (as long as the braking distance) is sampled square by square for walls,
--- cars, people and zombies. Obstacles brake the car; zombies only slow it (push through).
+-- Road scan: rows across the road from behind the car to the braking distance, checked only where the
+-- body (car width + a small margin) would pass. Walls, fences, trees and solid objects count by their
+-- tile (fences by the tile edge they sit on), other cars by their own box, people on foot as a small
+-- circle. Getting past: side positions off the lane line are tried (cheapest = closest to the lane);
+-- the first one whose path is clear becomes the plan and the car eases over to it, slowing first when
+-- the gap needs a short swerve. Nothing clear: stop before it. Moving cars are followed, not passed;
+-- zombies only slow the car (push through).
 -- Holding a drive key for 1 s hands the car back (counts as arrived); the HUD "stop here" button stops
 -- and charges by distance + EmergencyFeePct.
 
@@ -28,9 +33,9 @@ local TUNE = {
     PROBE_WAIT  = 60,     -- ticks before a weak probe runs again
     DW_MAX      = 0.15,   -- rad/s of yaw-rate change asked in one tick at most
     LEVER       = 20,     -- m: lever of the side push (long = mostly turn, little sideways shove)
-    ERR_SLOW    = 1.0,
-    STOP_GAP    = 3,      -- tiles kept between the bumper and an obstacle
-    BRAKE_OVER  = 3,      -- km/h over the target speed before the brakes come on (below: cruise control eases off)    -- rad of heading error at which the car is down to crawling speed
+    ERR_SLOW    = 1.0,    -- rad of heading error at which the car is down to crawling speed
+    STOP_GAP    = 1.5,    -- tiles kept between the bumper and something the car stops for
+    BRAKE_OVER  = 3,      -- km/h over the target speed before the brakes come on (below: cruise control eases off)
     HEAD_GAIN   = 2.0,    -- yaw rate (rad/s) asked per rad of heading error
     LAT_ACCEL   = 4.0,    -- m/s^2 allowed sideways (caps the yaw rate at speed)
     TURN_ACCEL  = 3.0,    -- m/s^2 used to pick a corner speed
@@ -38,6 +43,20 @@ local TUNE = {
     STUCK_MS    = 10000,  -- crawling < 1.5 km/h this long with nothing blocking = stuck
     PROG_MS     = 500,
     LEAD_STALE  = 3000,
+    -- road scan / getting past things
+    MARGIN      = 0.15,   -- m kept clear on each side of the body (+ up to one CELL)
+    NEAR        = 2,      -- tiles past the bumper checked against the bare body (pulling away from a fence close by)
+    ROW         = 0.75,   -- m between scanned rows (shorter than anything the car must not hit)
+    CELL        = 0.25,   -- m between points across a row
+    SCAN_MAX    = 70,     -- tiles scanned ahead at most
+    AVOID_MAX   = 6,      -- tiles the car may leave its lane line by to get past something
+    ROAD_EDGE   = 1.5,    -- tiles past the road edge the car centre may go
+    SIDE_STEP   = 0.5,    -- tiles between the side positions tried
+    SIDE_ACCEL  = 2.5,    -- m/s^2 sideways while moving over
+    SWERVE_KMH  = { 12, 5 },  -- slower (shorter) swerves tried when the gap is too close at speed
+    AVOID_KMH   = 30,     -- top speed while off the lane line
+    MOVING_KMH  = 3,      -- cars faster than this are followed, not driven round
+    CAR_TTL     = 3000,   -- ms a "which car is on this tile" answer is kept (found cars are re-read every scan)
 }
 D.TUNE = TUNE
 
@@ -49,7 +68,7 @@ D.steerSign = D.steerSign or 1      -- learnt once per session, kept for later t
 -- ------------------------------------------------------------------------------
 local function prepare(route)
     local n = #route.x
-    local x, y, w = {}, {}, {}
+    local x, y, w, lane = {}, {}, {}, {}
     for i = 1, n do
         local a = math.max(1, i - 1)
         local b = math.min(n, i + 1)
@@ -66,10 +85,11 @@ local function prepare(route)
             x[i], y[i] = route.x[i], route.y[i]
         end
         w[i] = width
+        lane[i] = off
     end
     local cum = { 0 }
     for i = 2, n do cum[i] = cum[i - 1] + COTW.dist(x[i - 1], y[i - 1], x[i], y[i]) end
-    return { x = x, y = y, w = w, cum = cum, n = n, len = cum[n] }
+    return { x = x, y = y, w = w, lane = lane, cum = cum, n = n, len = cum[n] }
 end
 
 -- point and unit direction at distance pos along the prepared route
@@ -87,9 +107,9 @@ local function pointAt(R, pos, hint)
     return R.x[k] + dx * t, R.y[k] + dy * t, dx / L, dy / L, k
 end
 
--- project (px, py) on segments near idx: pos along route, distance off it, segment
+-- project (px, py) on segments near idx: pos along route, distance off it, segment, side (+ = right)
 local function locate(R, px, py, idx)
-    local best, bpos, bk = nil, 0, idx
+    local best, bpos, bk, side = nil, 0, idx, 0
     for k = math.max(1, idx - 2), math.min(R.n - 1, idx + 20) do
         local x1, y1, x2, y2 = R.x[k], R.y[k], R.x[k + 1], R.y[k + 1]
         local vx, vy = x2 - x1, y2 - y1
@@ -99,10 +119,12 @@ local function locate(R, px, py, idx)
         local d = COTW.dist(px, py, x1 + vx * t, y1 + vy * t)
         if not best or d < best then
             best, bk = d, k
-            bpos = R.cum[k] + t * math.sqrt(L2)
+            local L = math.sqrt(L2)
+            bpos = R.cum[k] + t * L
+            side = L > 0 and ((px - x1) * -vy + (py - y1) * vx) / L or 0
         end
     end
-    return bpos, best or 0, bk
+    return bpos, best or 0, bk, side
 end
 
 local function wrap(a)
@@ -136,61 +158,379 @@ local function cornerCap(R, pos, idx, decel)
 end
 
 -- ------------------------------------------------------------------------------
+-- plan: where across the road the car drives (tiles right of the lane line)
+-- { s0 = route pos it was made at, d0 = side then, c = side to reach, T = tiles used to get there,
+--   v = speed (m/s) T was sized for }; nil = on the lane line
+-- ------------------------------------------------------------------------------
+local function smooth(t)
+    if t <= 0 then return 0 end
+    if t >= 1 then return 1 end
+    return t * t * (3 - 2 * t)
+end
+
+local function offsetAt(P, pos)
+    if not P then return 0 end
+    return P.d0 + (P.c - P.d0) * smooth((pos - P.s0) / P.T)
+end
+
+-- tiles of road an S-shaped move of `delta` tiles takes at vms (sideways pull capped at SIDE_ACCEL)
+local function moveLen(delta, vms)
+    local a = math.abs(delta)
+    if a < 0.3 then return 2 end
+    return math.max(3 + a, vms * math.sqrt(2 * math.pi * a / TUNE.SIDE_ACCEL))
+end
+
+-- ------------------------------------------------------------------------------
 -- road scan
 -- ------------------------------------------------------------------------------
-local function call(o, fn, ...)
-    if not o or not o[fn] then return nil end
-    local ok, r = pcall(o[fn], o, ...)
-    if ok then return r end
+local NONE = {}
+
+-- what stands on a tile, kept for the trip: s = solid (whole tile), n / w = wall or fence on the
+-- north / west edge. nil = not loaded (not kept)
+local function tileInfo(cell, x, y)
+    local key = x * 100000 + y
+    local t = st.tiles[key]
+    if t ~= nil then return t end
+    local sq = cell:getGridSquare(x, y, 0)
+    if not sq then return nil end
+    local ok, s, n, w = pcall(function()
+        return sq:isSolid() or sq:isSolidTrans() or sq:HasTree(), sq:has(IsoFlagType.collideN), sq:has(IsoFlagType.collideW)
+    end)
+    if ok and (s or n or w) then t = { s = s, n = n, w = w } else t = NONE end
+    st.tileCount = st.tileCount + 1
+    if st.tileCount > 30000 then st.tiles, st.tileCount = {}, 0 end
+    st.tiles[key] = t
+    return t
+end
+
+-- remember any car standing on this tile (asked again after CAR_TTL)
+local function findCar(cell, x, y, now)
+    local key = x * 100000 + y
+    local seen = st.carTiles[key]
+    if seen and now - seen < TUNE.CAR_TTL then return end
+    st.carTiles[key] = now
+    st.carTileCount = st.carTileCount + 1
+    if st.carTileCount > 6000 then st.carTiles, st.carTileCount = {}, 0 end
+    local sq = cell:getGridSquare(x, y, 0)
+    local car = sq and sq:getVehicleContainer()
+    if car then st.cars[car] = true end
+end
+
+local function carBox(car)
+    local f = car:getForwardVector(Vector3f.new())
+    local fx, fy = f:x(), f:z()
+    local L = math.sqrt(fx * fx + fy * fy)
+    if L < 0.01 then fx, fy, L = 1, 0, 1 end
+    local ext = car:getScript():getExtents()
+    local kmh = car:getCurrentSpeedKmHour()
+    return {
+        x = car:getX(), y = car:getY(), fx = fx / L, fy = fy / L, hw = ext:x() / 2, hl = ext:z() / 2,
+        v = kmh / 3.6, moving = math.abs(kmh) > TUNE.MOVING_KMH,
+    }
+end
+
+-- cars close enough to row i to matter
+local function rowBoxes(sc, i)
+    local list = sc.rowBoxes[i]
+    if list then return list end
+    list = {}
+    local row = sc.rows[i]
+    for _, b in ipairs(sc.boxes) do
+        if COTW.dist(row.x, row.y, b.x, b.y) < sc.reach + b.hl + b.hw then list[#list + 1] = b end
+    end
+    sc.rowBoxes[i] = list
+    return list
+end
+
+-- is world point (wx, wy) inside something? true, the car's box, or false. moving = count cars that
+-- are driving too. A wall / fence is a band tn (north edge) / tw (west edge) thick on each side of its
+-- tile edge: thin across the road, thick enough along it that no row of points steps over it.
+local function hitAt(sc, wx, wy, moving, boxes, tn, tw)
+    local tx, ty = math.floor(wx), math.floor(wy)
+    local fx, fy = wx - tx, wy - ty
+    local t = tileInfo(sc.cell, tx, ty)
+    if t == nil then
+        sc.unloaded = true
+    elseif t ~= NONE then
+        if t.s and fx > 0.1 and fx < 0.9 and fy > 0.1 and fy < 0.9 then return true end
+        if t.n and fy < tn then return true end
+        if t.w and fx < tw then return true end
+    end
+    -- the neighbours' north / west edges are this tile's south / east edges
+    if fy > 1 - tn then
+        local u = tileInfo(sc.cell, tx, ty + 1)
+        if u and u.n then return true end
+    end
+    if fx > 1 - tw then
+        local u = tileInfo(sc.cell, tx + 1, ty)
+        if u and u.w then return true end
+    end
+    for i = 1, #boxes do
+        local b = boxes[i]
+        if moving or not b.moving then
+            local ex, ey = wx - b.x, wy - b.y
+            if math.abs(ex * b.fx + ey * b.fy) < b.hl and math.abs(ey * b.fx - ex * b.fy) < b.hw then return b end
+        end
+    end
+    for i = 1, #sc.people do
+        local p = sc.people[i]
+        local ex, ey = wx - p.x, wy - p.y
+        if ex * ex + ey * ey < 0.2 then return true end
+    end
+    return false
+end
+
+-- row i, point j (j * CELL tiles right of the lane line), remembered for this scan
+local function occ(sc, i, j, moving)
+    local memo = moving and sc.occM or sc.occ
+    local key = i * 2000 + j
+    local v = memo[key]
+    if v == nil then
+        local row = sc.rows[i]
+        local d = j * TUNE.CELL
+        local tn = math.max(0.2, TUNE.ROW / 2 * math.abs(row.dy) + 0.05)
+        local tw = math.max(0.2, TUNE.ROW / 2 * math.abs(row.dx) + 0.05)
+        v = hitAt(sc, row.x - row.dy * d, row.y + row.dx * d, moving, rowBoxes(sc, i), tn, tw)
+        memo[key] = v
+    end
+    return v
+end
+
+-- side position of plan P at s tiles ahead of the car (behind: where the car is now)
+local function sideAt(sc, P, s)
+    if s <= 0 then return sc.d end
+    return offsetAt(P, st.pos + s)
+end
+
+-- first row the body (and trailer) would touch something on plan P: its s, index and what (true or a
+-- car box); nil = clear to the end
+local function firstHit(sc, P, moving)
+    local hw, half, rear, cell = sc.hw, sc.half, sc.rear, TUNE.CELL
+    for i = 1, sc.n do
+        local r = sc.rows[i].s
+        -- the body covers this row while its centre is between r - half and r + rear
+        local a, b = sideAt(sc, P, r - half), sideAt(sc, P, r + rear)
+        local near = r >= half and r < half + TUNE.NEAR
+        local w = near and sc.body or hw
+        local lo, hi = math.min(a, b) - w, math.max(a, b) + w
+        -- beside the body now: only room it would newly swing into (the body's own band plus one
+        -- point is skipped, so something already close beside the car never counts for staying put)
+        local skipLo, skipHi = 1, 0
+        if r < half then skipLo, skipHi = sc.d - hw - cell, sc.d + hw + cell end
+        -- one point past each edge so nothing slips in between the points and the body; just past
+        -- the bumper only points on the body itself (every plan still starts where the car is)
+        local j1, j2 = math.floor(lo / cell), math.ceil(hi / cell)
+        if near then j1, j2 = math.ceil(lo / cell), math.floor(hi / cell) end
+        for j = j1, j2 do
+            local dj = j * cell
+            if dj < skipLo or dj > skipHi then
+                local what = occ(sc, i, j, moving)
+                if what then return r, i, what end
+            end
+        end
+    end
     return nil
+end
+
+local function makePlan(sc, c, vms)
+    return { s0 = st.pos, d0 = sc.d, c = c, T = moveLen(c - sc.d, vms), v = vms }
+end
+
+-- pick where to drive: { plan, hit } (hit = s the plan runs into, nil when clear), plus `slow`:
+-- a plan that only works after slowing to slow.v
+local function choose(sc, vms)
+    local P = st.plan or makePlan(sc, 0, vms)
+    local k = st.idx
+    local lim = (st.R.w[k] or 8) / 2 + TUNE.ROAD_EDGE
+    local lane = st.R.lane[k] or 0
+    local lo = math.max(-TUNE.AVOID_MAX, -lim - lane)
+    local hi = math.min(TUNE.AVOID_MAX, lim - lane)
+    -- cost: off the lane line, away from the current plan, and the body hanging off the road
+    local roadHalf = (st.R.w[k] or 8) / 2
+    local body = (st.prof.w or 2) / 2
+    local list = {}
+    local function add(c)
+        local over = math.max(0, math.abs(c + lane) + body - roadHalf)
+        list[#list + 1] = { c = c, cost = math.abs(c) + 0.6 * math.abs(c - P.c) + over }
+    end
+    local c = math.ceil(lo / TUNE.SIDE_STEP) * TUNE.SIDE_STEP
+    while c <= hi + 0.001 do
+        add(c)
+        c = c + TUNE.SIDE_STEP
+    end
+    -- and straight on from where the car is (never sweeps into anything beside it)
+    if math.abs(sc.d - P.c) >= 0.01 then add(sc.d) end
+    table.sort(list, function(a, b) return a.cost < b.cost end)
+
+    -- the plan we have, unless something closer to the lane line is clear
+    local curHit = firstHit(sc, P)
+    local pCost = math.abs(P.c)
+    local best, bestHit = P, curHit
+    -- something beside the car counts as worse than anything ahead (braking does not help there)
+    local function score(h) return h < sc.half and h - 100 or h end
+    for _, e in ipairs(list) do
+        if not curHit and e.cost >= pCost then return { plan = P } end
+        if math.abs(e.c - P.c) >= 0.01 then
+            local Q = makePlan(sc, e.c, vms)
+            local h = firstHit(sc, Q)
+            if not h then return { plan = Q } end
+            -- nothing clear: the side position that gets clearly furthest
+            if curHit and score(h) > score(bestHit) + 2 then best, bestHit = Q, h end
+        end
+    end
+    if not curHit then return { plan = P } end
+    -- too close for a swerve at this speed: one after slowing down?
+    for _, kmh in ipairs(TUNE.SWERVE_KMH) do
+        local vs = kmh / 3.6
+        if vs < vms - 0.3 then
+            for _, e in ipairs(list) do
+                if math.abs(e.c - P.c) >= 0.01 then
+                    local Q = makePlan(sc, e.c, vs)
+                    if not firstHit(sc, Q) then return { plan = P, hit = curHit, slow = Q } end
+                end
+            end
+        end
+    end
+    return { plan = best, hit = bestHit }
+end
+
+local function findPeople(sc, v, look)
+    local list = getOnlinePlayers and getOnlinePlayers()
+    if not list then return end
+    local me = getSpecificPlayer(0)
+    for i = 0, list:size() - 1 do
+        local p = list:get(i)
+        if p ~= me and not p:getVehicle() and COTW.dist(p:getX(), p:getY(), v:getX(), v:getY()) < look + 10 then
+            sc.people[#sc.people + 1] = { x = p:getX(), y = p:getY() }
+        end
+    end
+end
+
+-- zombies under the planned path (they slow the car, never stop it)
+local function countZombies(sc, P)
+    local n, seen = 0, {}
+    local edge = sc.hw - 0.3
+    for i = 1, sc.n, 2 do
+        local row = sc.rows[i]
+        if row.s >= sc.half then
+            local c = sideAt(sc, P, row.s)
+            for o = -1, 1 do
+                local d = c + o * edge
+                local x, y = math.floor(row.x - row.dy * d), math.floor(row.y + row.dx * d)
+                local key = x * 100000 + y
+                if not seen[key] then
+                    seen[key] = true
+                    local sq = sc.cell:getGridSquare(x, y, 0)
+                    local movers = sq and sq:getMovingObjects()
+                    if movers then
+                        for m = 0, movers:size() - 1 do
+                            local z = movers:get(m)
+                            if instanceof(z, "IsoZombie") and not z:isDead() then n = n + 1 end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return n
 end
 
 local function sense(v, trailer)
     local R, prof = st.R, st.prof
-    local speed = math.abs(v:getCurrentSpeedKmHour())
-    local vms = speed / 3.6
+    local vms = math.abs(v:getCurrentSpeedKmHour()) / 3.6
     local decel = prof.decel or 6
     local half = (prof.l or 4) / 2
-    local look = math.min(90, vms * vms / (2 * decel) + half + 10)
-    local hw = (prof.w or 2) / 2 + 0.4
-    local cell = getCell()
-    local zombies, unloaded = 0, false
-    local s = half + 0.5
+    local look = math.min(TUNE.SCAN_MAX, vms * vms / (2 * decel) + half + 12)
+    local now = getTimestampMs()
+    local sc = {
+        cell = getCell(), half = half, rear = half + (prof.tl and prof.tl + 1 or 0),
+        body = (prof.w or 2) / 2, hw = (prof.w or 2) / 2 + TUNE.MARGIN, d = st.side or 0,
+        rows = {}, occ = {}, occM = {}, boxes = {}, rowBoxes = {}, people = {},
+    }
+    sc.reach = TUNE.AVOID_MAX + sc.hw + 1
+    local s, n, k = -sc.rear, 0, st.idx
     while s <= look do
-        local px, py, dx, dy = pointAt(R, st.pos + s, st.idx)
-        local o = -hw
-        while o <= hw + 0.01 do
-            local sx, sy = px - dy * o, py + dx * o
-            local sq = cell:getGridSquare(math.floor(sx), math.floor(sy), 0)
-            if not sq then
-                unloaded = true
-            else
-                local hard = call(sq, "isSolid") or call(sq, "isSolidTrans") or call(sq, "HasTree")
-                local car = call(sq, "getVehicleContainer")
-                if car and car ~= v and car ~= trailer then hard = true end
-                local movers = call(sq, "getMovingObjects")
-                if movers then
-                    for i = 0, movers:size() - 1 do
-                        local m = movers:get(i)
-                        if instanceof(m, "IsoZombie") then
-                            if not call(m, "isDead") then zombies = zombies + 1 end
-                        elseif instanceof(m, "IsoPlayer") and m ~= getSpecificPlayer(0) and not call(m, "getVehicle") then
-                            hard = true
-                        end
-                    end
-                end
-                if hard then
-                    local room = math.max(0, s - half - TUNE.STOP_GAP)
-                    return { limit = math.sqrt(2 * decel * room) * 3.6, why = "obstacle", blocked = room < 3 }
-                end
-            end
-            o = o + math.max(0.7, hw / 2)
-        end
-        s = s + 1
+        local x, y, dx, dy, kk = pointAt(R, st.pos + s, k)
+        k = kk
+        n = n + 1
+        sc.rows[n] = { s = s, x = x, y = y, dx = dx, dy = dy }
+        s = s + TUNE.ROW
     end
-    if zombies > 0 then return { limit = COTW.opt("ZombieSpeed"), why = "zombie", zombies = zombies } end
-    if unloaded then return { limit = 25, why = "unloaded" } end
-    return { limit = 999 }
+    sc.n = n
+
+    -- cars: every third scan look for new ones on tiles fixed along the route (every 1.5 tiles),
+    -- then re-read all the known ones every scan
+    st.scans = st.scans + 1
+    if st.scans % 3 == 1 then
+        local wide = TUNE.AVOID_MAX + sc.hw + 2
+        local a = math.ceil((st.pos - sc.rear) / 1.5) * 1.5
+        k = st.idx
+        while a <= st.pos + look do
+            local x, y, dx, dy, kk = pointAt(R, a, k)
+            k = kk
+            local o = -wide
+            while o <= wide do
+                findCar(sc.cell, math.floor(x - dy * o), math.floor(y + dx * o), now)
+                o = o + 1.5
+            end
+            a = a + 1.5
+        end
+    end
+    for car in pairs(st.cars) do
+        local keep = car ~= v and car ~= trailer and not car:isRemovedFromWorld()
+            and COTW.dist(car:getX(), car:getY(), v:getX(), v:getY()) < look + 20
+        if keep then
+            local ok, box = pcall(carBox, car)
+            if ok then
+                sc.boxes[#sc.boxes + 1] = box
+                if box.moving then sc.anyMoving = true end
+            end
+        else
+            st.cars[car] = nil
+        end
+    end
+    findPeople(sc, v, look)
+
+    local pick = choose(sc, vms)
+    local P = pick.plan
+    local res = { limit = 999, plan = P }
+    local function cap(limit, why)
+        if limit < res.limit then res.limit, res.why = limit, why end
+    end
+    -- something ahead on the way: stop before it (beside the car braking does not help; the plan
+    -- that sweeps into it was already passed over)
+    if pick.hit and pick.hit >= half then
+        local room = math.max(0, pick.hit - half - TUNE.STOP_GAP)
+        cap(math.sqrt(2 * decel * room) * 3.6, "obstacle")
+        res.blocked = room < 1
+    end
+    if pick.slow then
+        -- reach the slower swerve speed while there is still room to swerve
+        local vs = pick.slow.v
+        local room = math.max(0, (pick.hit or look) - half - pick.slow.T - 1)
+        cap(math.max(vs * 3.6, math.sqrt(vs * vs + 2 * decel * room) * 3.6), "avoid")
+        res.slow = pick.slow
+    end
+    -- driving cars on the path: follow (as 0.2.0 did), able to stop by the time we reach where it
+    -- will have stopped: its own speed along our way counts
+    local mh, mi, what
+    if sc.anyMoving then mh, mi, what = firstHit(sc, P, true) end
+    if mh and mh >= half and (not pick.hit or mh < pick.hit) then
+        local room = math.max(0, mh - half - TUNE.STOP_GAP)
+        local lead = 0
+        if type(what) == "table" then
+            local row = sc.rows[mi]
+            lead = math.max(0, what.v * (what.fx * row.dx + what.fy * row.dy))
+        end
+        cap(math.sqrt(lead * lead + 2 * decel * room) * 3.6, "obstacle")
+    end
+    -- planned off the lane line, or still moving over
+    if math.abs(P.c) > 1 then cap(TUNE.AVOID_KMH, "avoid") end
+    if math.abs(P.c - P.d0) > 0.5 and st.pos < P.s0 + P.T then cap(math.max(TUNE.SWERVE_KMH[1], P.v * 3.6 + 3), "avoid") end
+    local zombies = countZombies(sc, P)
+    if zombies > 0 then cap(COTW.opt("ZombieSpeed"), "zombie"); res.zombies = zombies end
+    if sc.unloaded then cap(25, "unloaded") end
+    return res
 end
 
 -- ------------------------------------------------------------------------------
@@ -296,8 +636,8 @@ local function tick()
     if st.holdMs >= TUNE.HOLD_MS then finishTrip("intervene"); return end
 
     local R = st.R
-    local pos, off, k = locate(R, v:getX(), v:getY(), st.idx)
-    st.pos, st.off, st.idx = pos, off, k
+    local pos, off, k, side = locate(R, v:getX(), v:getY(), st.idx)
+    st.pos, st.off, st.idx, st.side = pos, off, k, side
     local rem = R.len - pos
     st.rem = rem
     local speed = v:getCurrentSpeedKmHour()
@@ -316,7 +656,12 @@ local function tick()
     target = math.min(target, cornerCap(R, pos, k, decel))
     if rem <= TUNE.ARRIVE then target = 0
     else target = math.min(target, math.sqrt(2 * decel * (rem - TUNE.ARRIVE)) * 3.6 + 3) end
-    if st.ticks % TUNE.SENSE_EVERY == 1 or not st.sense then st.sense = sense(v, trailer) end
+    if st.ticks % TUNE.SENSE_EVERY == 1 or not st.sense then
+        st.sense = sense(v, trailer)
+        st.plan = st.sense.plan
+        -- back on the lane line and settled: no plan
+        if st.plan and st.plan.c == 0 and pos > st.plan.s0 + st.plan.T then st.plan = nil end
+    end
     if st.sense.limit < target then target = st.sense.limit; st.why = st.sense.why end
 
     local C = COTW.C
@@ -347,10 +692,15 @@ local function tick()
         pcall(function() v:setRegulator(true); v:setRegulatorSpeed(kmh) end)
     end
 
-    -- steering toward a point ahead (further at speed, further still with a trailer)
-    local ahead = math.max(6, math.min(22, 5 + aspeed * 0.2)) + (trailer and 4 or 0)
-    local tx, ty = pointAt(R, pos + ahead, k)
-    st.err = steer(v, tx, ty, speed, dt)
+    -- steering toward a point ahead on the plan (further at speed, further still with a trailer;
+    -- closer while moving over so the car follows the S instead of cutting it)
+    local P = st.plan
+    local ahead = math.max(6, math.min(22, 5 + aspeed * 0.2))
+    if P and math.abs(P.c - P.d0) > 0.5 and pos < P.s0 + P.T then ahead = math.max(4, math.min(12, 3 + aspeed * 0.2)) end
+    ahead = ahead + (trailer and 4 or 0)
+    local tx, ty, tdx, tdy = pointAt(R, pos + ahead, k)
+    local o = offsetAt(P, pos + ahead)
+    st.err = steer(v, tx - tdy * o, ty + tdx * o, speed, dt)
 
     -- how it ends
     if aspeed < 2 then
@@ -387,6 +737,7 @@ function D.start(route)
         R = prepare(route), prof = prof, trailer = trailer,
         idx = 1, pos = 0, rem = route.len, holdMs = 0, ticks = 0,
         lastProg = 0, t0 = getTimestampMs(), yawInt = 0, err = 0,
+        tiles = {}, tileCount = 0, carTiles = {}, carTileCount = 0, cars = {}, scans = 0,
     }
     if trailer then
         local tp = COTW.profileFor(trailer)
@@ -411,12 +762,17 @@ end
 
 function D.running() return st ~= nil end
 
+-- side position (tiles right of the lane line) the car aims for at route position pos
+function D.sideAt(pos)
+    return st and offsetAt(st.plan, pos) or 0
+end
+
 -- what the HUD shows
 function D.status()
     if not st then return nil end
     return {
         target = st.target or 0, why = st.why, hold = st.holdMs / TUNE.HOLD_MS, rem = st.rem or 0,
-        emergency = st.emergency, R = st.R, idx = st.idx,
+        emergency = st.emergency, R = st.R, idx = st.idx, pos = st.pos, len = st.R.len,
     }
 end
 

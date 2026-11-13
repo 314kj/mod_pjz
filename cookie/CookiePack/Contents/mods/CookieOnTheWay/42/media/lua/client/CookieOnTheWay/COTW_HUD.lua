@@ -1,23 +1,27 @@
 -- Cookie On the Way : on-screen strip (top centre) + bill / group invite popups
--- Navigator: an arrow relative to where the car (or player) faces, the next turn and the distance
--- left; re-routes when 25 tiles off the line, ends 15 tiles from the pin.
--- Autopilot: distance left, target speed and why it is slower, the hold-to-take-over bar and the
--- "stop here" button. The last trip's summary stays for 10 s.
+-- UI v2 look (COTW_UI): the next turn in a hexagon, distance left, a speed gauge, progress bars, why
+-- the car is slower (amber) and a red "stop here" / "stop navigating" button.
+-- Navigator: re-routes when 25 tiles off the line, ends 15 tiles from the pin.
+-- Autopilot: same strip from the autopilot's own lane line, plus the hold-to-take-over bar. Booked
+-- trips, riding and the last trip's summary (10 s) show as a short strip.
 
 require "CookieOnTheWay/COTW_Driver"
+require "CookieOnTheWay/COTW_UI"
 require "ISUI/ISPanel"
-require "ISUI/ISButton"
 require "ISUI/ISModalDialog"
 
 COTWHud = ISPanel:derive("COTWHud")
 
-local FONT_S = getTextManager():getFontHeight(UIFont.Small)
-local FONT_M = getTextManager():getFontHeight(UIFont.Medium)
-local W, H = 360, FONT_M + FONT_S * 2 + 22
+local U = COTW.UI
+local K = U.C
+local W = 390
+local CUT = 14
 local REROUTE = 25
 local NAV_DONE = 15
 local TURN_ANGLE = 0.6       -- rad: smaller bends are "keep going"
+local TURN_SHOW = 300        -- tiles: a turn further than this shows as "straight on"
 local SUMMARY_MS = 10000
+local WHY_ICON = { zombie = "zombie", obstacle = "warn", avoid = "swerve", group = "convoy", unloaded = "clock", offroute = "pin", emergency = "stop" }
 
 local function T(key, ...) return getText(key, ...) end
 
@@ -28,7 +32,7 @@ local function wrap(a)
 end
 
 -- ------------------------------------------------------------------------------
--- navigator maths
+-- route maths
 -- ------------------------------------------------------------------------------
 local function navCum(nav)
     if nav.cum then return nav.cum end
@@ -55,12 +59,12 @@ local function navLocate(nav, px, py)
     return bpos, best or 0, bk
 end
 
--- next real turn after segment k: distance to it and "left" / "right"
-local function nextTurn(nav, pos, k)
-    local r, cum = nav.route, navCum(nav)
-    for i = k + 1, #r.x - 1 do
-        local a = math.atan2(r.y[i] - r.y[i - 1], r.x[i] - r.x[i - 1])
-        local b = math.atan2(r.y[i + 1] - r.y[i], r.x[i + 1] - r.x[i])
+-- next real turn after segment k of xs/ys: distance to it and "left" / "right"
+local function nextTurn(xs, ys, cum, pos, k)
+    for i = k + 1, #xs - 1 do
+        if cum[i] - pos > TURN_SHOW then return nil end
+        local a = math.atan2(ys[i] - ys[i - 1], xs[i] - xs[i - 1])
+        local b = math.atan2(ys[i + 1] - ys[i], xs[i + 1] - xs[i])
         local d = wrap(b - a)
         if math.abs(d) > TURN_ANGLE then
             return cum[i] - pos, d > 0 and "right" or "left"
@@ -69,47 +73,30 @@ local function nextTurn(nav, pos, k)
     return nil
 end
 
-local function facing(p)
+local function speedOf(p)
     local v = p:getVehicle()
-    if v then
-        local f = v:getForwardVector(Vector3f.new())
-        return math.atan2(f:z(), f:x())
-    end
-    local dir = p:getForwardDirection()
-    return math.atan2(dir:getY(), dir:getX())
+    return v and math.abs(v:getCurrentSpeedKmHour()) or 0
 end
 
 -- ------------------------------------------------------------------------------
 -- panel
 -- ------------------------------------------------------------------------------
 function COTWHud:new()
-    local o = ISPanel.new(self, getCore():getScreenWidth() / 2 - W / 2, 20, W, H)
-    o.backgroundColor = { r = 0.08, g = 0.07, b = 0.06, a = 0.85 }
-    o.borderColor = { r = 0.85, g = 0.6, b = 0.25, a = 1 }
+    local o = ISPanel.new(self, getCore():getScreenWidth() / 2 - W / 2, 20, W, 130)
+    o.background = false
     o.lastReroute = 0
     return o
 end
 
 function COTWHud:createChildren()
     ISPanel.createChildren(self)
-    self.stopBtn = ISButton:new(self.width - 98, self.height - 30, 90, 24, T("IGUI_COTW_StopHere"), self, COTWHud.onStop)
+    self.stopBtn = COTWBtn:new(0, 0, 10, U.FONT_S + 10, T("IGUI_COTW_StopHere"), self, COTWHud.onStop, "stop", "stop")
     self.stopBtn:initialise()
     self:addChild(self.stopBtn)
 end
 
 function COTWHud:onStop()
     if COTW.Driver.running() then COTW.Driver.emergency() else COTW.stopNav() end
-end
-
-function COTWHud:arrow(cx, cy, ang, size)
-    -- ang 0 = straight up on screen (= where we face)
-    local s, c = math.sin(ang), math.cos(ang)
-    local function pt(x, y) return cx + x * c - y * s, cy + x * s + y * c end
-    local tx, ty = pt(0, -size)
-    local rx, ry = pt(size * 0.6, size * 0.7)
-    local mx, my = pt(0, size * 0.3)
-    local lx, ly = pt(-size * 0.6, size * 0.7)
-    self.javaObject:DrawTexture(nil, tx, ty, rx, ry, mx, my, lx, ly, 1, 0.8, 0.35, 1)
 end
 
 -- hidden (and not catching clicks) whenever there is nothing to show
@@ -120,24 +107,107 @@ local function wanted()
         or (C.lastEnd ~= nil and getTimestampMs() - C.lastEnd.t < SUMMARY_MS)
 end
 
-function COTWHud:render()
+-- the full strip: turn, distance, gauge, progress, why, stop button
+-- d = { turnDist, turnSide, mode, rem, why, speed, done (0..1), hint, stopTitle, hold }
+function COTWHud:drawDrive(d)
+    local w = self.width
+    local sw = d.stopTitle and (U.textW(d.stopTitle) + 16 + 24) or 0
+    local hint = d.hint and U.wrap(d.hint, w - 28 - sw - 10) or {}
+    local footH = math.max(U.FONT_S + 10, #hint * U.FONT_S + 4)
+    local h = 10 + 58 + 10 + 6 + 8 + footH + 14
+    if self.height ~= h then self:setHeight(h) end
+    U.stripFrame(self, w, h, CUT)
+
+    -- turn hexagon
+    local icon = d.turnSide == "left" and "turnL" or (d.turnSide == "right" and "turnR" or "up")
+    for i = 3, 1, -1 do U.hex(self, 14 - i * 2, 13 - i * 2, 52 + i * 4, 52 + i * 4, K.g, 0.1) end
+    U.hex(self, 14, 13, 52, 52, K.g, 1)
+    U.icon(self, icon, 26, 25, 28, K.dark)
+
+    -- turn, then mode + distance left, then why it is slower (amber)
+    local tx = 80
+    local big = d.turnSide and T("IGUI_COTW_Turn_" .. d.turnSide, tostring(math.floor(d.turnDist))) or T("IGUI_COTW_Straight")
+    U.text(self, big, tx, 10, K.ink, UIFont.Medium)
+    local sy = 12 + U.FONT_M
+    U.text(self, d.mode, tx, sy, K.mute)
+    local x = tx + U.textW(d.mode) + 10
+    U.icon(self, "road", x, sy + (U.FONT_S - 14) / 2, 14, K.g)
+    U.text(self, T("IGUI_COTW_Hud_Left", string.format("%.1f", d.rem / 1000)), x + 18, sy, K.mute)
+    if d.why then
+        sy = sy + U.FONT_S
+        U.icon(self, WHY_ICON[d.why] or "warn", tx, sy + (U.FONT_S - 14) / 2, 14, K.amber)
+        U.text(self, T("IGUI_COTW_Why_" .. d.why), tx + 18, sy, K.amber)
+    end
+
+    -- speed gauge (270 degrees open at the bottom, MaxSpeed = full)
+    local gx, gy, r = w - 14 - 29, 10 + 29, 25
+    local a0 = math.pi * 0.75
+    U.arc(self, gx, gy, r, 5, a0, a0 + math.pi * 1.5, K.white, 0.08, 24)
+    local f = math.max(0, math.min(1, d.speed / math.max(1, COTW.opt("MaxSpeed"))))
+    if f > 0.005 then
+        U.arc(self, gx, gy, r, 9, a0, a0 + math.pi * 1.5 * f, K.g, 0.18)
+        U.arc(self, gx, gy, r, 5, a0, a0 + math.pi * 1.5 * f, K.g, 1)
+    end
+    U.textC(self, tostring(math.floor(d.speed + 0.5)), gx, gy - U.FONT_M / 2 - 5, K.ink, UIFont.Medium)
+    U.textC(self, "km/h", gx, gy + 8, K.mute)
+
+    -- progress: 10 slanted bars
+    local by = 10 + 58 + 10
+    local bw = (w - 28 - 27) / 10
+    local on = math.floor(math.max(0, math.min(1, d.done)) * 10 + 0.5)
+    for i = 0, 9 do
+        local bx = 14 + i * (bw + 3)
+        local lit = i < on
+        if lit then U.quad(self, bx + 3, by - 2, bx + bw + 3, by - 2, bx + bw - 1, by + 8, bx - 1, by + 8, K.g, 0.25) end
+        U.quad(self, bx + 3, by, bx + bw + 3, by, bx + bw, by + 6, bx, by + 6, lit and K.g or K.white, lit and 1 or 0.07)
+    end
+
+    -- foot: hint + stop button
+    local fy = by + 6 + 8
+    local sb = self.stopBtn
+    sb:setTitle(d.stopTitle or "")
+    sb:setX(w - 14 - sw)
+    sb:setY(fy + (footH - U.FONT_S - 10) / 2)
+    sb:setWidth(sw)
+    sb:setHeight(U.FONT_S + 10)
+    sb:setVisible(d.stopTitle ~= nil and not d.stopping)
+    for i, ln in ipairs(hint) do U.text(self, ln, 14, fy + (footH - #hint * U.FONT_S) / 2 + (i - 1) * U.FONT_S, K.mute) end
+    if d.hold and d.hold > 0 then
+        U.rect(self, 14, h - 10, w - 28, 3, K.red, 0.13)
+        U.rect(self, 14, h - 11, (w - 28) * math.min(1, d.hold), 5, K.red, 0.25)
+        U.rect(self, 14, h - 10, (w - 28) * math.min(1, d.hold), 3, K.red, 1)
+    end
+end
+
+-- the short strip: icon, title, a line under it
+function COTWHud:drawInfo(icon, title, sub, warn)
+    local w = self.width
+    local h = 10 + math.max(40, U.FONT_M + U.FONT_S + 4) + 14
+    if self.height ~= h then self:setHeight(h) end
+    self.stopBtn:setVisible(false)
+    U.stripFrame(self, w, h, CUT)
+    local col = warn and K.amber or K.g
+    U.hex(self, 14, 10, 40, 40, col, 1)
+    U.icon(self, icon, 24, 20, 20, K.dark)
+    U.text(self, title, 66, 10, warn and K.amber or K.ink, UIFont.Medium)
+    if sub then U.text(self, sub, 66, 12 + U.FONT_M, K.mute) end
+end
+
+function COTWHud:prerender()
     local C = COTW.C
     local p = COTW.player()
     if not p then return end
     local st = COTW.Driver.status()
     local now = getTimestampMs()
-    self.stopBtn:setVisible(false)
 
     if st then
-        self.stopBtn:setVisible(not st.emergency)
-        self.stopBtn:setTitle(T("IGUI_COTW_StopHere"))
-        self:drawText(T("IGUI_COTW_Hud_Auto", string.format("%.1f", st.rem / 1000)), 10, 6, 1, 0.8, 0.4, 1, UIFont.Medium)
-        local why = st.why and T("IGUI_COTW_Why_" .. st.why) or ""
-        self:drawText(T("IGUI_COTW_Hud_Speed", tostring(math.floor(st.target))) .. "  " .. why, 10, 8 + FONT_M, 1, 1, 1, 1, UIFont.Small)
-        self:drawText(T("IGUI_COTW_Hud_Hold"), 10, 10 + FONT_M + FONT_S, 0.7, 0.7, 0.7, 1, UIFont.Small)
-        if st.hold > 0 then
-            self:drawRect(10, self.height - 6, (self.width - 20) * math.min(1, st.hold), 3, 1, 0.9, 0.3, 0.2)
-        end
+        local R = st.R
+        local dist, side = nextTurn(R.x, R.y, R.cum, st.pos, st.idx)
+        self:drawDrive({
+            turnDist = dist, turnSide = side, mode = T("IGUI_COTW_Mode_auto"), rem = st.rem, why = st.why,
+            speed = speedOf(p), done = st.len > 0 and st.pos / st.len or 0, hint = T("IGUI_COTW_Hud_Hold"),
+            stopTitle = T("IGUI_COTW_StopHere"), stopping = st.emergency, hold = st.hold,
+        })
         return
     end
 
@@ -157,40 +227,34 @@ function COTWHud:render()
             C.navIdx = 1
             return
         end
-        -- arrow toward a point a little ahead on the route (or the pin itself near the end)
-        local r = nav.route
-        local ax, ay = nav.destX, nav.destY
-        local ahead = pos + 12
-        for i = k + 1, #r.x do
-            if cum[i] >= ahead then ax, ay = r.x[i], r.y[i]; break end
-        end
-        local ang = wrap(math.atan2(ay - p:getY(), ax - p:getX()) - facing(p))
-        self:arrow(30, self.height / 2, ang, 16)
-        local dist, side = nextTurn(nav, pos, k)
-        local text = dist and T("IGUI_COTW_Turn_" .. side, tostring(math.floor(dist))) or T("IGUI_COTW_Straight")
-        self:drawText(text, 60, 6, 1, 1, 1, 1, UIFont.Medium)
-        self:drawText(T("IGUI_COTW_Hud_Left", string.format("%.1f", rem / 1000)), 60, 8 + FONT_M, 0.8, 0.8, 0.8, 1, UIFont.Small)
-        self.stopBtn:setVisible(true)
-        self.stopBtn:setTitle(T("IGUI_COTW_NavStop"))
+        local dist, side = nextTurn(nav.route.x, nav.route.y, cum, pos, k)
+        local total = cum[#cum]
+        self:drawDrive({
+            turnDist = dist, turnSide = side, mode = T("IGUI_COTW_Mode_nav"), rem = rem,
+            speed = speedOf(p), done = total > 0 and pos / total or 0, stopTitle = T("IGUI_COTW_NavStop"),
+        })
         return
     end
 
     if C.trip then
-        self:drawText(T("IGUI_COTW_State_" .. C.trip.state), 10, 6, 1, 0.8, 0.4, 1, UIFont.Medium)
+        local d = C.dest
+        self:drawInfo("clock", T("IGUI_COTW_State_" .. C.trip.state), d and d.name or nil)
         return
     end
     if C.riding then
-        self:drawText(T("IGUI_COTW_Riding", C.riding.booker), 10, 6, 1, 0.8, 0.4, 1, UIFont.Medium)
+        self:drawInfo("car", T("IGUI_COTW_Riding", C.riding.booker), nil)
         return
     end
     local e = C.lastEnd
     if e and now - e.t < SUMMARY_MS then
-        self:drawText(T("IGUI_COTW_End_" .. tostring(e.reason)), 10, 6, 1, 0.8, 0.4, 1, UIFont.Medium)
+        local good = e.reason == "arrive" or e.reason == "intervene" or e.reason == "emergency"
         local money = e.free and T("IGUI_COTW_Free") or T("IGUI_COTW_End_Money", COTW.money(e.paid or 0), COTW.money(e.back or 0))
-        self:drawText(T("IGUI_COTW_End_Dist", string.format("%.1f", (e.driven or 0) / 1000), string.format("%.1f", (e.len or 0) / 1000)) .. "  " .. money,
-            10, 8 + FONT_M, 1, 1, 1, 1, UIFont.Small)
+        local sub = T("IGUI_COTW_End_Dist", string.format("%.1f", (e.driven or 0) / 1000), string.format("%.1f", (e.len or 0) / 1000)) .. " · " .. money
+        self:drawInfo(good and "check" or "warn", T("IGUI_COTW_End_" .. tostring(e.reason)), sub, not good)
     end
 end
+
+function COTWHud:render() end
 
 -- ------------------------------------------------------------------------------
 -- bill / invite popups
