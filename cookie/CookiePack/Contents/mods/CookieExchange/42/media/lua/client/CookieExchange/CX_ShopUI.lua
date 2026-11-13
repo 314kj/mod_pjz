@@ -445,7 +445,8 @@ end
 -- session. The server still checks every row on save, so a list that cannot be read only means
 -- the admin types the id by hand.
 -- ==============================================================================
-local SUG_ROWS = 8
+local SUG_ROWS = 12
+local SUG_BAR = 12      -- scrollbar strip on the right: click or drag it
 local SUG_H = math.max(FONT_S * 2 + 6, 34)
 local lists = {}
 
@@ -465,7 +466,9 @@ local function addRow(out, seen, v, label, ft)
     if not v or v == "" or seen[v] then return end
     seen[v] = true
     label = (label and label ~= "") and label or v
-    out[#out + 1] = { v = v, label = label, ft = ft, l = string.lower(label .. " " .. v) }
+    local row = { v = v, label = label, ft = ft, l = string.lower(label .. " " .. v) }
+    out[#out + 1] = row
+    return row
 end
 
 local BUILD = {}
@@ -521,7 +524,13 @@ function BUILD.trait(out, seen)
             local okR, back = pcall(function() return CharacterTrait.get(ResourceLocation.of(id)) end)
             if okR and back ~= nil then
                 local okL, label = pcall(function() return getText(def:getLabel()) end)
-                addRow(out, seen, id, okL and label and tostring(label) or nil, nil)
+                local row = addRow(out, seen, id, okL and label and tostring(label) or nil, nil)
+                if row then
+                    local okX, tex = pcall(function() return def:getTexture() end)
+                    if okX and tex then row.tex = tex end
+                    local okC, cost = pcall(function() return def:getCost() end)
+                    row.bad = okC and type(cost) == "number" and cost < 0
+                end
             end
         end
     end
@@ -590,6 +599,7 @@ end
 function CXSuggest:place()
     local h = SUG_H * math.max(1, math.min(SUG_ROWS, #self.rows)) + 2
     self:setX(self.box:getAbsoluteX())
+    self:setWidth(math.max(self.box:getWidth(), 420))
     self:setY(self.box:getAbsoluteY() + self.box:getHeight() + 2)
     self:setHeight(h)
 end
@@ -600,17 +610,49 @@ function CXSuggest:onMouseWheel(del)
     return true
 end
 
+function CXSuggest:barTo(y)
+    local maxS = math.max(0, #self.rows - SUG_ROWS)
+    if maxS == 0 then return end
+    local f = math.max(0, math.min(1, (y - 1) / math.max(1, self.height - 2)))
+    self.scroll = math.floor(f * maxS + 0.5)
+end
+
 function CXSuggest:onMouseDown(x, y)
+    if #self.rows > SUG_ROWS and x >= self.width - SUG_BAR then
+        self.dragBar = true
+        self:barTo(y)
+        return true
+    end
     local i = math.floor((y - 1) / SUG_H) + 1 + self.scroll
     local r = self.rows[i]
     if r then
         local head, _, tail = splitSpec(self.kind, self.box:getText() or "")
-        self.box:setText(head .. r.v .. tail)
-        self.form.sugShut = true
-        self:setVisible(false)
+        if self.kind == "trait" then
+            head = string.gsub(head, "[%+%-]$", "") .. (r.bad and "-" or "+")
+        end
+        if self.kind == "item" then
+            -- keep the list open: the next click adds another line to the pack
+            self.box:setText(head .. r.v .. tail .. ", ")
+            self.form.sugDirty = true
+        else
+            self.box:setText(head .. r.v .. tail)
+            self.form.sugShut = true
+            self:setVisible(false)
+        end
     end
     return true
 end
+
+function CXSuggest:onMouseMove(dx, dy)
+    if self.dragBar then self:barTo(self:getMouseY()) end
+end
+
+function CXSuggest:onMouseMoveOutside(dx, dy)
+    if self.dragBar then self:barTo(self:getMouseY()) end
+end
+
+function CXSuggest:onMouseUp(x, y) self.dragBar = false; return true end
+function CXSuggest:onMouseUpOutside(x, y) self.dragBar = false end
 
 function CXSuggest:render()
     ISPanel.render(self)
@@ -626,10 +668,19 @@ function CXSuggest:render()
             self:drawRect(1, y, self.width - 2, SUG_H, 0.35, 0.75, 0.45, 0.1)
         end
         local tx = 6
-        local tex = r.ft and iconTex(r.ft)
+        local tex = r.tex or (r.ft and iconTex(r.ft))
         if tex then
             self:drawTextureScaledAspect(tex, 4, y + 2, SUG_H - 4, SUG_H - 4, 1, 1, 1, 1)
             tx = SUG_H + 6
+        end
+        if self.kind == "trait" then
+            local tag = r.bad and T("IGUI_CX_TraitRemove") or T("IGUI_CX_TraitBuy")
+            local tw = getTextManager():MeasureStringX(UIFont.Small, tag)
+            if r.bad then
+                self:drawText(tag, self.width - SUG_BAR - tw - 6, y + 2, 1, 0.45, 0.4, 1, UIFont.Small)
+            else
+                self:drawText(tag, self.width - SUG_BAR - tw - 6, y + 2, 0.45, 0.9, 0.5, 1, UIFont.Small)
+            end
         end
         self:drawText(r.label, tx, y + 2, 1, 1, 1, 1, UIFont.Small)
         if r.label ~= r.v then
@@ -637,9 +688,10 @@ function CXSuggest:render()
         end
     end
     if #self.rows > SUG_ROWS then
-        local barH = math.max(10, self.height * SUG_ROWS / #self.rows)
+        local barH = math.max(24, self.height * SUG_ROWS / #self.rows)
         local barY = (self.height - barH) * self.scroll / (#self.rows - SUG_ROWS)
-        self:drawRect(self.width - 4, barY, 3, barH, 0.7, GOLD.r, GOLD.g, GOLD.b)
+        self:drawRect(self.width - SUG_BAR, 1, SUG_BAR - 1, self.height - 2, 0.5, 0.15, 0.15, 0.15)
+        self:drawRect(self.width - SUG_BAR + 2, barY, SUG_BAR - 5, barH, 0.85, GOLD.r, GOLD.g, GOLD.b)
     end
 end
 

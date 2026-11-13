@@ -17,7 +17,7 @@
     "IGUI_CX_Res_SelfSend": "โอนให้ตัวเองไม่ได้",
     "IGUI_CX_Res_NoMoney": "เงินในกระเป๋าไม่พอ",
     "IGUI_CX_Res_TooMany": "แบงค์เยอะเกินไป ถอนทีละน้อยลง",
-    "IGUI_CX_OpenShop": "เปิดร้าน",
+    "IGUI_CX_OpenShop": "ร้านค้า",
     "IGUI_CX_ShopTitle": "Cookie Shop",
     "IGUI_CX_BuyBack": "รับซื้อ",
     "IGUI_CX_Admin": "Admin",
@@ -97,5 +97,7 @@
     "IGUI_CX_Shop_KitGiven": "ได้รับ starter kit แล้ว",
     "IGUI_CX_Shop_KitCat": "หมวด Starter kit ลบไม่ได้",
     "IGUI_CX_KitRow": "แจกฟรี",
-    "IGUI_CX_NoMatch": "ไม่พบที่ตรง พิมพ์ id เองได้"
+    "IGUI_CX_NoMatch": "ไม่พบที่ตรง พิมพ์ id เองได้",
+    "IGUI_CX_TraitBuy": "ซื้อ",
+    "IGUI_CX_TraitRemove": "ถอดออก"
 }

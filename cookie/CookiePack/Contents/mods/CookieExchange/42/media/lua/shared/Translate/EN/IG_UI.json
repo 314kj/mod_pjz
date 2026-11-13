@@ -17,7 +17,7 @@
     "IGUI_CX_Res_SelfSend": "You can't send money to yourself",
     "IGUI_CX_Res_NoMoney": "Not enough money in your wallet",
     "IGUI_CX_Res_TooMany": "Too many bills at once, withdraw a smaller amount",
-    "IGUI_CX_OpenShop": "Open shop",
+    "IGUI_CX_OpenShop": "Shop",
     "IGUI_CX_ShopTitle": "Cookie Shop",
     "IGUI_CX_BuyBack": "Buy-back",
     "IGUI_CX_Admin": "Admin",
@@ -97,5 +97,7 @@
     "IGUI_CX_Shop_KitGiven": "You got the starter kit",
     "IGUI_CX_Shop_KitCat": "The Starter kit category cannot be deleted",
     "IGUI_CX_KitRow": "Free kit",
-    "IGUI_CX_NoMatch": "No match - type the id yourself"
+    "IGUI_CX_NoMatch": "No match - type the id yourself",
+    "IGUI_CX_TraitBuy": "buy",
+    "IGUI_CX_TraitRemove": "remove"
 }
