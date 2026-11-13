@@ -1,0 +1,91 @@
+VERSION = 1,
+
+option CookieOnTheWay.PricePerKm
+{
+    type = integer, min = 1, max = 100000, default = 136,
+    page = CookieOnTheWay, translation = CookieOnTheWay_PricePerKm,
+}
+
+option CookieOnTheWay.MinFare
+{
+    type = integer, min = 0, max = 100000, default = 100,
+    page = CookieOnTheWay, translation = CookieOnTheWay_MinFare,
+}
+
+option CookieOnTheWay.PassengerPct
+{
+    type = integer, min = 0, max = 1000, default = 20,
+    page = CookieOnTheWay, translation = CookieOnTheWay_PassengerPct,
+}
+
+option CookieOnTheWay.TrailerFee
+{
+    type = integer, min = 0, max = 100000, default = 100,
+    page = CookieOnTheWay, translation = CookieOnTheWay_TrailerFee,
+}
+
+option CookieOnTheWay.BabySeatDays
+{
+    type = integer, min = 0, max = 3650, default = 60,
+    page = CookieOnTheWay, translation = CookieOnTheWay_BabySeatDays,
+}
+
+option CookieOnTheWay.MaxSpeed
+{
+    type = integer, min = 10, max = 200, default = 90,
+    page = CookieOnTheWay, translation = CookieOnTheWay_MaxSpeed,
+}
+
+option CookieOnTheWay.CitySpeed
+{
+    type = integer, min = 10, max = 200, default = 50,
+    page = CookieOnTheWay, translation = CookieOnTheWay_CitySpeed,
+}
+
+option CookieOnTheWay.TrailerMaxSpeed
+{
+    type = integer, min = 10, max = 200, default = 60,
+    page = CookieOnTheWay, translation = CookieOnTheWay_TrailerMaxSpeed,
+}
+
+option CookieOnTheWay.ZombieSpeed
+{
+    type = integer, min = 1, max = 100, default = 15,
+    page = CookieOnTheWay, translation = CookieOnTheWay_ZombieSpeed,
+}
+
+option CookieOnTheWay.GroupGap
+{
+    type = integer, min = 5, max = 100, default = 10,
+    page = CookieOnTheWay, translation = CookieOnTheWay_GroupGap,
+}
+
+option CookieOnTheWay.BillSeconds
+{
+    type = integer, min = 10, max = 600, default = 60,
+    page = CookieOnTheWay, translation = CookieOnTheWay_BillSeconds,
+}
+
+option CookieOnTheWay.EmergencyFeePct
+{
+    type = integer, min = 0, max = 1000, default = 10,
+    page = CookieOnTheWay, translation = CookieOnTheWay_EmergencyFeePct,
+}
+
+option CookieOnTheWay.BlockedSeconds
+{
+    type = integer, min = 1, max = 120, default = 5,
+    page = CookieOnTheWay, translation = CookieOnTheWay_BlockedSeconds,
+}
+
+option CookieOnTheWay.MinFuelPct
+{
+    type = integer, min = 0, max = 100, default = 15,
+    page = CookieOnTheWay, translation = CookieOnTheWay_MinFuelPct,
+}
+
+option CookieOnTheWay.RequireWallet
+{
+    type = boolean, default = false,
+    page = CookieOnTheWay, translation = CookieOnTheWay_RequireWallet,
+}
