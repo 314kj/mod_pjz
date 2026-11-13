@@ -47,10 +47,13 @@ import java.util.Map;
  * 1.3.0: the server's Cookie Slicer speed-ups on the player's PC too (SpeedPatcher / SpeedHooks:
  * Lua event loop, the same error printed 3 times then counted, entity lists), switch in the window
  * (speed.txt); "record 3 minutes" with Java's flight recorder for the admins (Recorder).
+ * 1.4.0: smoother driving and fewer 3D zombies (SmoothPatcher / SmoothHooks): map pieces finished at
+ * most chunk_ms per frame instead of a dozen at once; how many zombies get a full 3D model (the game:
+ * 510); both from the window at once, kept in smooth.txt.
  * Copyright (c) AKA / Cookie Cheetah. All rights reserved.
  */
 public final class Helper implements Runnable {
-    public static final String VERSION = "1.3.0";
+    public static final String VERSION = "1.4.0";
     static final long MB = 1024L * 1024L;
     static final String PC_FILE = "CookieSlicer_pc.txt";
     static final String REQUEST_FILE = "CookieSlicer_request.txt";
@@ -59,6 +62,8 @@ public final class Helper implements Runnable {
     static final String STATS_FILE = "heapstats.txt"; // most RAM the game used in recent sessions
     static final String SPEED_FILE = "speed.txt"; // speed-ups on/off ("speed=0" = off; no file = on)
     static volatile boolean speedPatching; // the speed-ups were set up at this start
+    static final String SMOOTH_FILE = "smooth.txt"; // chunk_ms / zombies3d (no file = 4 ms, 510)
+    static volatile boolean smoothPatching; // the two smooth places were set up at this start
 
     final File luaDir;
     final File stateDir;
@@ -67,6 +72,7 @@ public final class Helper implements Runnable {
     private long heapNextMb = 0;
     private String ramsaveNote = null;
     private String speedNote = null;
+    private String smoothNote = null;
     private long peakLive = 0, peakWritten = 0;
     private List<Long> pastPeaks;
     private static String ramsaveNow, gcName;
@@ -129,6 +135,16 @@ public final class Helper implements Runnable {
                     }
                 } catch (Throwable t) {
                     System.out.println("[CookieSlicerHelper] speed-ups off (the game runs as usual): " + t);
+                }
+                try {
+                    if (state != null) {
+                        File f = new File(state, SMOOTH_FILE);
+                        if (f.isFile()) SmoothHooks.set(read(f));
+                    }
+                    inst.addTransformer(new SmoothPatcher(), false);
+                    smoothPatching = true;
+                } catch (Throwable t) {
+                    System.out.println("[CookieSlicerHelper] smooth off (the game runs as usual): " + t);
                 }
             }
             try {
@@ -280,6 +296,9 @@ public final class Helper implements Runnable {
         m.put("speed_next", savedSpeed(stateDir) ? "1" : "0");
         if (speedNote != null) m.put("speed_note", speedNote);
         if (speedPatching) SpeedHooks.status(m);
+        // smooth (1.4.0): map pieces per frame, zombies in 3D
+        if (smoothPatching) SmoothHooks.status(m);
+        if (smoothNote != null) m.put("smooth_note", smoothNote);
         Recorder.status(m);
         if (!m.containsKey("gpu") && gpuGuess != null) m.put("gpu", gpuGuess); // before the game has drawn a frame
         if (!m.containsKey("vram_total_mb") && gpuGuessMb > 0) m.put("vram_total_mb", Long.toString(gpuGuessMb));
@@ -479,6 +498,7 @@ public final class Helper implements Runnable {
         if ("1".equals(r.get("heap_report"))) HeapReport.startAsync(new File(luaDir, HeapReport.FILE));
         String sp = r.get("speed");
         if (sp != null && !sp.isEmpty()) setSpeed(!"0".equals(sp.trim()));
+        if (r.containsKey("chunk_ms") || r.containsKey("zombies3d")) setSmooth(r);
         long rec = parse(r.get("record"), -1);
         if (rec > 0) Recorder.start(luaDir.getAbsoluteFile().getParentFile(), (int) Math.min(rec, 300));
         setHeap(parse(r.get("heap_mb"), -1));
@@ -542,6 +562,24 @@ public final class Helper implements Runnable {
             System.out.println("[CookieSlicerHelper] speed-ups " + (on ? "on" : "off") + (speedPatching ? " now" : " from the next start"));
         } catch (IOException e) {
             speedNote = "failed: " + e.getMessage();
+        }
+    }
+
+    // ================================================================ smooth (1.4.0)
+
+    /** map pieces per frame / zombies in 3D: at once, and smooth.txt next to the jar for the next start */
+    void setSmooth(Map<String, String> r) {
+        SmoothHooks.set(r);
+        if (stateDir == null) {
+            smoothNote = "failed: helper folder unknown";
+            return;
+        }
+        try {
+            Files.write(new File(stateDir, SMOOTH_FILE).toPath(), SmoothHooks.save().getBytes(StandardCharsets.UTF_8));
+            smoothNote = "ok";
+            System.out.println("[CookieSlicerHelper] smooth: chunk_ms=" + SmoothHooks.chunkMs + " zombies3d=" + SmoothHooks.limit3d);
+        } catch (IOException e) {
+            smoothNote = "failed: " + e.getMessage();
         }
     }
 

@@ -18,10 +18,15 @@ import java.util.Map;
  *
  * Every call to change must be found exactly the expected number of times, otherwise
  * nothing in the class is changed (see ShaderPatcher).
+ *
+ * A number written into the code (sipush n, also 3 bytes) can be swapped the same way for a
+ * call to a static "()I" method in the hook class, when the opcode right after it is the
+ * expected one (helper 1.4.0: IsoWorld.sceneCullZombies "sipush 510; if_icmpge").
  */
 final class ClassPatch {
     static final int INVOKEVIRTUAL = 0xb6;
     static final int INVOKESTATIC = 0xb8;
+    static final int SIPUSH = 0x11;
 
     /** One kind of call to swap. */
     static final class Redirect {
@@ -32,6 +37,7 @@ final class ClassPatch {
         final String ldc;        // when set: the call's first argument must be this String constant (ldc; aload; invoke)
         final int expected;      // how many such calls must be there
         final String newName, newDesc;  // static method in Hooks
+        int value, nextOp;       // SIPUSH only: the number, and the opcode right after it
         int found;
 
         Redirect(String inMethod, String inDesc, int opcode, String owner, String name, String desc,
@@ -41,7 +47,16 @@ final class ClassPatch {
             this.expected = expected; this.newName = newName; this.newDesc = newDesc;
         }
 
+        /** "sipush value" followed by nextOp, swapped for a call to the static int method newName() */
+        static Redirect constant(String inMethod, String inDesc, int value, int nextOp, int expected, String newName) {
+            Redirect r = new Redirect(inMethod, inDesc, SIPUSH, null, null, null, null, expected, newName, "()I");
+            r.value = value;
+            r.nextOp = nextOp;
+            return r;
+        }
+
         String label() {
+            if (opcode == SIPUSH) return inMethod + ": sipush " + value;
             return inMethod + ": " + owner.substring(owner.lastIndexOf('/') + 1) + "." + name
                 + (ldc != null ? "(\"" + ldc + "\")" : "");
         }
@@ -215,6 +230,14 @@ final class ClassPatch {
                         r.found++;
                         edits.add(new int[] { at, INVOKESTATIC, methodref(hooksClass, r.newName, r.newDesc) });
                     }
+                }
+            }
+            if (op == SIPUSH) {
+                for (Redirect r : redirects) {
+                    if (r.opcode != SIPUSH || !r.inMethod.equals(mName) || !r.inDesc.equals(mDesc)) continue;
+                    if ((short) u2(at + 1) != r.value || pc + 3 >= len || u1(at + 3) != r.nextOp) continue;
+                    r.found++;
+                    edits.add(new int[] { at, INVOKESTATIC, methodref(hooksClass, r.newName, r.newDesc) });
                 }
             }
             op2 = op1; str2 = str1;

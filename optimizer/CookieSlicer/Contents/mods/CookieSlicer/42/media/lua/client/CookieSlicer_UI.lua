@@ -1132,6 +1132,7 @@ function CookieSlicerWindow:drawSpeed(cx, y, cw, labelW)
         y = self:para(T("Ver_speedPart", tostring(pc.speed_failed)), cx + 4, y, cw - 8, C.warn, F.small) + 2
     end
     y = y + gap - 2
+    y = self:drawSmooth(cx, y, cw, labelW)
 
     -- record a few minutes for the admins
     self:rect(cx, y, cw, 1, C.track)
@@ -1158,6 +1159,55 @@ function CookieSlicerWindow:drawSpeed(cx, y, cw, labelW)
         y = self:para(T("Ver_recNote"), bx, y, bw, C.dim, F.small) + gap - 2
     end
     return y
+end
+
+-- smoother driving + zombies in 3D (helper 1.4.0): what the helper says now, or what was just asked
+local function smoothValue(pc, key, dflt)
+    local asked = CS.smoothAsked and CS.smoothAsked[key]
+    if asked and CS.smoothAskedT and getTimestampMs() - CS.smoothAskedT < 6000 then return tonumber(asked) or dflt end
+    return tonumber(pc[key]) or dflt
+end
+
+CookieSlicerWindow.ZOMBIES_3D = { 510, 300, 200, 150 }
+
+function CookieSlicerWindow:drawSmooth(cx, y, cw, labelW)
+    local F, gap = self.F, self.gap
+    local pc = CS.pc
+    self:rect(cx, y, cw, 1, C.track)
+    y = y + gap
+    if not CS.helperHas(CS.SMOOTH_HELPER_MIN) then
+        return self:para(T("Ver_smoothOld", tostring(pc.helper), CS.SMOOTH_HELPER_MIN), cx, y, cw, C.warn, F.small) + gap
+    end
+    if pc.fresh and pc.smooth_classes == nil then -- the helper could not set it up at this start
+        return self:para(T("Ver_smoothPart", "IsoChunkMap, IsoWorld"), cx, y, cw, C.warn, F.small) + gap
+    end
+    local on = smoothValue(pc, "chunk_ms", 4) > 0
+    y = self:switchRow(cx, y, cw, T("Ver_smoothDrive"), on, CookieSlicerWindow.onSmoothDrive, not on)
+    y = self:para(T("Ver_smoothDriveNote"), cx + 4, y + 2, cw - 8, C.dim, F.small) + 2
+    if on and pc.chunks_done then
+        y = self:para(T("Ver_smoothSince", count(pc.chunks_done), count(pc.chunks_waited)), cx + 4, y, cw - 8, C.soft, F.small) + 2
+    end
+    y = y + gap - 2
+
+    local now3d = smoothValue(pc, "zombies3d", 510)
+    self:text(fit(T("Ver_smooth3d"), F.body, labelW), cx, y, C.dim, F.body)
+    local vx, vw = cx + labelW + gap, cw - labelW - gap
+    local bh = fh(F.body) + 10
+    local bw = tw(T("Ver_smooth3dGame", 510), F.body) + 20
+    local x, yy = vx, y - 4
+    for _, n in ipairs(CookieSlicerWindow.ZOMBIES_3D) do
+        local label = n == 510 and T("Ver_smooth3dGame", n) or tostring(n)
+        local w = math.max(tw(label, F.body) + 20, n == 510 and bw or 0, 56)
+        if x + w > vx + vw and x > vx then x, yy = vx, yy + bh + 6 end
+        self:button(x, yy, w, bh, label, F.body, CookieSlicerWindow.onZombies3d, n, n == now3d and "primary" or "normal")
+        x = x + w + 6
+    end
+    y = yy + bh + 6
+    y = self:para(T("Ver_smooth3dNote"), vx, y, vw, C.dim, F.small) + 2
+    if pc.smooth_failed then
+        y = self:para(T("Ver_smoothPart", tostring(pc.smooth_failed)), cx + 4, y, cw - 8, C.warn, F.small) + 2
+    end
+    return y + gap - 2
 end
 
 -- ---------------------------------------------------------------- menu (left)
@@ -1408,6 +1458,14 @@ end
 
 function CookieSlicerWindow:onSpeed(on)
     CS.requestSpeed(on)
+end
+
+function CookieSlicerWindow:onSmoothDrive(on)
+    CS.requestSmooth({ chunk_ms = on and 4 or 0 })
+end
+
+function CookieSlicerWindow:onZombies3d(n)
+    CS.requestSmooth({ zombies3d = n })
 end
 
 function CookieSlicerWindow:onRecord()

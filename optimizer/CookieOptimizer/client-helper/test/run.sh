@@ -8,6 +8,8 @@
 #   RamTest     less RAM: the "what uses RAM" list, the window's RAM-saver switch, the pc
 #               file (run with the start script's savers and without them; Java 25)
 #   RecTest     "record 3 minutes" (Java's flight recorder)
+#   SmoothTest  1.4.0 map pieces per frame + zombies in 3D (hooks; with PZ_JAR also the real classes)
+#   RealSmoothTest  1.4.0 the patched IsoChunkMap / IsoWorld pass Java 25's bytecode check
 #   RealSpeedTest  1.3.0 speed-ups against the game's real classes (with PZ_STDLIB, the game's
 #               stdlib.lua; uses the server agent's test drivers in ../server-agent/test/real)
 # PZ_COMPILE_JAR: see build.sh. PZ_JAR: the game's projectzomboid.jar. JAVA25: a Java 25+
@@ -16,9 +18,18 @@
 set -e
 cd "$(dirname "$0")/.."
 rm -rf build/test && mkdir -p build/test/out
-javac --release 21 -encoding UTF-8 -cp "$PZ_COMPILE_JAR" -d build/test $(find src -name '*.java') test/HelperTest.java test/ShaderTest.java test/JoinTest.java test/RamTest.java test/RecTest.java test/SpeedPatchWrite.java
+javac --release 21 -encoding UTF-8 -cp "$PZ_COMPILE_JAR" -d build/test $(find src -name '*.java') test/HelperTest.java test/ShaderTest.java test/JoinTest.java test/RamTest.java test/RecTest.java test/SpeedPatchWrite.java test/SmoothTest.java
 java -cp build/test cookie.slicer.helper.HelperTest build/test/out
 java -cp build/test cookie.slicer.helper.RecTest build/test/out
+if [ -n "$PZ_JAR" ] && [ -n "$JAVA25" ]; then
+  # the game jar is signed: patched classes cannot sit next to signed ones, so use an unsigned copy
+  rm -rf build/smooth && mkdir -p build/smooth/patched build/smooth/run
+  cp "$PZ_JAR" build/smooth/pz.jar
+  zip -q -d build/smooth/pz.jar 'META-INF/*.SF' 'META-INF/*.RSA' 'META-INF/*.DSA' 'META-INF/*.EC' || true
+  "$JAVA25" -cp "build/test:build/smooth/pz.jar" cookie.slicer.helper.SmoothTest build/smooth/pz.jar build/test/out build/smooth/patched
+  javac --release 21 -d build/smooth/run test/real/RealSmoothTest.java
+  "$JAVA25" -cp build/smooth/run RealSmoothTest build/smooth/pz.jar build/test build/smooth/patched
+fi
 if [ -n "$PZ_JAR" ] && [ -n "$JAVA25" ]; then
   "$JAVA25" --enable-native-access=ALL-UNNAMED -cp "$PZ_JAR:build/test" cookie.slicer.helper.JoinTest build/test/out "$PZ_JAR" "${CONSOLE_TXT:-}"
 fi

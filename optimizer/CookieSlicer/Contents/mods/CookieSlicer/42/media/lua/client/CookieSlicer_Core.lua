@@ -16,12 +16,13 @@ if isServer() then return end
 
 CookieSlicer = CookieSlicer or {}
 local CS = CookieSlicer
-CS.VERSION = "1.3.0"
-CS.HELPER_LATEST = "1.3.0" -- the helper shipped in this mod's helper/ folder
+CS.VERSION = "1.4.0"
+CS.HELPER_LATEST = "1.4.0" -- the helper shipped in this mod's helper/ folder
 CS.SHADER_HELPER_MIN = "1.1.0" -- first helper that draws the shader
 CS.JOIN_HELPER_MIN = "1.2.0" -- first helper that reads the game's log and has the RAM savers
 CS.RAM_HELPER_MIN = "1.2.1" -- first helper that suggests game RAM from real use and keeps the heap near it
 CS.SPEED_HELPER_MIN = "1.3.0" -- first helper with the speed-ups (events, repeated errors, entity lists) and the recorder
+CS.SMOOTH_HELPER_MIN = "1.4.0" -- first helper with smoother driving (map pieces per frame) and zombies in 3D
 
 local SETTINGS_FILE = "CookieSlicer_client.txt"
 local HELPER_FILE = "CookieSlicer_pc.txt"
@@ -231,6 +232,14 @@ end
 function CS.requestSpeed(on)
     CS.request({ speed = on and 1 or 0 })
     CS.speedAsked = on and 1 or 0
+end
+
+-- smoother driving (chunk_ms: 4 on, 0 = the game's way) / zombies in 3D (510 / 300 / 200 / 150): at once (helper 1.4.0)
+function CS.requestSmooth(kv)
+    CS.request(kv)
+    CS.smoothAsked = CS.smoothAsked or {}
+    for k, v in pairs(kv) do CS.smoothAsked[k] = tostring(v) end
+    CS.smoothAskedT = getTimestampMs()
 end
 
 -- record what the game does for a few minutes (Java's flight recorder), for the admins
