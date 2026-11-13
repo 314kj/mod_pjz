@@ -440,6 +440,210 @@ function CX.toggleShop()
 end
 
 -- ==============================================================================
+-- "Gives" suggestions: type in the box, pick from a scrolling list under it
+-- Lists come from this build (script manager / AnimalDefinitions / trait registry), read once per
+-- session. The server still checks every row on save, so a list that cannot be read only means
+-- the admin types the id by hand.
+-- ==============================================================================
+local SUG_ROWS = 8
+local SUG_H = math.max(FONT_S * 2 + 6, 34)
+local lists = {}
+
+local function jlist(v)
+    local out = {}
+    if v == nil then return out end
+    local ok, n = pcall(function() return v:size() end)
+    if not ok or type(n) ~= "number" then return out end
+    for i = 0, n - 1 do
+        local okG, e = pcall(function() return v:get(i) end)
+        if okG and e ~= nil then out[#out + 1] = e end
+    end
+    return out
+end
+
+local function addRow(out, seen, v, label, ft)
+    if not v or v == "" or seen[v] then return end
+    seen[v] = true
+    label = (label and label ~= "") and label or v
+    out[#out + 1] = { v = v, label = label, ft = ft, l = string.lower(label .. " " .. v) }
+end
+
+local BUILD = {}
+
+function BUILD.item(out, seen)
+    local ok, all = pcall(function() return getScriptManager():getAllItems() end)
+    for _, si in ipairs(ok and jlist(all) or {}) do
+        local okF, ft = pcall(function() return si:getFullName() end)
+        if okF and type(ft) == "string" then
+            local okD, dn = pcall(function() return si:getDisplayName() end)
+            addRow(out, seen, ft, okD and dn and tostring(dn) or nil, ft)
+        end
+    end
+end
+
+function BUILD.car(out, seen)
+    local ok, all = pcall(function() return getScriptManager():getAllVehicleScripts() end)
+    for _, sc in ipairs(ok and jlist(all) or {}) do
+        local okF, fn = pcall(function() return sc:getFullName() end)
+        if not (okF and type(fn) == "string" and string.find(fn, ".", 1, true)) then
+            okF, fn = pcall(function() return sc:getModule():getName() .. "." .. sc:getName() end)
+        end
+        if okF and type(fn) == "string" then addRow(out, seen, fn, nil, nil) end
+    end
+end
+
+function BUILD.pet(out, seen)
+    local defs = type(AnimalDefinitions) == "table" and (type(AnimalDefinitions.animals) == "table"
+        and AnimalDefinitions.animals or AnimalDefinitions) or {}
+    for typ, def in pairs(defs) do
+        if type(typ) == "string" and type(def) == "table" then
+            addRow(out, seen, typ, nil, nil)
+            if type(def.breeds) == "table" then
+                for breed in pairs(def.breeds) do
+                    if type(breed) == "string" then
+                        addRow(out, seen, typ .. ":" .. breed, typ .. " (" .. breed .. ")", nil)
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- trait ids are written the way the server reads them (+base:fastlearner); a name that does not
+-- go back through CharacterTrait.get is left out rather than guessed
+function BUILD.trait(out, seen)
+    local ok, all = pcall(function() return CharacterTraitDefinition.getTraits() end)
+    for _, def in ipairs(ok and jlist(all) or {}) do
+        local okT, t = pcall(function() return def:getType() end)
+        if okT and t then
+            local id = string.lower(tostring(t))
+            if not string.find(id, ":", 1, true) then id = "base:" .. id end
+            local okR, back = pcall(function() return CharacterTrait.get(ResourceLocation.of(id)) end)
+            if okR and back ~= nil then
+                local okL, label = pcall(function() return getText(def:getLabel()) end)
+                addRow(out, seen, id, okL and label and tostring(label) or nil, nil)
+            end
+        end
+    end
+end
+
+local function listFor(kind)
+    if lists[kind] then return lists[kind] end
+    local out, seen = {}, {}
+    if BUILD[kind] then pcall(BUILD[kind], out, seen) end
+    table.sort(out, function(a, b)
+        if a.label ~= b.label then return a.label < b.label end
+        return a.v < b.v
+    end)
+    lists[kind] = out
+    return out
+end
+
+-- the part of the box the list searches and replaces: the last line of an item list, the whole
+-- box for the rest; a count ("x3") and a trait sign stay as typed
+local function splitSpec(kind, text)
+    local head, body = "", text
+    if kind == "item" then
+        local a = string.match(text, "^(.*,)%s*[^,]*$")
+        if a then head = a .. " "; body = string.sub(text, #a + 1) end
+    end
+    body = string.gsub(string.gsub(body, "^%s+", ""), "%s+$", "")
+    local sign, tail = "", ""
+    if kind == "trait" then
+        sign = string.match(body, "^[%+%-]") or "+"
+        body = string.gsub(body, "^[%+%-]%s*", "")
+    else
+        local b, n = string.match(body, "^(.-)%s+[xX](%d+)$")
+        if b then body = b; tail = " x" .. n end
+    end
+    return head .. sign, body, tail
+end
+
+CXSuggest = ISPanel:derive("CXSuggest")
+
+function CXSuggest:new(form, box)
+    local o = ISPanel:new(0, 0, box:getWidth(), SUG_H * SUG_ROWS + 2)
+    setmetatable(o, self)
+    self.__index = self
+    o.form = form
+    o.box = box
+    o.rows = {}
+    o.scroll = 0
+    o.backgroundColor = { r = 0.03, g = 0.03, b = 0.03, a = 0.97 }
+    o.borderColor = { r = GOLD.r, g = GOLD.g, b = GOLD.b, a = 0.8 }
+    return o
+end
+
+function CXSuggest:refresh()
+    local kind = self.form:specKind()
+    local _, q = splitSpec(kind, self.box:getText() or "")
+    q = string.lower(q)
+    local rows = {}
+    for _, r in ipairs(listFor(kind)) do
+        if q == "" or string.find(r.l, q, 1, true) then rows[#rows + 1] = r end
+    end
+    self.rows = rows
+    self.kind = kind
+    self.scroll = 0
+end
+
+function CXSuggest:place()
+    local h = SUG_H * math.max(1, math.min(SUG_ROWS, #self.rows)) + 2
+    self:setX(self.box:getAbsoluteX())
+    self:setY(self.box:getAbsoluteY() + self.box:getHeight() + 2)
+    self:setHeight(h)
+end
+
+function CXSuggest:onMouseWheel(del)
+    local maxS = math.max(0, #self.rows - SUG_ROWS)
+    self.scroll = math.max(0, math.min(maxS, self.scroll + del))
+    return true
+end
+
+function CXSuggest:onMouseDown(x, y)
+    local i = math.floor((y - 1) / SUG_H) + 1 + self.scroll
+    local r = self.rows[i]
+    if r then
+        local head, _, tail = splitSpec(self.kind, self.box:getText() or "")
+        self.box:setText(head .. r.v .. tail)
+        self.form.sugShut = true
+        self:setVisible(false)
+    end
+    return true
+end
+
+function CXSuggest:render()
+    ISPanel.render(self)
+    if #self.rows == 0 then
+        self:drawText(T("IGUI_CX_NoMatch"), 8, (SUG_H - FONT_S) / 2, 0.7, 0.7, 0.7, 1, UIFont.Small)
+        return
+    end
+    local mx, my = self:getMouseX(), self:getMouseY()
+    for k = 1, math.min(SUG_ROWS, #self.rows - self.scroll) do
+        local r = self.rows[k + self.scroll]
+        local y = 1 + (k - 1) * SUG_H
+        if self:isMouseOver() and my >= y and my < y + SUG_H and mx >= 0 and mx < self.width then
+            self:drawRect(1, y, self.width - 2, SUG_H, 0.35, 0.75, 0.45, 0.1)
+        end
+        local tx = 6
+        local tex = r.ft and iconTex(r.ft)
+        if tex then
+            self:drawTextureScaledAspect(tex, 4, y + 2, SUG_H - 4, SUG_H - 4, 1, 1, 1, 1)
+            tx = SUG_H + 6
+        end
+        self:drawText(r.label, tx, y + 2, 1, 1, 1, 1, UIFont.Small)
+        if r.label ~= r.v then
+            self:drawText(r.v, tx, y + 2 + FONT_S, 0.6, 0.6, 0.6, 1, UIFont.Small)
+        end
+    end
+    if #self.rows > SUG_ROWS then
+        local barH = math.max(10, self.height * SUG_ROWS / #self.rows)
+        local barY = (self.height - barH) * self.scroll / (#self.rows - SUG_ROWS)
+        self:drawRect(self.width - 4, barY, 3, barH, 0.7, GOLD.r, GOLD.g, GOLD.b)
+    end
+end
+
+-- ==============================================================================
 -- admin form: item row / category / buy-back row
 -- ==============================================================================
 local FORM_W = 400
@@ -488,7 +692,35 @@ function CXShopForm:combo(key, label, options, selected)
     return c
 end
 
-function CXShopForm:onCombo() end
+function CXShopForm:onCombo()
+    self.sugDirty = true
+end
+
+function CXShopForm:specKind()
+    local c = self.fields.kind
+    return c and c:getOptionData(c.selected) or "item"
+end
+
+-- the list shows while the Gives box has focus (or the mouse is on the list) and hides after a pick
+-- until the admin types again
+function CXShopForm:update()
+    ISPanel.update(self)
+    local s = self.sug
+    if not s then return end
+    local box = self.fields.spec
+    local want = not self.sugShut and self:isVisible() and box and (box:isFocused() or s:isMouseOver())
+    if want then
+        if self.sugDirty or s.kind ~= self:specKind() or not s:isVisible() then
+            s:refresh()
+            self.sugDirty = false
+        end
+        s:place()
+        if not s:isVisible() then s:setVisible(true) end
+        s:bringToTop()
+    elseif s:isVisible() then
+        s:setVisible(false)
+    end
+end
 
 function CXShopForm:createChildren()
     ISPanel.createChildren(self)
@@ -504,7 +736,12 @@ function CXShopForm:createChildren()
         local kinds = {}
         for _, k in ipairs(CX.KINDS) do kinds[#kinds + 1] = { text = T("IGUI_CX_Kind_" .. k), data = k } end
         self:combo("kind", T("IGUI_CX_F_Kind"), kinds, r.kind or "item")
-        self:entry("spec", T("IGUI_CX_F_Spec"), r.spec)
+        local spec = self:entry("spec", T("IGUI_CX_F_Spec"), r.spec)
+        spec.onTextChange = function() self.sugShut = false; self.sugDirty = true end
+        self.sug = CXSuggest:new(self, spec)
+        self.sug:initialise()
+        self.sug:setVisible(false)
+        self.sug:addToUIManager()
         self.helpY = self.nextY
         self.nextY = self.nextY + FONT_S + 8
         self:entry("price", T("IGUI_CX_F_Price"), r.price, true)
@@ -561,6 +798,11 @@ function CXShopForm:render()
 end
 
 function CXShopForm:close()
+    if self.sug then
+        self.sug:setVisible(false)
+        self.sug:removeFromUIManager()
+        self.sug = nil
+    end
     self:setVisible(false)
     self:removeFromUIManager()
     if CX.shopWindow and CX.shopWindow.form == self then CX.shopWindow.form = nil end

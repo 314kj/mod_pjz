@@ -96,5 +96,6 @@
     "IGUI_CX_Shop_SlipsMoved": "เปลี่ยนใบ Kuraya ที่ถืออยู่เป็นใบของ Cookie แล้ว",
     "IGUI_CX_Shop_KitGiven": "ได้รับ starter kit แล้ว",
     "IGUI_CX_Shop_KitCat": "หมวด Starter kit ลบไม่ได้",
-    "IGUI_CX_KitRow": "แจกฟรี"
+    "IGUI_CX_KitRow": "แจกฟรี",
+    "IGUI_CX_NoMatch": "ไม่พบที่ตรง พิมพ์ id เองได้"
 }
