@@ -7,8 +7,9 @@
 -- inertia * wanted yaw-rate change / frame time.
 -- Road scan: rows across the road from behind the car to the braking distance, checked only where the
 -- body (car width + a small margin) would pass. Walls, fences, trees and solid objects count by their
--- tile (fences by the tile edge they sit on), other cars by their own box, people on foot as a small
--- circle. Bushes and water count as solid too; grass and dirt beside the road are drivable.
+-- tile (fences by the tile edge they sit on), other cars by their own box (exactly: what part of it
+-- lies across each row, so the corner of a car parked at an angle cannot slip between the points),
+-- people on foot as a small circle. Bushes and water count as solid too; grass and dirt beside the road are drivable.
 -- Getting past: side positions off the lane line are tried every quarter tile up to the shoulder and
 -- grass beside the road (cheapest = closest to the lane, on the road); each is tried straight on and
 -- as a detour that comes back to the lane once the body is past what blocks it. The first clear one
@@ -56,6 +57,8 @@ local TUNE = {
     LEAD_STALE  = 3000,
     -- road scan / getting past things
     MARGIN      = 0.15,   -- m kept clear on each side of the body (+ up to one CELL)
+    KINK_PAD    = 0.5,    -- tiles at most a car is widened by near a kink in the road line (the body is
+                          -- at an angle to the rows there, its corners stick out)
     NEAR        = 2,      -- tiles past the bumper checked against the bare body (pulling away from a fence close by)
     ROW         = 0.75,   -- m between scanned rows (shorter than anything the car must not hit)
     CELL        = 0.25,   -- m between points across a row
@@ -345,6 +348,73 @@ local function rowBoxes(sc, i)
     return list
 end
 
+-- cars across row i: { lo, hi, b } = side positions the box b covers within the slab half a row either
+-- side of the row (wider where the route bends, so the slabs leave no wedge between them on the outer
+-- side). Exact, unlike the points: the corner of a car parked at an angle is a thin sliver. Near a kink
+-- in the road line (a 1-tile jog in the graph) the car does not turn with the rows: its body is at an
+-- angle to them and a corner sticks out by up to half its length * sin(angle), so the box is wider there
+-- (lo0 / hi0 = not grown: what firstHit uses just past the bumper for a car parked close beside the body,
+-- on the side the plan does not move to, so pulling away from it is not blocked; sc.beside lists those).
+-- clipSide: one side of a box (along a, across d) clipped to the slab -h..h, widening lo..hi
+local function clipSide(a1, d1, a2, d2, h, lo, hi)
+    local t0, t1, da = 0, 1, a2 - a1
+    if math.abs(da) < 1e-6 then
+        if a1 < -h or a1 > h then return lo, hi end
+    else
+        local ta, tb = (-h - a1) / da, (h - a1) / da
+        if ta > tb then ta, tb = tb, ta end
+        t0, t1 = math.max(0, ta), math.min(1, tb)
+        if t0 > t1 then return lo, hi end
+    end
+    local e1, e2 = d1 + (d2 - d1) * t0, d1 + (d2 - d1) * t1
+    return math.min(lo, e1, e2), math.max(hi, e1, e2)
+end
+
+local function rowSpans(sc, i)
+    local list = sc.spans[i]
+    if list then return list end
+    list = {}
+    sc.spans[i] = list
+    local boxes = rowBoxes(sc, i)
+    if #boxes == 0 then return list end
+    local rows = sc.rows
+    local row = rows[i]
+    local dx, dy = row.dx, row.dy
+    local bend, kink = 0, 0
+    local reach = math.ceil((sc.half + 2) / TUNE.ROW)
+    for j = math.max(1, i - reach), math.min(sc.n, i + reach) do
+        local o = rows[j]
+        local sn = math.abs(dx * o.dy - dy * o.dx)
+        if j == i - 1 or j == i + 1 then bend = math.max(bend, sn) end
+        if sn > kink then kink = sn end
+    end
+    local grow = math.min(TUNE.KINK_PAD, sc.half * kink)
+    for n = 1, #boxes do
+        local b = boxes[n]
+        local ox, oy = b.x - row.x, b.y - row.y
+        local ca, cd = ox * dx + oy * dy, oy * dx - ox * dy          -- centre: along, across
+        local fa, fd = b.fx * dx + b.fy * dy, b.fy * dx - b.fx * dy  -- its forward, in the row's frame
+        local h = TUNE.ROW / 2 + 0.05 + bend * (math.abs(cd) + b.hl) / 2
+        -- corners: centre +- forward * hl +- sideways * hw (sideways = forward turned right: -fd, fa)
+        local la, ld, wa, wd = fa * b.hl, fd * b.hl, -fd * b.hw, fa * b.hw
+        local a1, d1 = ca + la + wa, cd + ld + wd
+        local a2, d2 = ca + la - wa, cd + ld - wd
+        local a3, d3 = ca - la - wa, cd - ld - wd
+        local a4, d4 = ca - la + wa, cd - ld + wd
+        -- each side of the box, clipped to the slab -h..h along the row
+        local lo, hi = clipSide(a1, d1, a2, d2, h, math.huge, -math.huge)
+        lo, hi = clipSide(a2, d2, a3, d3, h, lo, hi)
+        lo, hi = clipSide(a3, d3, a4, d4, h, lo, hi)
+        lo, hi = clipSide(a4, d4, a1, d1, h, lo, hi)
+        if lo <= hi then
+            list[#list + 1] = { lo = lo - grow, hi = hi + grow, lo0 = lo, hi0 = hi, b = b }
+            -- parked close beside the body now (pulling away from it, not coming up to it)
+            if row.s < sc.half and hi > sc.d - sc.hw - TUNE.KINK_PAD and lo < sc.d + sc.hw + TUNE.KINK_PAD then sc.beside[b] = true end
+        end
+    end
+    return list
+end
+
 -- is world point (wx, wy) inside something? true, the car's box, or false. moving = count cars that
 -- are driving too. A wall / fence is a band tn (north edge) / tw (west edge) thick on each side of its
 -- tile edge: thin across the road, thick enough along it that no row of points steps over it.
@@ -443,6 +513,21 @@ local function firstHit(sc, P, moving)
                 local what = memo[i * 2000 + j]
                 if what == nil then what = occ(sc, i, j, moving) end
                 if what then return r, i, what end
+            end
+        end
+        -- cars exactly (a sliver of one between the points), same band and skip as the points; just past
+        -- the bumper a car parked beside the body is grown (kink) only when the plan moves over toward it
+        -- (rows run from behind the car forward, so the rows beside it have filled sc.beside by now)
+        local spans = rowSpans(sc, i)
+        for n = 1, #spans do
+            local e = spans[n]
+            if moving or not e.b.moving then
+                local slo, shi = e.lo, e.hi
+                if near and sc.beside[e.b] and ((e.hi0 <= sc.d and math.min(a, b) >= sc.d - 0.01) or (e.lo0 >= sc.d and math.max(a, b) <= sc.d + 0.01)) then
+                    slo, shi = e.lo0, e.hi0
+                end
+                local a2, b2 = math.max(slo, lo), math.min(shi, hi)
+                if a2 < b2 and (a2 < skipLo or b2 > skipHi) then return r, i, e.b end
             end
         end
     end
@@ -676,7 +761,7 @@ local function sense(v, trailer)
     local sc = {
         cell = getCell(), half = half, rear = half + (prof.tl and prof.tl + 1 or 0),
         body = (prof.w or 2) / 2, hw = (prof.w or 2) / 2 + TUNE.MARGIN, d = st.side or 0,
-        rows = {}, occ = {}, occM = {}, boxes = {}, rowBoxes = {}, people = {},
+        rows = {}, occ = {}, occM = {}, boxes = {}, rowBoxes = {}, spans = {}, beside = {}, people = {},
     }
     sc.reach = TUNE.AVOID_MAX + sc.hw + 1
     local s, n, k = -sc.rear, 0, st.idx

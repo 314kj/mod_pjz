@@ -2,9 +2,10 @@
 -- Stand on one corner of a piece of road and press, then on the opposite corner (at most 60 x 60
 -- tiles): the box gets a dotted frame on the ground and is scanned the way the autopilot sees it
 -- (solid tiles, walls / fences on tile edges, bushes, water, the floor sprite, parked cars, zombies)
--- with the graph roads that cross it. Then the admin presses start and drives through; every 0.1 s
--- the car's place, heading, speed and summed part condition are kept. Leaving the box, a teleport,
--- leaving the seat or 5 minutes stop it and save. The file is written on this computer only
+-- with the graph roads that cross it. Squares not loaded yet are scanned when they load (the car
+-- brings them in). Then the admin, in the car inside the box, presses start and drives through;
+-- every 0.1 s the car's place, heading, speed and summed part condition are kept. Leaving the box, a
+-- teleport, leaving the seat or 5 minutes stop it and save. The file is written on this computer only
 -- (Zomboid/Lua/COTW_lesson_<time>.json, ASCII), to compare the autopilot with the admin's drive offline.
 
 require "CookieOnTheWay/COTW_Client"
@@ -17,7 +18,7 @@ local MAX = 60              -- tiles per side at most
 local MIN = 6               -- tiles per side at least
 local FRAME_MS = 100
 local MAX_FRAMES = 3000     -- 5 minutes
-local OUT = 10              -- tiles past the box edge that end the recording
+local FILL = 400            -- squares not loaded at scan time tried again per 0.1 s
 local WARP = 30             -- tiles between two frames = teleport
 local FRAME_STEP = 3        -- tiles between the dots of the frame on the ground
 local COL = { 0.25, 0.75, 1.0 }
@@ -72,46 +73,74 @@ local function carOf(car)
     return out
 end
 
+-- one loaded square: every one is kept (even bare ones), so a replay tells scanned ground from
+-- ground nobody saw. Zombies only at the first scan (later ones walked in)
+local function scanTile(sc, sq, x, y, mine, zombies)
+    local t = COTW.Driver.readTile(sq)
+    local flags = (t.s and 1 or 0) + (t.n and 2 or 0) + (t.w and 4 or 0) + (t.wet and 8 or 0)
+    local fname = floorName(sq)
+    local fi = 0
+    if fname then
+        fi = sc.fidx[fname]
+        if not fi then
+            sc.floors[#sc.floors + 1] = fname
+            fi = #sc.floors
+            sc.fidx[fname] = fi
+        end
+    end
+    sc.tiles[#sc.tiles + 1] = { x, y, flags, fi }
+    local car = sq:getVehicleContainer()
+    if car and car ~= mine and not sc.seenCar[car] then
+        sc.seenCar[car] = true
+        local c = carOf(car)
+        if c then sc.cars[#sc.cars + 1] = c end
+    end
+    if zombies then
+        pcall(function()
+            local list = sq:getMovingObjects()
+            for i = 0, list:size() - 1 do
+                local o = list:get(i)
+                if instanceof(o, "IsoZombie") then sc.zombies[#sc.zombies + 1] = { o:getX(), o:getY() } end
+            end
+        end)
+    end
+end
+
 local function scan()
     local cell = getCell()
     local mine = COTW.driving()
-    local sc = { tiles = {}, floors = {}, cars = {}, zombies = {} }
-    local fidx, seenCar = {}, {}
+    local sc = { tiles = {}, floors = {}, cars = {}, zombies = {}, missing = {}, fidx = {}, seenCar = {} }
     for x = S.x1, S.x2 do
         for y = S.y1, S.y2 do
             local sq = cell and cell:getGridSquare(x, y, 0)
-            if sq then
-                local t = COTW.Driver.readTile(sq)
-                local flags = (t.s and 1 or 0) + (t.n and 2 or 0) + (t.w and 4 or 0) + (t.wet and 8 or 0)
-                local fname = floorName(sq)
-                local fi = 0
-                if fname then
-                    fi = fidx[fname]
-                    if not fi then
-                        sc.floors[#sc.floors + 1] = fname
-                        fi = #sc.floors
-                        fidx[fname] = fi
-                    end
-                end
-                if flags > 0 or fi > 0 then sc.tiles[#sc.tiles + 1] = { x, y, flags, fi } end
-                local car = sq:getVehicleContainer()
-                if car and car ~= mine and not seenCar[car] then
-                    seenCar[car] = true
-                    local c = carOf(car)
-                    if c then sc.cars[#sc.cars + 1] = c end
-                end
-                pcall(function()
-                    local list = sq:getMovingObjects()
-                    for i = 0, list:size() - 1 do
-                        local o = list:get(i)
-                        if instanceof(o, "IsoZombie") then sc.zombies[#sc.zombies + 1] = { o:getX(), o:getY() } end
-                    end
-                end)
-            end
+            if sq then scanTile(sc, sq, x, y, mine, true) else sc.missing[#sc.missing + 1] = { x, y } end
         end
     end
     sc.roads = COTW.Graph.edgesIn(S.x1 - 5, S.y1 - 5, S.x2 + 5, S.y2 + 5)
     return sc
+end
+
+-- squares that were not loaded at scan time, scanned as they load (FILL tried per call, in turn)
+local function fill()
+    local sc, cell = S.scene, getCell()
+    local miss = sc and sc.missing
+    if not cell or not miss or #miss == 0 then return end
+    local mine = COTW.driving()
+    local k = S.fillAt or 1
+    for _ = 1, math.min(#miss, FILL) do
+        if #miss == 0 then break end
+        if k > #miss then k = 1 end
+        local m = miss[k]
+        local sq = cell:getGridSquare(m[1], m[2], 0)
+        if sq then
+            scanTile(sc, sq, m[1], m[2], mine, false)
+            miss[k] = miss[#miss]
+            miss[#miss] = nil
+        else
+            k = k + 1
+        end
+    end
+    S.fillAt = k
 end
 
 -- ------------------------------------------------------------------------------
@@ -129,7 +158,7 @@ local function save(reason)
     local out = {}
     local function put(s) out[#out + 1] = s end
     put('{"v":1,"t":' .. string.format("%.0f", S.t0) .. ',"end":' .. str(reason))
-    put(',"box":[' .. S.x1 .. ',' .. S.y1 .. ',' .. S.x2 .. ',' .. S.y2 .. ']')
+    put(',"box":[' .. S.x1 .. ',' .. S.y1 .. ',' .. S.x2 .. ',' .. S.y2 .. '],"missing":' .. #sc.missing)
     local prof = S.prof or {}
     put(',"car":{"key":' .. str(S.key) .. ',"w":' .. n2(prof.w or 2) .. ',"l":' .. n2(prof.l or 4) .. ',"decel":' .. n2(prof.decel or 6)
         .. ',"mass":' .. n2(prof.mass or 1000) .. '}')
@@ -171,8 +200,11 @@ local function save(reason)
         for _, s in ipairs(out) do w:write(s) end
         w:close()
     end)
-    if ok then COTW.say("IGUI_COTW_Lesson_Saved", name) else COTW.say("IGUI_COTW_Lesson_Fail") end
-    COTW.log("teach scene " .. name .. " " .. #fr .. " frames, " .. #sc.tiles .. " tiles, " .. #cars .. " cars (" .. tostring(reason) .. ")")
+    if not ok then COTW.say("IGUI_COTW_Lesson_Fail")
+    elseif #sc.missing > 0 then COTW.say("IGUI_COTW_Lesson_SavedHoles", name, tostring(#sc.missing))
+    else COTW.say("IGUI_COTW_Lesson_Saved", name) end
+    COTW.log("teach scene " .. name .. " " .. #fr .. " frames, " .. #sc.tiles .. " tiles (" .. #sc.missing .. " never loaded), "
+        .. #cars .. " cars (" .. tostring(reason) .. ")")
 end
 
 -- ------------------------------------------------------------------------------
@@ -200,7 +232,7 @@ local function stop(reason)
     local done = S
     S = nil          -- first: a failed save must not leave it recording
     clearDots()
-    if done and #done.frames > 1 then
+    if done and done.frames and #done.frames > 1 then
         S = done     -- save() reads S
         local ok, err = pcall(save, reason)
         S = nil
@@ -211,7 +243,9 @@ local function stop(reason)
     end
 end
 
--- the panel button: corner 1, corner 2 (scan), start, stop
+local function inBox(x, y) return x >= S.x1 and x < S.x2 + 1 and y >= S.y1 and y < S.y2 + 1 end
+
+-- the panel button: corner 1, corner 2 (scan), start (in the car, inside the box), stop
 function LS.press()
     local p = COTW.player()
     if not p or not COTW.isAdmin() then return end
@@ -234,6 +268,8 @@ function LS.press()
     elseif S.phase == "ready" then
         local v = COTW.driving()
         if not v then COTW.say("IGUI_COTW_Lesson_Car"); return end
+        if not inBox(v:getX(), v:getY()) then COTW.say("IGUI_COTW_Lesson_StartOut"); return end
+        fill()
         S.prof, S.key = COTW.profileFor(v)
         S.phase, S.frames, S.t0, S.lastT = "rec", {}, getTimestampMs(), 0
         S.v = v
@@ -259,7 +295,7 @@ local function recTick()
     local x, y = v:getX(), v:getY()
     if S.lx and COTW.dist(S.lx, S.ly, x, y) > WARP then stop("warp"); return end
     S.lx, S.ly = x, y
-    if x < S.x1 - OUT or x > S.x2 + OUT or y < S.y1 - OUT or y > S.y2 + OUT then
+    if not inBox(x, y) then
         COTW.say("IGUI_COTW_Lesson_Out")
         stop("out")
         return
@@ -269,9 +305,18 @@ local function recTick()
     if #S.frames >= MAX_FRAMES then stop("long") end
 end
 
+local function onTick()
+    local now = getTimestampMs()
+    if now - (S.lastFill or 0) >= FRAME_MS then
+        S.lastFill = now
+        fill()
+    end
+    if S and S.phase == "rec" then recTick() end
+end
+
 Events.OnTick.Add(function()
-    if not S or S.phase ~= "rec" then return end
-    local ok, err = pcall(recTick)
+    if not S or S.phase == "c1" then return end
+    local ok, err = pcall(onTick)
     if not ok then
         COTW.log("teach scene error: " .. tostring(err))
         stop("error")

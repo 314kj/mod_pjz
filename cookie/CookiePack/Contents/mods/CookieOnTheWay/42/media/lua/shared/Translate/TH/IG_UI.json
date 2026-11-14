@@ -143,5 +143,7 @@
     "IGUI_COTW_Lesson_Fail": "เขียนไฟล์ฉากสอนไม่ได้",
     "IGUI_COTW_Lesson_Small": "ฉากเล็กไป: มุมต้องห่างกันอย่างน้อย 6 ช่อง",
     "IGUI_COTW_Lesson_Big": "ตัดฉากเหลือ 60 x 60 ช่อง นับจากมุม 1",
-    "IGUI_COTW_Lesson_Car": "นั่งที่คนขับก่อนถึงจะอัดได้"
+    "IGUI_COTW_Lesson_Car": "นั่งที่คนขับก่อนถึงจะอัดได้",
+    "IGUI_COTW_Lesson_StartOut": "ขับเข้าในกรอบก่อน แล้วค่อยกดเริ่ม",
+    "IGUI_COTW_Lesson_SavedHoles": "บันทึกฉากสอนแล้ว: Zomboid/Lua/%1 (มี %2 ช่องที่ไม่ได้โหลด: ขับเข้าใกล้ก่อนกดหยุด)"
 }

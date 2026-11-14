@@ -143,5 +143,7 @@
     "IGUI_COTW_Lesson_Fail": "Could not write the teach scene file",
     "IGUI_COTW_Lesson_Small": "Scene too small: corners at least 6 tiles apart",
     "IGUI_COTW_Lesson_Big": "Scene cut to 60 x 60 tiles around corner 1",
-    "IGUI_COTW_Lesson_Car": "Get in the driver seat to record"
+    "IGUI_COTW_Lesson_Car": "Get in the driver seat to record",
+    "IGUI_COTW_Lesson_StartOut": "Drive into the frame first, then press start",
+    "IGUI_COTW_Lesson_SavedHoles": "Teach scene saved: Zomboid/Lua/%1 (%2 squares never loaded: drive closer to them before stopping)"
 }
