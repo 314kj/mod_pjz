@@ -27,7 +27,10 @@ function Get-RawArgs {
         }
         $null = [CookieSlicer.Argv]::LocalFree($p)
         for ($i = 0; $i -lt $all.Count - 1; $i++) {
-            if ($all[$i] -eq $self) { return @($all[($i + 1)..($all.Count - 1)]) }
+            # the comma keeps a list of one (only the game's exe: no launch options of the
+            # player's own) a list; PowerShell would hand back the bare text and $cmd[0]
+            # below would be its first letter ("C"), so the game never started
+            if ($all[$i] -eq $self) { return ,@($all[($i + 1)..($all.Count - 1)]) }
         }
     } catch { }
     return $null
