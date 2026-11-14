@@ -1,6 +1,7 @@
 -- Cookie On the Way : world map (pick a place, draw the route, home and pins)
 -- Right-click on the world map: go here (opens the booking panel), navigate here (drive yourself),
--- set My Home, save as My Pin 1-5, and for admins measure the reference fare / delete an admin road.
+-- set My Home, save as My Pin 1-5, and for admins measure the reference fare / delete an admin road /
+-- clear trouble spots (drawn for admins: red = closed, routes go round it; orange = watched).
 -- Admins keep the vanilla debug menu with ours as a submenu, or ours alone when the map was opened
 -- from the booking panel (pick mode).
 
@@ -14,6 +15,8 @@ local COL_TRIP = { 0.95, 0.55, 0.10 }
 local COL_NAV  = { 0.15, 0.55, 0.95 }
 local COL_PREV = { 0.55, 0.55, 0.55 }
 local COL_ADMIN = { 0.75, 0.20, 0.75 }
+local COL_SHUT = { 0.85, 0.10, 0.10 }
+local COL_WATCH = { 0.95, 0.60, 0.15 }
 
 function M.pick()
     M.picking = true
@@ -62,12 +65,24 @@ local function onSetPin(_, x, y, i)
 end
 
 local function onMeasure(_, x, y)
-    local r = COTW.Graph.route(COTW.REF_FROM[1], COTW.REF_FROM[2], x, y)
+    local r = COTW.Graph.route(COTW.REF_FROM[1], COTW.REF_FROM[2], x, y, true)
     if not r then COTW.say("IGUI_COTW_Err_unreachable"); return end
     COTW.say("IGUI_COTW_Measure", string.format("%.2f", r.len / 1000), COTW.money(COTW.fare(r.len)))
 end
 
 local function onDelRoad(_, x, y) COTW.send("delRoad", { x = x, y = y }) end
+
+local function onClearSpot(_, x, y) COTW.send("clearClosed", { x = x, y = y }) end
+
+local function onClearAll() COTW.send("clearClosed", { all = true }) end
+
+-- a trouble spot within 30 tiles of (x, y)?
+local function spotNear(x, y)
+    for _, s in ipairs(COTW.C.closed or {}) do
+        if COTW.dist(x, y, s.x, s.y) < 30 then return s end
+    end
+    return nil
+end
 
 local function fillMenu(context, x, y)
     context:addOption(getText("IGUI_COTW_GoHere"), nil, onGoHere, x, y)
@@ -85,6 +100,9 @@ local function fillMenu(context, x, y)
     if COTW.isAdmin() then
         context:addOption(getText("IGUI_COTW_Measure_Opt"), nil, onMeasure, x, y)
         context:addOption(getText("IGUI_COTW_DelRoad"), nil, onDelRoad, x, y)
+        if spotNear(x, y) then context:addOption(getText("IGUI_COTW_ClosedClear"), nil, onClearSpot, x, y) end
+        local n = #(COTW.C.closed or {})
+        if n > 0 then context:addOption(getText("IGUI_COTW_ClosedClearAll", tostring(n)), nil, onClearAll) end
     end
 end
 
@@ -156,6 +174,12 @@ function ISWorldMap:render()
                 local xs, ys = {}, {}
                 for k = 1, #r.p, 2 do xs[#xs + 1] = r.p[k]; ys[#ys + 1] = r.p[k + 1] end
                 drawPolyline(self, xs, ys, 1, COL_ADMIN, 0.8)
+            end
+            -- trouble spots: weight and hours since the last trip gave up there
+            local now = getTimestampMs()
+            for _, s in ipairs(C.closed or {}) do
+                local hrs = s.t and s.t > 0 and math.max(0, math.floor((now - s.t) / 3600000)) or 0
+                marker(self, s.x, s.y, getText("IGUI_COTW_ClosedSpot", string.format("%.1f", s.w or 0), tostring(hrs)), s.on and COL_SHUT or COL_WATCH)
             end
         end
         local st = COTW.Driver.status()

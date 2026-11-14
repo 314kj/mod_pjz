@@ -29,5 +29,7 @@
     "Sandbox_CookieOnTheWay_MinFuelPct": "น้ำมันขั้นต่ำที่ต้องมีตอนจอง (%)",
     "Sandbox_CookieOnTheWay_MinFuelPct_tooltip": "น้ำมันหมดกลางทาง = จบเที่ยวคิดตามระยะ",
     "Sandbox_CookieOnTheWay_RequireWallet": "Autopilot ต้องมี Cookie Exchange",
-    "Sandbox_CookieOnTheWay_RequireWallet_tooltip": "ปิด: ไม่มีม็อด wallet = เที่ยวฟรี · เปิด: ไม่มี wallet ใช้ Autopilot ไม่ได้"
+    "Sandbox_CookieOnTheWay_RequireWallet_tooltip": "ปิด: ไม่มีม็อด wallet = เที่ยวฟรี · เปิด: ไม่มี wallet ใช้ Autopilot ไม่ได้",
+    "Sandbox_CookieOnTheWay_ClosedHalfLifeHours": "ความจำจุดติด (ชั่วโมง)",
+    "Sandbox_CookieOnTheWay_ClosedHalfLifeHours_tooltip": "จุดที่ Autopilot ติดหรือค้างจะถูกจำไว้ ติดจาก 2 ทริปขึ้นไปเส้นทางจะอ้อม ความจำลดครึ่งทุกกี่ชั่วโมง (เวลาจริง) มีทริปผ่านได้ = ล้างทันที"
 }

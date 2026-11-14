@@ -3,8 +3,11 @@
 -- Admin roads (recorded by driving them, kept in global ModData) are added on top: each end snaps onto
 -- the nearest road within SNAP_END tiles, splitting that road there, so map mods whose road data does
 -- not reach the main network can be linked in game.
+-- Closed trouble spots (COTW_Closed, sent by the server) add a cost to the road they sit on, so a
+-- route goes round them when it can.
 
 require "CookieOnTheWay/COTW_Const"
+require "CookieOnTheWay/COTW_Closed"
 
 COTW.Graph = COTW.Graph or {}
 local G = COTW.Graph
@@ -29,6 +32,9 @@ COTW.RoadData = {
 
 local W = nil          -- working graph: { nx, ny, edges, adj, grid }
 local extra = {}       -- admin roads: { { w = width, p = { x1, y1, ... } } }
+local closedPts = {}   -- trouble spots: { { x, y, on } }, only closed ones (on) count
+local penDirty = false
+local penOff = false   -- this search ignores trouble spots (navigator, admin fare measure)
 
 -- ------------------------------------------------------------------------------
 -- building
@@ -163,6 +169,7 @@ local function addExtra(road)
 end
 
 function G.build()
+    penDirty = false     -- (nearest() below must not lay costs on a half-built graph; ensure() does it after)
     W = { nx = {}, ny = {}, edges = {}, adj = {}, grid = {} }
     for i = 1, #base.nx do
         W.nx[i] = base.nx[i]
@@ -210,8 +217,62 @@ function G.build()
     end
 end
 
+-- every live road within r tiles of (x, y): { [edge] = road position closest to it }
+local function edgesNear(x, y, r)
+    local out, best = {}, {}
+    for cx = math.floor((x - r) / CELL), math.floor((x + r) / CELL) do
+        for cy = math.floor((y - r) / CELL), math.floor((y + r) / CELL) do
+            local list = W.grid[cellKey(cx, cy)]
+            if list then
+                for i = 1, #list, 2 do
+                    local ei, k = list[i], list[i + 1]
+                    local e = W.edges[ei]
+                    if not e.dead then
+                        local p = e.p
+                        local t, _, _, d = project(x, y, p[k * 2 - 1], p[k * 2], p[k * 2 + 1], p[k * 2 + 2])
+                        if d <= r and (not best[ei] or d < best[ei]) then
+                            best[ei] = d
+                            out[ei] = e.cum[k] + t * (e.cum[k + 1] - e.cum[k])
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return out
+end
+
+-- each closed spot sits on every road within PEN_R of it (a junction, two roads drawn on top of each
+-- other), or on its nearest road within NEAR: e.pen = { road positions }, e.penId = { spot }
+local PEN_R = 2.5
+local function applyClosed()
+    penDirty = false
+    for i = 1, #W.edges do W.edges[i].pen, W.edges[i].penId = nil, nil end
+    for id, c in ipairs(closedPts) do
+        if c.on and type(c.x) == "number" and type(c.y) == "number" then
+            local near = edgesNear(c.x, c.y, PEN_R)
+            local any = false
+            for _ in pairs(near) do any = true; break end
+            if not any then
+                local hit = G.nearest(c.x, c.y, COTW.Closed.NEAR)
+                if hit then near[hit.e] = hit.pos end
+            end
+            for ei, pos in pairs(near) do
+                local e = W.edges[ei]
+                e.pen, e.penId = e.pen or {}, e.penId or {}
+                e.pen[#e.pen + 1] = pos
+                e.penId[#e.penId + 1] = id
+            end
+        end
+    end
+end
+
 function G.ensure()
-    if not W then G.build() end
+    if not W then
+        G.build()
+        penDirty = true
+    end
+    if penDirty then applyClosed() end
 end
 
 -- admin roads changed (server load / sync): rebuild on next use
@@ -221,6 +282,36 @@ function G.setExtra(list)
 end
 
 function G.extraList() return extra end
+
+-- trouble spots changed (server refresh / sync): costs are redone on next use, the graph stays
+function G.setClosed(list)
+    closedPts = type(list) == "table" and list or {}
+    penDirty = true
+end
+
+function G.closedList() return closedPts end
+
+-- every live road with a point inside the box (teach scenes): { { a, b, ax, ay, bx, by, w, p } }
+function G.edgesIn(x1, y1, x2, y2)
+    G.ensure()
+    local seen, out = {}, {}
+    for cx = math.floor(math.min(x1, x2) / CELL), math.floor(math.max(x1, x2) / CELL) do
+        for cy = math.floor(math.min(y1, y2) / CELL), math.floor(math.max(y1, y2) / CELL) do
+            local list = W.grid[cellKey(cx, cy)]
+            if list then
+                for i = 1, #list, 2 do
+                    local ei = list[i]
+                    local e = W.edges[ei]
+                    if not seen[ei] and not e.dead then
+                        seen[ei] = true
+                        out[#out + 1] = { a = e.a, b = e.b, ax = W.nx[e.a], ay = W.ny[e.a], bx = W.nx[e.b], by = W.ny[e.b], w = e.w or 8, p = e.p }
+                    end
+                end
+            end
+        end
+    end
+    return out
+end
 
 function G.stats()
     G.ensure()
@@ -264,6 +355,22 @@ end
 
 local function cost(e, len) return len * ((e.w or 8) >= COTW.HIGHWAY_WIDTH and 1 or NARROW_COST) end
 
+-- closed spots on edge e between road positions a and b (either order); ids go into set when given
+local function penCount(e, a, b, set)
+    local pen = e.pen
+    if not pen then return 0 end
+    if a > b then a, b = b, a end
+    local n = 0
+    for i = 1, #pen do
+        if pen[i] >= a - 0.5 and pen[i] <= b + 0.5 then
+            n = n + 1
+            if set then set[e.penId[i]] = true end
+        end
+    end
+    return n
+end
+local function pen(e, a, b) return not penOff and e.pen and penCount(e, a, b) * COTW.Closed.COST or 0 end
+
 -- append the points of edge ei between road positions from..to (either direction) to out
 local function appendSpan(out, ei, from, to)
     local e = W.edges[ei]
@@ -298,9 +405,13 @@ local function appendSpan(out, ei, from, to)
 end
 
 -- route from (x1, y1) to (x2, y2) along roads.
--- returns { x = {}, y = {}, w = {}, len, startGap, endGap, destX, destY } or nil, reason
-function G.route(x1, y1, x2, y2)
+-- returns { x = {}, y = {}, w = {}, len, startGap, startOff, endGap, destX, destY, closed } or nil, reason
+-- (startOff = tiles from the start past the edge of its road, 0 on the road; closed = closed trouble
+-- spots the route still goes through: there was no way round shorter by COTW.Closed.COST).
+-- raw = true: trouble spots cost nothing (the navigator and the admin fare measure stay as they were)
+function G.route(x1, y1, x2, y2, raw)
     G.ensure()
+    penOff = raw == true
     local s = G.nearest(x1, y1, 80)
     if not s then return nil, "noroad_start" end
     if not G.nearest(x2, y2, 400) then return nil, "noroad_dest" end
@@ -318,10 +429,13 @@ function G.route(x1, y1, x2, y2)
         end              -- a whole town not linked yet (Raccoon City): route inside it as before
     end
     if not d then return nil, "unreachable" end
-    local out = { x = {}, y = {}, w = {}, destX = x2, destY = y2, startGap = s.d, endGap = d.d }
+    local out = { x = {}, y = {}, w = {}, destX = x2, destY = y2, startGap = s.d, endGap = d.d,
+                  startOff = math.max(0, s.d - (W.edges[s.e].w or 8) / 2), closed = 0 }
 
+    local hitSpots = {}
     if s.e == d.e then
         appendSpan(out, s.e, s.pos, d.pos)
+        penCount(W.edges[s.e], s.pos, d.pos, hitSpots)
     else
         local se, de = W.edges[s.e], W.edges[d.e]
         local g, came, closed = {}, {}, {}
@@ -335,8 +449,8 @@ function G.route(x1, y1, x2, y2)
                 heapPush(h, n, gv + hcost(n))
             end
         end
-        relax(se.a, cost(se, s.pos), { start = true, e = s.e, to = 0 })
-        relax(se.b, cost(se, se.len - s.pos), { start = true, e = s.e, to = se.len })
+        relax(se.a, cost(se, s.pos) + pen(se, 0, s.pos), { start = true, e = s.e, to = 0 })
+        relax(se.b, cost(se, se.len - s.pos) + pen(se, s.pos, se.len), { start = true, e = s.e, to = se.len })
         local bestEnd, bestEndG = nil, nil
         while #h > 0 do
             local top = heapPop(h)
@@ -345,7 +459,7 @@ function G.route(x1, y1, x2, y2)
                 closed[u] = true
                 if bestEndG and g[u] + hcost(u) >= bestEndG then break end
                 if u == de.a or u == de.b then
-                    local fin = g[u] + cost(de, u == de.a and d.pos or (de.len - d.pos))
+                    local fin = g[u] + cost(de, u == de.a and d.pos or (de.len - d.pos)) + (u == de.a and pen(de, 0, d.pos) or pen(de, d.pos, de.len))
                     if not bestEndG or fin < bestEndG then bestEndG, bestEnd = fin, u end
                 end
                 local list = W.adj[u]
@@ -354,7 +468,7 @@ function G.route(x1, y1, x2, y2)
                         local ei = list[i]
                         local e = W.edges[ei]
                         local v = e.a == u and e.b or e.a
-                        relax(v, g[u] + cost(e, e.len), { from = u, e = ei, rev = e.b == u })
+                        relax(v, g[u] + cost(e, e.len) + pen(e, 0, e.len), { from = u, e = ei, rev = e.b == u })
                     end
                 end
             end
@@ -369,17 +483,21 @@ function G.route(x1, y1, x2, y2)
             n = c.from
         end
         appendSpan(out, s.e, s.pos, steps[1].to)
+        penCount(se, s.pos, steps[1].to, hitSpots)
         for i = 2, #steps do
             local c = steps[i]
             local e = W.edges[c.e]
             if c.rev then appendSpan(out, c.e, e.len, 0) else appendSpan(out, c.e, 0, e.len) end
+            penCount(e, 0, e.len, hitSpots)
         end
         appendSpan(out, d.e, bestEnd == de.a and 0 or de.len, d.pos)
+        penCount(de, bestEnd == de.a and 0 or de.len, d.pos, hitSpots)
     end
 
     local len = 0
     for i = 2, #out.x do len = len + COTW.dist(out.x[i - 1], out.y[i - 1], out.x[i], out.y[i]) end
     out.len = len
+    for _ in pairs(hitSpots) do out.closed = out.closed + 1 end
     if #out.x < 2 then return nil, "too_short" end
     return out
 end

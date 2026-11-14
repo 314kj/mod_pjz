@@ -2,11 +2,14 @@
 -- Owns pins, scanned vehicle profiles, admin roads and every trip. Prices each trip from its own route,
 -- holds the money up front (Cookie Exchange wallet), counts the distance really driven from the
 -- vehicle's position every second, and refunds the unused part when a trip ends early.
--- Commands: hello, setHome, setPin, delPin, quote, book, payBill, cancel, prog, finish,
---           groupJoin, groupStart, saveProfile, delProfile, saveRoad, delRoad
+-- Learns as trips run: where trips give up (trouble spots, COTW_Closed: routes go round closed ones,
+-- a trip that gets past clears one) and how hard each car model really brakes (brakeObs).
+-- Commands: hello, setHome, setPin, delPin, quote, book, payBill, cancel, prog, finish, brakeObs,
+--           groupJoin, groupStart, saveProfile, delProfile, saveRoad, delRoad, clearClosed
 if isClient() and not isServer() then return end
 
 require "CookieOnTheWay/COTW_RoadData"
+require "CookieOnTheWay/COTW_Closed"
 
 local TICK_MS = 1000
 local STEP_CAP = 32          -- most tiles one 1 s sample may add (90 km/h = 25 m/s)
@@ -15,12 +18,17 @@ local READY_MS = 300000      -- a booked group car waits this long for the leade
 local ARRIVE_SLACK = 30      -- "arrived" must be this close to the route end
 local HISTORY = 10
 local ASK_MS = 1000
+local CLOSED_TICK_MS = 600000   -- trouble spots fade: closed / open is looked at again this often
+local BRAKE_LEARN = 0.2         -- weight of one measured brake in a model's braking
+local BRAKE_MIN, BRAKE_MAX = 0.7, 1.05   -- learnt braking stays within these times the admin scan
 
 local db = nil
 local trips = {}             -- id -> trip (live, not saved: a restart ends every trip by distance via db.open)
 local groups = {}            -- gid -> { leader, dest, members = { tripId, ... }, started }
 local lastTick = 0
+local lastClosedTick = 0
 local booted = false
+local K = COTW.Closed
 
 local function nowMs() return getTimestampMs() end
 
@@ -38,6 +46,7 @@ local function DB()
         db.roadsV = 2
     end
     db.open = db.open or {}      -- trips that held money, so a crash can refund them on boot
+    db.closed = db.closed or {}  -- trouble spots (COTW_Closed): { { x, y, hits = { { t, who } }, on } }
     db.nextId = db.nextId or 1
     return db
 end
@@ -206,8 +215,38 @@ local function quoteArgs(pl)
     end
     return {
         len = math.floor(pl.route.len), base = pl.base, seat = pl.seat, trailerFee = pl.trailerFee,
-        riders = riders, total = pl.total, free = wallet() == nil, endGap = pl.route.endGap,
+        riders = riders, total = pl.total, free = wallet() == nil, endGap = pl.route.endGap, startOff = pl.route.startOff,
+        closed = pl.route.closed,
     }
+end
+
+-- ------------------------------------------------------------------------------
+-- shared world: scanned profiles, admin roads, trouble spots
+-- ------------------------------------------------------------------------------
+local function closedOut() return K.export(DB().closed, nowMs()) end
+
+local function broadcastWorld()
+    local closed = closedOut()
+    forOnline(function(q) tell(q, "world", { profiles = DB().profiles, roads = DB().roads, closed = closed }) end)
+end
+
+-- the closed set changed: route on it here and on every client (their previews and navigator)
+local function syncClosed()
+    COTW.Graph.setClosed(closedOut())
+    broadcastWorld()
+end
+
+-- a trip gave up at (x, y) on its route
+local function closedHit(trip, x, y)
+    local t = nowMs()
+    local spot = K.record(DB().closed, x, y, K.hash(trip.booker), t)
+    if not spot then return end
+    local was = spot.on == true
+    local changed = K.refresh(DB().closed, t)
+    -- (one format per string.format: Kahlua)
+    COTW.log("trouble spot " .. spot.x .. "," .. spot.y .. " hit (weight " .. string.format("%.1f", K.weight(spot, t)) .. ", "
+        .. #spot.hits .. " hits" .. (spot.on and (was and ", closed" or ", now closed") or "") .. ")")
+    if changed then syncClosed() end
 end
 
 -- ------------------------------------------------------------------------------
@@ -234,6 +273,7 @@ local function startTrip(trip)
     trip.lastProg = nowMs()
     local v = getVehicleById(trip.vid)
     if v then trip.lx, trip.ly = v:getX(), v:getY() end
+    trip.watch = K.watch(DB().closed, trip.route)
     tellName(trip.booker, "go", { id = trip.id, route = routeArgs(trip.route), gid = trip.gid, order = trip.order })
     for _, r in ipairs(trip.riders) do tellName(r.name, "riding", { id = trip.id, booker = trip.booker }) end
 end
@@ -275,6 +315,20 @@ local function finish(trip, reason)
         end
     end
     COTW.log("trip " .. trip.id .. " " .. trip.booker .. " ended " .. reason .. " driven " .. summary.driven .. "/" .. summary.len)
+    -- where it gave up, by the server's own last look at the car (blocked / stuck / off route only; not a
+    -- car that ran dry or stalled: that is not the road)
+    if trip.state == "driving" then
+        local ok, err = pcall(function()
+            local v = getVehicleById(trip.vid)
+            if v then
+                local okE, running = pcall(function() return v:isEngineRunning() end)
+                if (okE and running == false) or fuelPct(v) < 2 then return end
+            end
+            local hx, hy = K.hitPoint(trip.route, reason, trip.lx, trip.ly, trip.driven)
+            if hx then closedHit(trip, hx, hy) end
+        end)
+        if not ok then COTW.log("trouble spot error: " .. tostring(err)) end
+    end
     -- the car behind in a group trip drives on alone
     if trip.gid and groups[trip.gid] then
         local g = groups[trip.gid]
@@ -319,7 +373,7 @@ local C = {}
 
 function C.hello(p)
     local u = user(nameOf(p))
-    tell(p, "state", { home = u.home, pins = u.pins, hist = u.hist, profiles = DB().profiles, roads = DB().roads })
+    tell(p, "state", { home = u.home, pins = u.pins, hist = u.hist, profiles = DB().profiles, roads = DB().roads, closed = closedOut() })
 end
 
 function C.setHome(p, args)
@@ -481,7 +535,8 @@ function C.finish(p, args)
     local trip = busy(nameOf(p))
     if not trip or trip.state ~= "driving" then return end
     local reason = tostring(args.reason or "blocked")
-    if reason ~= "arrive" and reason ~= "intervene" and reason ~= "emergency" and reason ~= "blocked" and reason ~= "stuck" and reason ~= "offroute" and reason ~= "left" then
+    if reason ~= "arrive" and reason ~= "intervene" and reason ~= "emergency" and reason ~= "blocked" and reason ~= "stuck" and reason ~= "offroute" and reason ~= "left"
+        and reason ~= "error" then
         reason = "blocked"
     end
     if reason == "arrive" then
@@ -492,12 +547,31 @@ function C.finish(p, args)
     finish(trip, reason)
 end
 
+-- a clean full brake the driving client measured (m/s^2, once a trip, never while towing): the model's
+-- braking drifts toward what its cars really do, from BRAKE_MIN to BRAKE_MAX times the admin scan
+-- (it may learn to brake earlier, hardly ever later). A new scan starts it over.
+function C.brakeObs(p, args)
+    local trip = busy(nameOf(p))
+    if not trip or trip.state ~= "driving" or trip.brakeDone then return end
+    local obs = tonumber(args.decel)
+    if not obs or obs ~= obs or obs < 0.5 or obs > 15 then return end
+    local v = getVehicleById(trip.vid)
+    if not v or v:getDriver() ~= p or trailerOf(v) then return end
+    local prof, key = profileOf(v)
+    if not prof then return end
+    trip.brakeDone = true
+    prof.decelScan = prof.decelScan or prof.decel or 6
+    local scan = prof.decelScan
+    local d = (prof.decel or scan) * (1 - BRAKE_LEARN) + obs * BRAKE_LEARN
+    prof.decel = math.max(scan * BRAKE_MIN, math.min(scan * BRAKE_MAX, d))
+    prof.brakeN = (prof.brakeN or 0) + 1
+    COTW.log("braking " .. tostring(key) .. ": measured " .. string.format("%.1f", obs) .. ", now " .. string.format("%.2f", prof.decel)
+        .. " (scan " .. string.format("%.1f", scan) .. ", " .. prof.brakeN .. " trips)")
+end
+
 -- ------------------------------------------------------------------------------
 -- admin
 -- ------------------------------------------------------------------------------
-local function broadcastWorld()
-    forOnline(function(q) tell(q, "world", { profiles = DB().profiles, roads = DB().roads }) end)
-end
 
 function C.saveProfile(p, args)
     if not isAdmin(p) or type(args.key) ~= "string" or type(args.data) ~= "table" then return end
@@ -532,6 +606,28 @@ function C.saveRoad(p, args)
     broadcastWorld()
 end
 
+-- forget the trouble spot closest to (x, y) within 30 tiles, or all of them (args.all)
+function C.clearClosed(p, args)
+    if not isAdmin(p) then return end
+    local list = DB().closed
+    if args.all == true then
+        COTW.log("all " .. #list .. " trouble spots cleared by " .. tostring(nameOf(p)))
+        for i = #list, 1, -1 do list[i] = nil end
+    else
+        if not coord(args.x) or not coord(args.y) then return end
+        local best, bi = 30, nil
+        for i, s in ipairs(list) do
+            local d = COTW.dist(args.x, args.y, s.x, s.y)
+            if d < best then best, bi = d, i end
+        end
+        if not bi then return end
+        COTW.log("trouble spot " .. list[bi].x .. "," .. list[bi].y .. " cleared by " .. tostring(nameOf(p)))
+        table.remove(list, bi)
+    end
+    K.refresh(list, nowMs())
+    syncClosed()
+end
+
 -- delete the admin road with a point closest to (x, y), within 30 tiles
 function C.delRoad(p, args)
     if not isAdmin(p) or type(args.x) ~= "number" then return end
@@ -556,13 +652,18 @@ local function boot()
     booted = true
     DB()
     COTW.Graph.setExtra(DB().roads)
+    K.refresh(DB().closed, nowMs())
+    COTW.Graph.setClosed(closedOut())
     -- trips cut off by a restart: nothing was driven that we can prove, refund in full
     for id, rec in pairs(DB().open) do
         for name, paid in pairs(rec.paid or {}) do refund(name, paid, "refund trip " .. id .. " (restart)") end
         DB().open[id] = nil
     end
     local n, e, x = COTW.Graph.stats()
-    COTW.log("server ready, junctions=" .. n .. " roads=" .. e .. " admin roads=" .. x .. " wallet=" .. tostring(wallet() ~= nil))
+    local on = 0
+    for _, s in ipairs(DB().closed) do if s.on then on = on + 1 end end
+    COTW.log("server ready, junctions=" .. n .. " roads=" .. e .. " admin roads=" .. x .. " trouble spots=" .. #DB().closed
+        .. " (closed " .. on .. ") wallet=" .. tostring(wallet() ~= nil))
 end
 
 local function sample(trip, t)
@@ -585,6 +686,18 @@ local function sample(trip, t)
         local step = COTW.dist(trip.lx, trip.ly, x, y)
         if step > STEP_CAP then step = STEP_CAP end
         trip.driven = trip.driven + step
+        -- got past a trouble spot: the road is open again
+        if trip.watch and #trip.watch > 0 and step < STEP_CAP then
+            local gone = K.passed(trip.watch, trip.lx, trip.ly, x, y)
+            local changed = false
+            for _, spot in ipairs(gone) do
+                if K.clear(DB().closed, spot) then
+                    COTW.log("trouble spot " .. spot.x .. "," .. spot.y .. " cleared: trip " .. trip.id .. " got past")
+                    changed = true     -- (open ones too: the admin map shows them)
+                end
+            end
+            if changed then syncClosed() end
+        end
     end
     trip.lx, trip.ly = x, y
     if t - trip.lastProg > STALL_MS then finish(trip, "stuck") end
@@ -604,6 +717,14 @@ local function onTick()
     if not booted then boot() end
     if t - lastTick < TICK_MS then return end
     lastTick = t
+    if t - lastClosedTick > CLOSED_TICK_MS then
+        lastClosedTick = t
+        local ok, changed = pcall(K.refresh, DB().closed, t)
+        if ok and changed then
+            COTW.log("trouble spots faded")
+            syncClosed()
+        end
+    end
     for _, trip in pairs(trips) do
         local ok, err = pcall(sample, trip, t)
         if not ok then COTW.log("trip " .. tostring(trip.id) .. " error: " .. tostring(err)) end

@@ -89,3 +89,9 @@ option CookieOnTheWay.RequireWallet
     type = boolean, default = false,
     page = CookieOnTheWay, translation = CookieOnTheWay_RequireWallet,
 }
+
+option CookieOnTheWay.ClosedHalfLifeHours
+{
+    type = integer, min = 1, max = 720, default = 24,
+    page = CookieOnTheWay, translation = CookieOnTheWay_ClosedHalfLifeHours,
+}

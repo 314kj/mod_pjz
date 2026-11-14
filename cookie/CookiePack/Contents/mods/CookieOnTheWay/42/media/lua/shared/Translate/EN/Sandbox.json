@@ -29,5 +29,7 @@
     "Sandbox_CookieOnTheWay_MinFuelPct": "Fuel needed to book (%)",
     "Sandbox_CookieOnTheWay_MinFuelPct_tooltip": "Running dry on the way ends the trip by distance.",
     "Sandbox_CookieOnTheWay_RequireWallet": "Autopilot needs Cookie Exchange",
-    "Sandbox_CookieOnTheWay_RequireWallet_tooltip": "Off: without the wallet mod trips are free. On: autopilot is off until the wallet is there."
+    "Sandbox_CookieOnTheWay_RequireWallet_tooltip": "Off: without the wallet mod trips are free. On: autopilot is off until the wallet is there.",
+    "Sandbox_CookieOnTheWay_ClosedHalfLifeHours": "Trouble spot memory (hours)",
+    "Sandbox_CookieOnTheWay_ClosedHalfLifeHours_tooltip": "Where autopilot trips got blocked or stuck is remembered and routes go round it once two trips gave up there. The memory halves this often (real hours). A trip that gets past clears it at once."
 }

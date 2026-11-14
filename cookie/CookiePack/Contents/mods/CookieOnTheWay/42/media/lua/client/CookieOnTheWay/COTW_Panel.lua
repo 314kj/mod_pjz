@@ -90,6 +90,8 @@ function COTWPanel:createChildren()
     self.startBtn = B(T("IGUI_COTW_GroupStart"), COTWPanel.onGroupStart, "main", "convoy")
     self.scanBtn = B(T("IGUI_COTW_Scan"), COTWPanel.onScan, "admin", "scan")
     self.recBtn = B("", COTWPanel.onRecord, "admin", "rec")
+    self.lessonBtn = B("", COTWPanel.onLesson, "admin", "rec")
+    self.lessonX = B(T("IGUI_COTW_LessonCancel"), COTWPanel.onLessonCancel, "admin", "x")
 end
 
 -- ------------------------------------------------------------------------------
@@ -182,6 +184,10 @@ end
 function COTWPanel:onScan() COTW.Admin.scan() end
 
 function COTWPanel:onRecord() COTW.Admin.recordToggle(); self:layout() end
+
+function COTWPanel:onLesson() COTW.Lesson.press(); self:layout() end
+
+function COTWPanel:onLessonCancel() COTW.Lesson.cancel(); self:layout() end
 
 -- ------------------------------------------------------------------------------
 -- layout (what shows depends on the step and the quote; buttons move with the riders)
@@ -281,6 +287,14 @@ function COTWPanel:layout()
             local mins = math.ceil(km / (COTW.opt("CitySpeed") * 0.8) * 60)
             chips[#chips + 1] = { icon = "road", text = T("IGUI_COTW_Km", string.format("%.1f", km)) }
             chips[#chips + 1] = { icon = "clock", text = T("IGUI_COTW_Min", tostring(mins)) }
+            -- parked off the road (yard, garage): the autopilot only drives the road, so drive out first
+            if q.startOff and q.startOff > 4 then
+                chips[#chips + 1] = { icon = "warn", text = T("IGUI_COTW_StartOffRoad", tostring(math.floor(q.startOff))), warn = true }
+            end
+            -- the only way goes through a spot where trips gave up before (no way round shorter by 3 km)
+            if q.closed and q.closed > 0 then
+                chips[#chips + 1] = { icon = "warn", text = T("IGUI_COTW_ClosedOnRoute", tostring(q.closed)), warn = true }
+            end
             if q.endGap and q.endGap > 15 then
                 chips[#chips + 1] = { icon = "pin", text = T("IGUI_COTW_OffRoad", tostring(math.floor(q.endGap))), warn = true }
             end
@@ -398,6 +412,18 @@ function COTWPanel:layout()
         place(self.scanBtn, PAD, y, hw, BTN + 4)
         place(self.recBtn, PAD + hw + 6, y, hw, BTN + 4)
         self.recBtn:setTitle(COTW.Admin.recording() and T("IGUI_COTW_RecStop") or T("IGUI_COTW_RecStart"))
+        y = y + BTN + 4 + 6
+        -- teach scene: corner 1, corner 2, start, stop (+ cancel once started)
+        local ph = COTW.Lesson and COTW.Lesson.phase()
+        self.shownLesson = ph
+        local title = ({ c1 = "IGUI_COTW_LessonC2", ready = "IGUI_COTW_LessonGo", rec = "IGUI_COTW_LessonStop" })[ph or ""] or "IGUI_COTW_LessonC1"
+        self.lessonBtn:setTitle(T(title))
+        if ph then
+            place(self.lessonBtn, PAD, y, inner - hw / 2 - 6, BTN + 4)
+            place(self.lessonX, PAD + inner - hw / 2, y, hw / 2, BTN + 4)
+        else
+            place(self.lessonBtn, PAD, y, inner, BTN + 4)
+        end
         y = y + BTN + 4
     end
     L.statusY = y + 8
@@ -596,13 +622,15 @@ function COTWPanel:drawBody()
     if COTW.Admin.scanning() then status = T("IGUI_COTW_Scan_Running") end
     local recOn, recN = COTW.Admin.recording()
     if recOn then status = T("IGUI_COTW_Rec_Running", tostring(recN)) end
+    if L.adminY and COTW.Lesson and COTW.Lesson.status() then status = COTW.Lesson.status() end
     if self.gid then status = (status and status .. "  " or "") .. T("IGUI_COTW_Joining") end
     if status then U.text(self, status, PAD, L.statusY, K.g) end
 end
 
 function COTWPanel:prerender()
     local C = COTW.C
-    if C.quote ~= self.shownQuote or (C.trip and C.trip.state) ~= self.shownState or (C.dest ~= nil) ~= self.shownDest then
+    if C.quote ~= self.shownQuote or (C.trip and C.trip.state) ~= self.shownState or (C.dest ~= nil) ~= self.shownDest
+        or (COTW.isAdmin() and COTW.Lesson and COTW.Lesson.phase() ~= self.shownLesson) then
         self.shownQuote = C.quote
         self.shownState = C.trip and C.trip.state
         self.shownDest = C.dest ~= nil

@@ -29,6 +29,7 @@ COTW.OPT_DEFAULTS = {
     BlockedSeconds  = 5,
     MinFuelPct      = 15,
     RequireWallet   = false,
+    ClosedHalfLifeHours = 24,
 }
 
 function COTW.opt(key)

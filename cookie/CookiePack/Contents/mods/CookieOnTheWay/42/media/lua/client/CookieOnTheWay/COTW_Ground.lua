@@ -73,9 +73,10 @@ local function sample(xs, ys, cum, pos, side)
         if L > 0 then
             dx, dy = dx / L, dy / L
             local o = side and side(s) or 0
+            -- +8 first: Kahlua's % truncates toward zero (-2 % 8 = -2), so keep the left side positive
             out[#out + 1] = {
                 x = xs[k] + (xs[k + 1] - xs[k]) * t - dy * o, y = ys[k] + (ys[k + 1] - ys[k]) * t + dx * o,
-                dir = math.floor(math.atan2(dy, dx) / (math.pi / 4) + 0.5) % 8, m = m,
+                dir = (math.floor(math.atan2(dy, dx) / (math.pi / 4) + 0.5) + 8) % 8, m = m,
             }
         end
         m = m + 1

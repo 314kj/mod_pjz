@@ -1,12 +1,13 @@
 -- Cookie On the Way : client state and network
--- Keeps this player's home / pins / trip history, the scanned vehicle list and admin roads the server
--- sends, the last quote, the running trip and the navigator route. UI files read COTW.C and call
+-- Keeps this player's home / pins / trip history, the scanned vehicle list, admin roads and trouble
+-- spots the server sends, the last quote, the running trip and the navigator route. UI files read COTW.C and call
 -- the helpers here; nothing on the client decides a price.
 
 require "CookieOnTheWay/COTW_RoadData"
 
 COTW.C = COTW.C or {
     home = nil, pins = {}, hist = {}, profiles = {},
+    closed = {},       -- trouble spots { x, y, w, on, t } (COTW_Closed): the graph routes round closed ones
     dest = nil,        -- { x, y, name } picked in the panel / on the map
     quote = nil,       -- last answer to "quote" (or { err = ... })
     trip = nil,        -- { id, state = "billing"|"ready"|"driving", gid, order, route, held }
@@ -71,7 +72,7 @@ end
 function COTW.startNav(x, y)
     local p = COTW.player()
     if not p then return false end
-    local route, why = COTW.Graph.route(p:getX(), p:getY(), x, y)
+    local route, why = COTW.Graph.route(p:getX(), p:getY(), x, y, true)     -- raw: a person drives, trouble spots are the autopilot's
     if not route then
         COTW.say("IGUI_COTW_Err_" .. tostring(why))
         return false
@@ -96,6 +97,10 @@ local S = {}
 local function applyWorld(args)
     if type(args.profiles) == "table" then C.profiles = args.profiles end
     if type(args.roads) == "table" then COTW.Graph.setExtra(args.roads) end
+    if type(args.closed) == "table" then
+        C.closed = args.closed
+        COTW.Graph.setClosed(args.closed)
+    end
 end
 
 function S.state(args)
