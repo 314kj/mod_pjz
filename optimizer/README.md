@@ -1,6 +1,6 @@
 # Cookie Slicer: ตัวช่วยให้เกมลื่น ของเซิฟ Cookie Cheetah
 
-**[⬇ ดาวน์โหลดตัวติดตั้ง (CookieSlicer-Setup.bat)](https://github.com/314kj/mod_pjz/releases/download/cookie-slicer-setup/CookieSlicer-Setup.bat)**  ·  ม็อด v1.4.0 · ตัวช่วย v1.4.0 · ฝั่งเซิฟ v4 · Project Zomboid Build 42.22.2
+**[⬇ ดาวน์โหลดตัวติดตั้ง (CookieSlicer-Setup.bat)](https://github.com/314kj/mod_pjz/releases/download/cookie-slicer-setup/CookieSlicer-Setup.bat)**  ·  ม็อด v1.4.1 · ตัวช่วย v1.5.0 · ฝั่งเซิฟ v4 · Project Zomboid Build 42.22.2
 
 > [!WARNING]
 > **ทำมาเพื่อใช้กับเซิฟ Cookie Cheetah (dedicated server) เท่านั้น**

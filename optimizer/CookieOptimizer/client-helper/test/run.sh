@@ -12,13 +12,17 @@
 #   RealSmoothTest  1.4.0 the patched IsoChunkMap / IsoWorld pass Java 25's bytecode check
 #   RealSpeedTest  1.3.0 speed-ups against the game's real classes (with PZ_STDLIB, the game's
 #               stdlib.lua; uses the server agent's test drivers in ../server-agent/test/real)
+#   RoomTest    1.5.0 room fix: the place in the real IsoLightSwitch (with PZ_JAR)
+#   RealRoomTest  1.5.0 the patched IsoLightSwitch passes Java 25's bytecode check; chunkLoaded on a real
+#               chunk whose square points at a cleared room: the game's code throws, the patched one
+#               points the square at the map's room (driver test/real/zombie/iso/RoomDrive.java)
 # PZ_COMPILE_JAR: see build.sh. PZ_JAR: the game's projectzomboid.jar. JAVA25: a Java 25+
 # runtime for running against the game's classes. SHADER_DIR: day.rgba, ref_golden.rgba
 # and the two shader files (made by test/make_reference.py).
 set -e
 cd "$(dirname "$0")/.."
 rm -rf build/test && mkdir -p build/test/out
-javac --release 21 -encoding UTF-8 -cp "$PZ_COMPILE_JAR" -d build/test $(find src -name '*.java') test/HelperTest.java test/ShaderTest.java test/JoinTest.java test/RamTest.java test/RecTest.java test/SpeedPatchWrite.java test/SmoothTest.java
+javac --release 21 -encoding UTF-8 -cp "$PZ_COMPILE_JAR" -d build/test $(find src -name '*.java') test/HelperTest.java test/ShaderTest.java test/JoinTest.java test/RamTest.java test/RecTest.java test/SpeedPatchWrite.java test/SmoothTest.java test/RoomTest.java
 java -cp build/test cookie.slicer.helper.HelperTest build/test/out
 java -cp build/test cookie.slicer.helper.RecTest build/test/out
 if [ -n "$PZ_JAR" ] && [ -n "$JAVA25" ]; then
@@ -29,6 +33,11 @@ if [ -n "$PZ_JAR" ] && [ -n "$JAVA25" ]; then
   "$JAVA25" -cp "build/test:build/smooth/pz.jar" cookie.slicer.helper.SmoothTest build/smooth/pz.jar build/test/out build/smooth/patched
   javac --release 21 -d build/smooth/run test/real/RealSmoothTest.java
   "$JAVA25" -cp build/smooth/run RealSmoothTest build/smooth/pz.jar build/test build/smooth/patched
+  rm -rf build/room && mkdir -p build/room/patched build/room/drive build/room/run
+  "$JAVA25" -cp "build/test:build/smooth/pz.jar" cookie.slicer.helper.RoomTest build/smooth/pz.jar build/room/patched
+  javac --release 21 -nowarn -cp "$PZ_COMPILE_JAR" -d build/room/drive test/real/zombie/iso/RoomDrive.java
+  javac --release 21 -d build/room/run test/real/RealRoomTest.java
+  "$JAVA25" -cp build/room/run RealRoomTest build/smooth/pz.jar build/test build/room/drive build/room/patched
 fi
 if [ -n "$PZ_JAR" ] && [ -n "$JAVA25" ]; then
   "$JAVA25" --enable-native-access=ALL-UNNAMED -cp "$PZ_JAR:build/test" cookie.slicer.helper.JoinTest build/test/out "$PZ_JAR" "${CONSOLE_TXT:-}"

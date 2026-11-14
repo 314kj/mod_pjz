@@ -50,10 +50,13 @@ import java.util.Map;
  * 1.4.0: smoother driving and fewer 3D zombies (SmoothPatcher / SmoothHooks): map pieces finished at
  * most chunk_ms per frame instead of a dozen at once; how many zombies get a full 3D model (the game:
  * 510); both from the window at once, kept in smooth.txt.
+ * 1.5.0: no crash when a map piece finishes while the rooms of player-built buildings are being made
+ * again (someone building nearby; RoomPatcher / RoomHooks): squares still pointing at a cleared room
+ * get the map's room there now. Always on, no switch.
  * Copyright (c) AKA / Cookie Cheetah. All rights reserved.
  */
 public final class Helper implements Runnable {
-    public static final String VERSION = "1.4.0";
+    public static final String VERSION = "1.5.0";
     static final long MB = 1024L * 1024L;
     static final String PC_FILE = "CookieSlicer_pc.txt";
     static final String REQUEST_FILE = "CookieSlicer_request.txt";
@@ -64,6 +67,7 @@ public final class Helper implements Runnable {
     static volatile boolean speedPatching; // the speed-ups were set up at this start
     static final String SMOOTH_FILE = "smooth.txt"; // chunk_ms / zombies3d (no file = 4 ms, 510)
     static volatile boolean smoothPatching; // the two smooth places were set up at this start
+    static volatile boolean roomPatching; // the room fix (1.5.0) was set up at this start
 
     final File luaDir;
     final File stateDir;
@@ -145,6 +149,12 @@ public final class Helper implements Runnable {
                     smoothPatching = true;
                 } catch (Throwable t) {
                     System.out.println("[CookieSlicerHelper] smooth off (the game runs as usual): " + t);
+                }
+                try {
+                    inst.addTransformer(new RoomPatcher(), false);
+                    roomPatching = true;
+                } catch (Throwable t) {
+                    System.out.println("[CookieSlicerHelper] room fix off (the game runs as usual): " + t);
                 }
             }
             try {
@@ -298,6 +308,8 @@ public final class Helper implements Runnable {
         if (speedPatching) SpeedHooks.status(m);
         // smooth (1.4.0): map pieces per frame, zombies in 3D
         if (smoothPatching) SmoothHooks.status(m);
+        // room fix (1.5.0): squares pointed from a cleared room to the map's room
+        if (roomPatching) RoomHooks.status(m);
         if (smoothNote != null) m.put("smooth_note", smoothNote);
         Recorder.status(m);
         if (!m.containsKey("gpu") && gpuGuess != null) m.put("gpu", gpuGuess); // before the game has drawn a frame
