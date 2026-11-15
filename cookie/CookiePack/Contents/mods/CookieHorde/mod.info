@@ -1,0 +1,9 @@
+name=Cookie Horde
+id=CookieHorde
+author=lookchinnoi (AKA)
+description=CookieCheetah admin zombie spawner. Pick a spot, a preset and a count: the server lets the zombies out a few at a time (up to 100 a minute per spot, 1000 per spot) instead of all in one tick, and removes the spot when it is done. Presets set speed, toughness, any number of outfits and item drops with a chance. A lag estimate advises before spawning.
+poster=poster.png
+icon=icon.png
+require=\CookieMission
+versionMin=42.13.0
+modversion=1.0.0
