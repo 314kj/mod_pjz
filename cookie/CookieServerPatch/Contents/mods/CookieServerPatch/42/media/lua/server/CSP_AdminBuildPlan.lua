@@ -17,6 +17,14 @@
 -- more at the end (a window frame placed before its wall); pieces that still fail
 -- stay in the admin's plan.
 --
+-- Building Craft pieces (name "BC:<tab>:<type>:<tile>:<first sprite>"): the
+-- object comes from Building Craft's own code for that tile (the same function its
+-- window calls) and goes through the same Actions.build. Building Craft takes its
+-- materials on the server even with Build Cheat on (from the player and from the
+-- ground around the square), so while a plan piece is built its material functions
+-- return nothing taken, as its own Build Cheat path does. Building Craft's files are
+-- not changed.
+--
 -- Players near the plan: when a player builds, the game rebuilds the rooms of
 -- the player-made buildings in that 256 x 256 cell on every client, and a player
 -- whose map is loading there at that moment can be thrown to the main menu
@@ -168,21 +176,100 @@ local function nearCount(job)
     return n
 end
 
+-- Building Craft's data for a "BC:" piece; nil when the tile is not there or its
+-- first sprite differs (the lists changed since the piece was planned)
+local function bcData(name)
+    local i, k, n, s1 = name:match("^BC:(%d+):(%d+):(%d+):(.+)$")
+    if not i then return nil end
+    i, k, n = tonumber(i), tonumber(k), tonumber(n)
+    local list = Building_Data and Building_Data.BuildingList
+    local tab = type(list) == "table" and list[i]
+    local typ = type(tab) == "table" and type(tab.subBuildData) == "table" and tab.subBuildData[k]
+    local item = type(typ) == "table" and type(typ.ItemDate) == "table" and typ.ItemDate[n]
+    if type(item) ~= "table" or type(item.Sprite) ~= "table" or item.Sprite[1] ~= s1 then return nil end
+    -- a garage door's width comes from Building Craft's window, which a plan does not keep
+    if item.IsGarageDoor or (type(item.Default) == "table" and item.Default.IsGarageDoor) then return nil end
+    return item, i, k, n
+end
+
+-- the object Building Craft's own code makes for the tile (its Func), as on the admin's
+-- screen. Func looks for the admin's tools with getSpecificPlayer(n) and ends with
+-- getCell():setDrag(object, n); the server has no cursor, so for this one call both
+-- point at the admin and at a catcher, and are put back right after.
+local function bcObject(job, p)
+    local item, i, k, n = bcData(p.name)
+    if not item then return nil end
+    local data = item.IsDefault and item.Default or item
+    if type(data) ~= "table" or type(data.Func) ~= "function" then return nil end
+    local sprite = {}
+    for s = 1, 12 do sprite["sprite" .. s] = item.Sprite[s] end
+    local caught = nil
+    local catcher = { setDrag = function(_, obj) caught = obj end }
+    local cell, specific = getCell, getSpecificPlayer
+    getCell = function() return catcher end
+    getSpecificPlayer = function() return job.player end
+    local ok, err = pcall(data.Func, i, k, n, sprite, 0)
+    getCell, getSpecificPlayer = cell, specific
+    if not ok then error(err) end
+    if type(caught) ~= "table" then return nil end
+    caught.player = job.player              -- on the server Building Craft reads the player object here
+    caught.nSprite = p.s
+    pcall(function() caught:getSprite() end)  -- north / west from nSprite, as the admin placed it
+    return caught
+end
+
+local function noMaterial() return {} end    -- what Building Craft's own Build Cheat path returns
+
+-- Actions.build for a Building Craft piece, its material functions taking nothing meanwhile
+local function buildBC(player, args)
+    local u = buildUtil
+    local a, b, c = u.consumeMaterialMy, u.openNailsBoxMy, u.openScrewsBoxMy
+    u.consumeMaterialMy, u.openNailsBoxMy, u.openScrewsBoxMy = noMaterial, noMaterial, noMaterial
+    local ok, err = pcall(Actions.build, player, args)
+    u.consumeMaterialMy, u.openNailsBoxMy, u.openScrewsBoxMy = a, b, c
+    return ok, err
+end
+
 -- "ok" | "fail" | "notloaded"
 local function buildOne(job, p)
     if not loaded(p.x, p.y) then return "notloaded" end
-    local info = SpriteConfigManager.GetObjectInfo(p.name)
-    if not info then return "fail" end
+    local bc = p.name:sub(1, 3) == "BC:"
+    local item
+    if bc then
+        item = bcObject(job, p)
+        if not item and job.errors < 3 then
+            job.errors = job.errors + 1
+            print(TAG .. ": Building Craft tile not found or changed: " .. p.name)
+        end
+    else
+        local info = SpriteConfigManager.GetObjectInfo(p.name)
+        item = info and ISBuildIsoEntity:new(job.player, info, p.s, ArrayList.new(), nil)
+    end
+    if not item then return "fail" end
     local before, beforeAll = 0, 0
     if p.cs then before, beforeAll = countSprite(p.cx, p.cy, p.cz, p.cs) end
-    local item = ISBuildIsoEntity:new(job.player, info, p.s, ArrayList.new(), nil)
-    Actions.build(job.player, { item = item, x = p.x, y = p.y, z = p.z, north = p.north, spriteName = p.spr })
+    local args = { item = item, x = p.x, y = p.y, z = p.z, north = p.north, spriteName = p.spr }
+    local ok, err = true, nil
+    if bc then
+        ok, err = buildBC(job.player, args)
+    else
+        Actions.build(job.player, args)
+    end
     if p.cs then
         -- built = the piece's first tile shows up, or anything new appeared on that square
         -- (counting a built piece as failed would build it twice in the retry pass)
         local after, afterAll = countSprite(p.cx, p.cy, p.cz, p.cs)
-        if after <= before and afterAll <= beforeAll then return "fail" end
+        if after <= before and afterAll <= beforeAll then
+            if not ok then error(err) end
+            return "fail"
+        end
+        if not ok and job.errors < 3 then
+            job.errors = job.errors + 1
+            print(TAG .. ": built, but Building Craft said " .. tostring(err))
+        end
+        return "ok"
     end
+    if not ok then error(err) end
     return "ok"
 end
 
