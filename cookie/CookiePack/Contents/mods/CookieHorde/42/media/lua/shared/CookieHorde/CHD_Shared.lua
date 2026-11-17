@@ -10,8 +10,8 @@ require "CM_Shared"
 
 CHD = CHD or {}
 CHD.MOD = "CookieHorde"
-CHD.VERSION = "1.0.0"
-CHD.BUILD = "chd-1.0.0"
+CHD.VERSION = "1.1.0"
+CHD.BUILD = "chd-1.1.0"
 
 -- limits per spawn spot
 CHD.MAX_PER_MIN = 100
@@ -33,9 +33,21 @@ CHD.HP_STEP = 0.25
 CHD.SPEEDS = { "server", "walk", "fast", "sprint" }
 CHD.SPEED_CODE = { sprint = 1, fast = 2, walk = 3 }   -- IsoZombie.SPEED_SPRINTER / FAST_SHAMBLER / SHAMBLER
 
--- sluggish: walk speed in % of normal (the game has no walk slower than a shambler; clients scale
--- the zombie's movement with setMoveDelta)
+-- sluggish: walk speed in % of a shambler. The game has no walk slower than a shambler and no
+-- per-zombie walk speed (setMoveDelta only scales turning), so the mod ships its own walk nodes
+-- (media/AnimSets/zombie/{walktoward,walktoward-network,pathfind}/CHD_SlowWalk1-3.xml). They win over
+-- every vanilla walk node (condition priority 1) while the zombie has CHDSlow = true, copy the three
+-- shambler walks and play at CHDWalkSpeed. Sluggish zombies always shamble.
 CHD.SLOW_STEPS = { 100, 80, 60, 40, 25 }
+CHD.VAR_SLOW = "CHDSlow"
+CHD.VAR_SPEED = "CHDWalkSpeed"
+CHD.VAR_ANIM = "CHDSlowAnim"
+CHD.SLOW_ANIMS = { 0.80, 0.64, 0.72 }   -- speed scale of the shambler walk each node copies
+CHD.SLOW_ANIM_KEYS = { "1", "2", "3" }  -- CHDSlowAnim values in the node files (tostring of a number may give "2.0")
+
+-- marked zombies go to clients as CHD.MARK_N numbers each: online id, walk factor (0 = normal),
+-- damage cut for boom, melee, gun
+CHD.MARK_N = 5
 
 -- resistance: damage cut in % per kind of hit, 100 = the hit does nothing.
 -- At most two kinds may be 100, so every resistant zombie can still be killed.
@@ -224,6 +236,105 @@ function CHD.advise(info)
     end
     if level == "low" then reasons[#reasons + 1] = { key = "ok" } end
     return level, expected, reasons, suggest
+end
+
+-- ===================================================================== sluggish walk
+-- the walk node a sluggish zombie plays: the same on every machine for one online id
+function CHD.slowAnimOf(n)
+    return CM.mod(math.floor(math.abs(CM.num(n, 0))), 3) + 1
+end
+
+-- slow a zombie on this machine; the speed goes in before the flag so the node never starts at the
+-- default speed of 1
+function CHD.setSlow(z, f, n)
+    local a = CHD.slowAnimOf(n)
+    z:setVariable(CHD.VAR_SPEED, CHD.SLOW_ANIMS[a] * CM.num(f, 1))
+    z:setVariable(CHD.VAR_ANIM, CHD.SLOW_ANIM_KEYS[a])
+    z:setVariable(CHD.VAR_SLOW, true)
+end
+
+function CHD.clearSlow(z)
+    z:setVariable(CHD.VAR_SLOW, false)
+end
+
+-- ===================================================================== resistance on a hit
+-- In multiplayer the client that owns a zombie works out its health and the server copies it, killing
+-- the zombie when that client says it is dead; explosions are worked out on that client only. So every
+-- machine that runs a hit (the attacker, the server, the owner) applies the same rule in OnHitZombie,
+-- which fires inside the zombie's Hit before any damage (IsoZombie.Hit, then IsoGameCharacter.Hit).
+-- (Hook.WeaponHitCharacter cannot be used: the game treats any registered hook as "cancel every
+-- weapon hit".)
+
+-- what kind of hit a weapon makes; nil, error when it cannot be read
+function CHD.kindOf(w)
+    if not w then return nil end
+    local ok, k = pcall(function()
+        if w:isExplosive() or w:isInstantExplosion() then return "boom" end
+        if w:isRanged() then return "gun" end
+        return "melee"
+    end)
+    if ok then return k end
+    return nil, k
+end
+
+-- boosts and avoid flags of one machine, undone on its next tick
+function CHD.newHits() return { boosted = {}, boostedList = {}, avoidList = {} } end
+
+local function unboost(st, z)
+    local f = st.boosted[z]
+    if not f then return end
+    st.boosted[z] = nil
+    pcall(function()
+        if not z:isDead() then z:setHealth(z:getHealth() * f) end
+    end)
+end
+
+-- An immune kind sets the one-shot avoidDamage flag, which the same Hit reads, clears and returns on.
+-- A damage cut raises the health by 1 / (1 - cut) for the hit and puts it back next tick: the hit then
+-- takes (1 - cut) of the damage and kills exactly when it would kill the real health.
+-- avoidAll avoids every kind with a cut (the server, for a zombie a client owns: that client's health
+-- is the one that counts, so the server copy must not drop or die on its own).
+-- Returns false, error only when the weapon kind cannot be read.
+function CHD.resHit(st, zombie, res, weapon, avoidAll)
+    if not weapon then return true end
+    local kind, err = CHD.kindOf(weapon)
+    if not kind then return false, err end
+    local cut = CM.num(res[kind], 0)
+    if cut >= 100 or (avoidAll and cut > 0) then
+        unboost(st, zombie)
+        zombie:setAvoidDamage(true)
+        st.avoidList[#st.avoidList + 1] = zombie
+        return true
+    end
+    local f = 1 - cut / 100
+    local cur = st.boosted[zombie]
+    if cur == f then return true end
+    local h = zombie:getHealth()
+    if cur then h = h * cur end       -- back to the real health before a different cut
+    if cut <= 0 then
+        st.boosted[zombie] = nil
+        if cur then zombie:setHealth(h) end
+        return true
+    end
+    zombie:setHealth(h / f)
+    st.boosted[zombie] = f
+    st.boostedList[#st.boostedList + 1] = zombie
+    return true
+end
+
+-- next tick: health back from the boosts, avoid flags no hit used cleared
+function CHD.resTick(st)
+    if #st.boostedList > 0 then
+        for i = 1, #st.boostedList do unboost(st, st.boostedList[i]) end
+        st.boostedList = {}
+    end
+    if #st.avoidList > 0 then
+        for i = 1, #st.avoidList do
+            local z = st.avoidList[i]
+            pcall(function() z:setAvoidDamage(false) end)
+        end
+        st.avoidList = {}
+    end
 end
 
 -- every outfit has the same chance

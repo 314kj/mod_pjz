@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode>
+	<m_Name>CHD_SlowWalk3</m_Name>
+	<m_AnimName>Zombie_Walk5</m_AnimName>
+	<m_BlendTime>0.20</m_BlendTime>
+	<m_SpeedScale>CHDWalkSpeed</m_SpeedScale>
+	<m_ConditionPriority>1</m_ConditionPriority>
+	<m_Conditions x_name="6996f9ad-9f4d-4cfe-b779-6a99398fdd52">
+		<m_Name>CHDSlow</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>true</m_Value>
+	</m_Conditions>
+	<m_Conditions x_name="b80a5110-c465-4802-95eb-249ba45e6aee">
+		<m_Name>CHDSlowAnim</m_Name>
+		<m_Type>STRING</m_Type>
+		<m_Value>3</m_Value>
+	</m_Conditions>
+	<m_Events x_name="07cf3776-4226-40da-b1f2-31167837fd1a">
+		<m_EventName>Footstep</m_EventName>
+		<m_TimePc>0.15</m_TimePc>
+		<m_ParameterValue>walk</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="da9656db-0ebf-4bc4-a80f-8f696d45a71c">
+		<m_EventName>Footstep</m_EventName>
+		<m_TimePc>0.6</m_TimePc>
+		<m_ParameterValue>walk</m_ParameterValue>
+	</m_Events>
+</animNode>

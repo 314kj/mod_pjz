@@ -17,6 +17,15 @@ local function ms()
 end
 CHDC.ms = ms
 
+local lastLog = {}               -- key -> ms of the last line for errors that repeat
+local function logEvery(key, msg)
+    local t = ms()
+    if not lastLog[key] or t - lastLog[key] >= 60000 then
+        lastLog[key] = t
+        CHD.log(msg)
+    end
+end
+
 function CHDC.player() return getSpecificPlayer(0) end
 
 function CHDC.send(cmd, args)
@@ -37,6 +46,10 @@ function CHDC.n(v)
     end
     return tostring(math.floor(x * 100 + 0.5) / 100)
 end
+
+-- a percentage for display; the % stays out of the translations, where the game's text formatting
+-- throws on every % that is not a %1 placeholder
+function CHDC.pct(v) return CHDC.n(v) .. "%" end
 
 function CHDC.txt(key, a, b, c)
     if type(a) == "number" then a = CHDC.n(a) end
@@ -136,35 +149,45 @@ function CHDC.savePreset(pre)
     return true
 end
 
--- ===================================================================== sluggish zombies
--- The server sends the online ids of sluggish zombies; this client scales their movement.
--- touched remembers every zombie object slowed here, so a reused object gets its speed back.
-CHDC.slow = CHDC.slow or {}     -- online id -> factor
-local slowN = 0
+-- ===================================================================== marked zombies
+-- The server sends the online ids of sluggish and resistant zombies. The client that owns a zombie
+-- moves it and works out its health, so this client slows the sluggish ones (our walk nodes, see
+-- CHD.setSlow) and applies the resistance to hits it runs. In single player the server side does both.
+-- touched remembers every zombie object slowed here, so a reused object is put back.
+CHDC.marks = CHDC.marks or {}   -- online id -> { f = walk factor or 0, r = { boom, melee, gun } or nil }
+local slowN = 0                 -- marks with a walk factor
 local touched = {}              -- zombie -> factor applied
 local touchedN = 0
 local lastSlowPass = 0
 local SLOW_PASS_MS = 1000
+local hits = CHD.newHits()
 
-local function applySlow(args)
+local function applyMarks(args)
     if args.all then
-        CHDC.slow = {}
+        CHDC.marks = {}
         slowN = 0
     end
     local add = arr(args.add)
-    for i = 1, #add - 1, 2 do
-        local id, f = add[i], CM.num(add[i + 1], 1)
-        if CHDC.slow[id] == nil then slowN = slowN + 1 end
-        CHDC.slow[id] = f
+    local n = CHD.MARK_N
+    for i = 1, #add - n + 1, n do
+        local id = add[i]
+        local m = { f = CM.num(add[i + 1], 0) }
+        local boom, melee, gun = CM.num(add[i + 2], 0), CM.num(add[i + 3], 0), CM.num(add[i + 4], 0)
+        if boom > 0 or melee > 0 or gun > 0 then m.r = { boom = boom, melee = melee, gun = gun } end
+        local old = CHDC.marks[id]
+        if old and old.f > 0 then slowN = slowN - 1 end
+        if m.f > 0 then slowN = slowN + 1 end
+        CHDC.marks[id] = m
     end
     for _, id in ipairs(arr(args.del)) do
-        if CHDC.slow[id] ~= nil then
-            CHDC.slow[id] = nil
-            slowN = slowN - 1
+        local old = CHDC.marks[id]
+        if old then
+            if old.f > 0 then slowN = slowN - 1 end
+            CHDC.marks[id] = nil
         end
     end
 end
-CHDC.applySlow = applySlow
+CHDC.applyMarks = applyMarks
 
 function CHDC.slowPass()
     if slowN <= 0 and touchedN <= 0 then return end
@@ -175,13 +198,14 @@ function CHDC.slowPass()
     local keep, keepN = {}, 0
     for z, f in pairs(touched) do
         local ok, stay = pcall(function()
-            return not z:isDead() and z:getCurrentSquare() ~= nil and CHDC.slow[z:getOnlineID()] == f
+            local m = CHDC.marks[z:getOnlineID()]
+            return not z:isDead() and z:getCurrentSquare() ~= nil and m ~= nil and m.f == f
         end)
         if ok and stay then
             keep[z] = f
             keepN = keepN + 1
         else
-            pcall(function() z:setMoveDelta(1) end)
+            pcall(CHD.clearSlow, z)
         end
     end
     touched, touchedN = keep, keepN
@@ -194,14 +218,28 @@ function CHDC.slowPass()
     for i = 0, list:size() - 1 do
         local z = list:get(i)
         if touched[z] == nil then
-            local f = CHDC.slow[z:getOnlineID()]
-            if f then
-                z:setMoveDelta(f)
-                touched[z] = f
-                touchedN = touchedN + 1
+            local id = z:getOnlineID()
+            local m = CHDC.marks[id]
+            if m and m.f > 0 then
+                local ok, err = pcall(CHD.setSlow, z, m.f, id)
+                if ok then
+                    touched[z] = m.f
+                    touchedN = touchedN + 1
+                else
+                    logEvery("slow", "cannot slow a zombie: " .. tostring(err))
+                end
             end
         end
     end
+end
+
+-- a hit this client runs on a listed resistant zombie (multiplayer only)
+function CHDC.onHitZombie(zombie, attacker, part, weapon)
+    if not isClient() or not zombie then return end
+    local m = CHDC.marks[zombie:getOnlineID()]
+    if not m or not m.r then return end
+    local ok, err = CHD.resHit(hits, zombie, m.r, weapon, false)
+    if not ok then logEvery("kind", "cannot read the weapon kind: " .. tostring(err)) end
 end
 
 local helloSent = false
@@ -210,9 +248,16 @@ Events.OnTick.Add(function()
         helloSent = true
         if not CM.isSP() then CHDC.send("hello", {}) end
     end
+    CHD.resTick(hits)
     local ok, err = pcall(CHDC.slowPass)
-    if not ok then CHD.log("slow pass error: " .. tostring(err)) end
+    if not ok then logEvery("pass", "slow pass error: " .. tostring(err)) end
 end)
+if Events.OnHitZombie then
+    Events.OnHitZombie.Add(function(zombie, attacker, part, weapon)
+        local ok, err = pcall(CHDC.onHitZombie, zombie, attacker, part, weapon)
+        if not ok then logEvery("hit", "hit error: " .. tostring(err)) end
+    end)
+end
 
 -- ===================================================================== server answers
 local TOAST_COLOR = { started = "good", noPreset = "bad", pointsFull = "bad", presetFull = "bad", cancelled = "dim" }
@@ -234,8 +279,8 @@ local function onServerCommand(module, command, args)
             args.reasons = arr(args.reasons)
             CHDC.est = args
         end
-    elseif command == "slow" then
-        applySlow(args)
+    elseif command == "marks" then
+        applyMarks(args)
     elseif command == "saved" then
         CHDC.savedId = args.id
     elseif command == "toast" then

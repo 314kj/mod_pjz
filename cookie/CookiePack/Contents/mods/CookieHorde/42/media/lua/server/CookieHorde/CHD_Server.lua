@@ -20,20 +20,17 @@ local LOG_GAP_MS = 60000
 
 -- point: { id, x, y, z, r, total, done, dead, perMin, acc, pre = preset copy, by, at, wait }
 
--- sluggish zombies: every client scales the movement of the zombies it moves, so the clients get
--- the online ids. Ids are known a moment after the spawn.
-local slowRef = {}       -- online id -> { z = zombie, f = factor }
-local slowWait = {}      -- { z, f, at } waiting for an online id
-local slowAdd, slowDel = {}, {}   -- changes not sent yet: add = { id, f, id, f ... }, del = { id ... }
-local lastSlowStep = 0
-local slowKeys, slowAt = nil, 1
-local SLOW_STEP_MS = 1000
-local SLOW_CHECKS = 200  -- known sluggish zombies looked at per step
+-- marked zombies (sluggish and / or resistant): the client that owns a zombie moves it and works out
+-- its health, so every client gets them by online id. Ids are known a moment after the spawn.
+local markRef = {}       -- online id -> { z = zombie, f = walk factor or 0, r = resistance or nil }
+local markWait = {}      -- { z, f, r, at } waiting for an online id
+local markAdd, markDel = {}, {}   -- changes not sent yet: add = CHD.MARK_N numbers a zombie, del = { id ... }
+local lastMarkStep = 0
+local markKeys, markAt = nil, 1
+local MARK_STEP_MS = 1000
+local MARK_CHECKS = 200  -- known marked zombies looked at per step
 
--- resistance: zombies whose health was raised for a hit with a damage cut; put back next tick
-local boosted = {}       -- zombie -> factor
-local boostedList = {}
-local avoidList = {}     -- zombies given avoidDamage this tick (cleared next tick if no hit used it)
+local hits = CHD.newHits()   -- resistance boosts and avoid flags, undone next tick
 
 local function nowMs()
     if getTimestampMs then
@@ -194,6 +191,7 @@ local function spawnOne(pt)
     for i = 0, list:size() - 1 do
         local z = list:get(i)
         local code = CHD.SPEED_CODE[pre.speed or ""]
+        if slow < 100 then code = CHD.SPEED_CODE.walk end   -- the slow walk nodes copy the shambler
         if code then pcall(function() z:doZombieSpeed(code) end) end
         local hp = CM.num(pre.hp, 1)
         if hp ~= 1 then pcall(function() z:setHealth(z:getHealth() * hp) end) end
@@ -205,132 +203,101 @@ local function spawnOne(pt)
             md.chR = tough and res or nil
             md.chS = slow < 100 and slow or nil
         end)
-        if slow < 100 then
-            if CM.isSP() then
-                pcall(function() z:setMoveDelta(slow / 100) end)
-            else
-                slowWait[#slowWait + 1] = { z = z, f = slow / 100, at = nowMs() }
-            end
+        if CM.isSP() then
+            if slow < 100 then pcall(CHD.setSlow, z, slow / 100, ZombRand(3)) end
+        elseif slow < 100 or tough then
+            markWait[#markWait + 1] = { z = z, f = slow < 100 and slow / 100 or 0, r = tough and res or nil, at = nowMs() }
         end
     end
     return true
 end
 CHDS.spawnOne = spawnOne
 
--- ===================================================================== sluggish zombies
-local function slowForget(id)
-    if slowRef[id] then
-        slowRef[id] = nil
-        slowDel[#slowDel + 1] = id
-    end
+-- ===================================================================== marked zombies
+local function pushMark(list, id, m)
+    local r = m.r or {}
+    list[#list + 1] = id
+    list[#list + 1] = m.f
+    list[#list + 1] = CM.num(r.boom, 0)
+    list[#list + 1] = CM.num(r.melee, 0)
+    list[#list + 1] = CM.num(r.gun, 0)
 end
 
-local function slowStep(t)
-    if t - lastSlowStep < SLOW_STEP_MS then return end
-    lastSlowStep = t
+local function markForget(id)
+    local m = markRef[id]
+    if not m then return end
+    markRef[id] = nil
+    markDel[#markDel + 1] = id
+    if m.f > 0 then pcall(CHD.clearSlow, m.z) end   -- the server copy (the object may be reused)
+end
+
+local function markStep(t)
+    if t - lastMarkStep < MARK_STEP_MS then return end
+    lastMarkStep = t
     -- online ids of new zombies (given up after 30 s: died or went away before it had one)
     local keep = {}
-    for _, w in ipairs(slowWait) do
+    for _, w in ipairs(markWait) do
         local ok, id = pcall(function() return w.z:getOnlineID() end)
-        if ok and id and id >= 0 then
-            slowRef[id] = { z = w.z, f = w.f }
-            slowAdd[#slowAdd + 1] = id
-            slowAdd[#slowAdd + 1] = w.f
+        local okD, dead = pcall(function() return w.z:isDead() end)
+        if okD and dead then
+            -- died before it was sent: nothing to send
+        elseif ok and id and id >= 0 then
+            local m = { z = w.z, f = w.f, r = w.r }
+            markRef[id] = m
+            pushMark(markAdd, id, m)
+            if m.f > 0 then pcall(CHD.setSlow, m.z, m.f, id) end   -- the server copy walks the same
         elseif t - w.at < 30000 then
             keep[#keep + 1] = w
+        else
+            logEvery("noid", "a marked zombie got no online id in 30 s: clients cannot slow or protect it")
         end
     end
-    slowWait = keep
+    markWait = keep
     -- dead, gone or reused: a slice of the known ones each step
-    if not slowKeys or slowAt > #slowKeys then
-        slowKeys = {}
-        for id in pairs(slowRef) do slowKeys[#slowKeys + 1] = id end
-        slowAt = 1
+    if not markKeys or markAt > #markKeys then
+        markKeys = {}
+        for id in pairs(markRef) do markKeys[#markKeys + 1] = id end
+        markAt = 1
     end
-    local stop = math.min(#slowKeys, slowAt + SLOW_CHECKS - 1)
-    for i = slowAt, stop do
-        local id = slowKeys[i]
-        local r = slowRef[id]
-        if r then
+    local stop = math.min(#markKeys, markAt + MARK_CHECKS - 1)
+    for i = markAt, stop do
+        local id = markKeys[i]
+        local m = markRef[id]
+        if m then
             local ok, alive = pcall(function()
-                return not r.z:isDead() and r.z:getCurrentSquare() ~= nil and r.z:getOnlineID() == id
-                    and r.z:getModData().chS ~= nil
+                local md = m.z:getModData()
+                return not m.z:isDead() and m.z:getCurrentSquare() ~= nil and m.z:getOnlineID() == id
+                    and (md.chS ~= nil or md.chR ~= nil)
             end)
-            if not ok or not alive then slowForget(id) end
+            if not ok or not alive then markForget(id) end
         end
     end
-    slowAt = stop + 1
-    if #slowAdd > 0 or #slowDel > 0 then
-        deliverAll("slow", { add = slowAdd, del = slowDel })
-        slowAdd, slowDel = {}, {}
+    markAt = stop + 1
+    if #markAdd > 0 or #markDel > 0 then
+        deliverAll("marks", { add = markAdd, del = markDel })
+        markAdd, markDel = {}, {}
     end
 end
 
-local function slowAll()
+local function markAll()
     local add = {}
-    for id, r in pairs(slowRef) do
-        add[#add + 1] = id
-        add[#add + 1] = r.f
-    end
+    for id, m in pairs(markRef) do pushMark(add, id, m) end
     return { all = true, add = add, del = {} }
 end
 
 -- ===================================================================== resistance
--- what kind of hit a weapon makes
-local function kindOf(w)
-    if not w then return nil end
-    local ok, k = pcall(function()
-        if w:isExplosive() or w:isInstantExplosion() then return "boom" end
-        if w:isRanged() then return "gun" end
-        return "melee"
-    end)
-    if ok then return k end
-    logEvery("kind", "cannot read the weapon kind: " .. tostring(k))
-    return nil
-end
-CHDS.kindOf = kindOf
-
-local function unboost(z)
-    local f = boosted[z]
-    if not f then return end
-    boosted[z] = nil
-    pcall(function()
-        if not z:isDead() then z:setHealth(z:getHealth() * f) end
-    end)
+-- a client owns the zombie: its health comes from that client
+local function ownedByClient(z)
+    local ok, o = pcall(function() return z:getOwner() end)
+    return ok and o ~= nil
 end
 
--- OnHitZombie fires inside the zombie's Hit before any damage (IsoZombie.Hit, then
--- IsoGameCharacter.Hit). An immune kind sets the one-shot avoidDamage flag, which that same Hit
--- reads, clears and returns on: no damage. (Hook.WeaponHitCharacter cannot be used: the game
--- treats any registered hook as "cancel every weapon hit".)
--- A damage cut raises the zombie's health by 1 / (1 - cut) for the hit and puts it back next tick:
--- the hit then takes (1 - cut) of the damage and kills exactly when it would kill the real health.
 local function onHitZombie(zombie, attacker, part, weapon)
     if not zombie or not zombie:hasModData() then return end
     local res = zombie:getModData().chR
     if type(res) ~= "table" then return end
-    local kind = kindOf(weapon)
-    if not kind then return end
-    local cut = CM.num(res[kind], 0)
-    if cut >= 100 then
-        unboost(zombie)
-        zombie:setAvoidDamage(true)
-        avoidList[#avoidList + 1] = zombie
-        return
-    end
-    local f = 1 - cut / 100
-    local cur = boosted[zombie]
-    if cur == f then return end
-    local h = zombie:getHealth()
-    if cur then h = h * cur end       -- back to the real health before a different cut
-    if cut <= 0 then
-        boosted[zombie] = nil
-        zombie:setHealth(h)
-        return
-    end
-    zombie:setHealth(h / f)
-    boosted[zombie] = f
-    boostedList[#boostedList + 1] = zombie
+    local ok, err = CHD.resHit(hits, zombie, res, weapon, not CM.isSP() and ownedByClient(zombie))
+    if not ok then logEvery("kind", "cannot read the weapon kind: " .. tostring(err)) end
 end
 CHDS.onHitZombie = onHitZombie
 
@@ -398,13 +365,7 @@ end
 local lastBeat = 0
 local function tick()
     if not S then return end
-    for i = 1, #boostedList do unboost(boostedList[i]) end
-    if #boostedList > 0 then boostedList = {} end
-    for i = 1, #avoidList do
-        local z = avoidList[i]
-        pcall(function() z:setAvoidDamage(false) end)
-    end
-    if #avoidList > 0 then avoidList = {} end
+    CHD.resTick(hits)
     local t = nowMs()
     if not lastMs then lastMs = t end
     local dt = t - lastMs
@@ -430,7 +391,7 @@ local function tick()
             finished = true
         end
     end
-    slowStep(t)
+    markStep(t)
     if t - lastBeat >= 2000 then
         lastBeat = t
         if CM.any(S.points) then changed = true end
@@ -448,15 +409,15 @@ local function onZombieDead(z)
     md.chP = nil
     local pt = S and S.points[pid]
     if pt then pt.dead = CM.num(pt.dead, 0) + 1 end
-    if md.chS ~= nil then
-        md.chS = nil
+    if md.chS ~= nil or md.chR ~= nil then
         if CM.isSP() then
-            pcall(function() z:setMoveDelta(1) end)
+            if md.chS ~= nil then pcall(CHD.clearSlow, z) end
         else
             local ok, id = pcall(function() return z:getOnlineID() end)
-            if ok and id then slowForget(id) end
+            if ok and id then markForget(id) end
         end
     end
+    md.chS = nil
     md.chR = nil
     local drops = md.chD
     md.chD = nil
@@ -544,9 +505,9 @@ local function onClientCommand(module, command, p, args)
     if rate[rk] and t - rate[rk] < (MIN_GAP[command] or 150) then return end
     rate[rk] = t
 
-    -- every player: the sluggish zombies their client has to slow down
+    -- every player: the marked zombies their client has to slow down and protect
     if command == "hello" then
-        deliver(p, "slow", slowAll())
+        deliver(p, "marks", markAll())
         return
     end
     if not CHDS.isAdmin(p) then return end

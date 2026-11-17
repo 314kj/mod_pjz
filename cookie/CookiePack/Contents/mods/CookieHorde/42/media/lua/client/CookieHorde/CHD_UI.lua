@@ -16,6 +16,12 @@ local LEVEL_COLOR = { low = C.good, mid = ORANGE, high = C.bad }
 
 local function fh() return CMUI.fh(UIFont.Small) end
 
+-- a damage cut: normal / -25% ... / no damage
+local function cutTxt(c)
+    if c <= 0 or c >= 100 then return T("IGUI_CHD_Cut_" .. N(c)) end
+    return T("IGUI_CHD_CutV", CHDC.pct(c))
+end
+
 local function metrics()
     return {
         pad = S(14),
@@ -202,12 +208,12 @@ function W:drawSpawn(x, y, w, h)
             function() d.pid = ids[CM.mod(cur, #ids) + 1] end)
         yy = yy + rh + S(6)
         if pre then
-            local sum = T("IGUI_CHD_Speed_" .. tostring(pre.speed))
             local slow = CHD.slowOf(pre.slow)
-            if slow < 100 then sum = sum .. " " .. T("IGUI_CHD_SlowV", slow) end
+            local sum = T("IGUI_CHD_Speed_" .. (slow < 100 and "walk" or tostring(pre.speed)))
+            if slow < 100 then sum = sum .. " " .. T("IGUI_CHD_SlowV", CHDC.pct(slow)) end
             sum = sum .. " / HP x" .. N(pre.hp)
             local res = CHD.cleanRes(pre.res)
-            if CHD.hasRes(res) then sum = sum .. " / " .. T("IGUI_CHD_ResSum", res.pct) end
+            if CHD.hasRes(res) then sum = sum .. " / " .. T("IGUI_CHD_ResSum", CHDC.pct(res.pct)) end
             sum = sum .. " / " .. T("IGUI_CHD_OutfitsN", #CHDC.arr(pre.outfits)) .. " / " .. T("IGUI_CHD_DropsN", #CHDC.arr(pre.drops))
             CMUI.text(self, CMUI.fit(sum, UIFont.Small, cw - lw), x + lw, yy, C.faint)
             yy = yy + fh() + S(6)
@@ -321,7 +327,7 @@ function W:drawDrops(x, y, w, h, showEntry)
         CMUI.btn(self, x + w - S(10) - rh, yy + S(2), rh, rh - S(4), "x", function() table.remove(list, i) end, "danger")
         local sy = yy + rh + S(4)
         local sw = math.floor((w - S(30)) / 2)
-        CMUI.stepper(self, x + S(6), sy, sw, rh, T("IGUI_CHD_Chance", d.pct),
+        CMUI.stepper(self, x + S(6), sy, sw, rh, T("IGUI_CHD_Chance", CHDC.pct(d.pct)),
             function() d.pct = math.max(1, (d.pct > 5 and d.pct - 5) or (d.pct - 1)) end,
             function() d.pct = math.min(100, (d.pct >= 5 and d.pct + 5) or (d.pct + 1)) end)
         CMUI.stepper(self, x + S(12) + sw, sy, sw, rh, T("IGUI_CHD_Amount", d.n),
@@ -398,13 +404,15 @@ function W:drawPresets(x, y, w, h, vis)
     self:label(T("IGUI_CHD_SpeedL"), rx, yy, rh)
     local si = 1
     for i = 1, #CHD.SPEEDS do if CHD.SPEEDS[i] == e.speed then si = i end end
-    CMUI.cycle(self, rx + fl, yy, fw, rh, T("IGUI_CHD_Speed_" .. e.speed),
+    local slowOn = e.slow < 100     -- sluggish zombies always shamble: the speed setting waits
+    CMUI.cycle(self, rx + fl, yy, fw, rh, T("IGUI_CHD_Speed_" .. (slowOn and "walk" or e.speed)),
         function() e.speed = CHD.SPEEDS[CM.mod(si - 2, #CHD.SPEEDS) + 1] end,
-        function() e.speed = CHD.SPEEDS[CM.mod(si, #CHD.SPEEDS) + 1] end)
+        function() e.speed = CHD.SPEEDS[CM.mod(si, #CHD.SPEEDS) + 1] end,
+        slowOn and { color = C.dim, tip = T("IGUI_CHD_SpeedSlowTip") } or nil)
     self:label(T("IGUI_CHD_SlowL"), rx2, yy, rh)
     local wi = 1
     for i = 1, #CHD.SLOW_STEPS do if CHD.SLOW_STEPS[i] == e.slow then wi = i end end
-    local slowTxt = e.slow >= 100 and T("IGUI_CHD_SlowNone") or T("IGUI_CHD_SlowV", e.slow)
+    local slowTxt = e.slow >= 100 and T("IGUI_CHD_SlowNone") or T("IGUI_CHD_SlowV", CHDC.pct(e.slow))
     CMUI.cycle(self, rx2 + fl, yy, fw, rh, slowTxt,
         function() e.slow = CHD.SLOW_STEPS[CM.mod(wi - 2, #CHD.SLOW_STEPS) + 1] end,
         function() e.slow = CHD.SLOW_STEPS[CM.mod(wi, #CHD.SLOW_STEPS) + 1] end, { tip = T("IGUI_CHD_SlowTip") })
@@ -415,7 +423,7 @@ function W:drawPresets(x, y, w, h, vis)
         function() e.hp = CHD.hpOf(e.hp - CHD.HP_STEP) end,
         function() e.hp = CHD.hpOf(e.hp + CHD.HP_STEP) end, { tip = T("IGUI_CHD_HPTip") })
     self:label(T("IGUI_CHD_ResL"), rx2, yy, rh)
-    CMUI.stepper(self, rx2 + fl, yy, fw, rh, T("IGUI_CHD_ResPct", e.res.pct),
+    CMUI.stepper(self, rx2 + fl, yy, fw, rh, T("IGUI_CHD_ResPct", CHDC.pct(e.res.pct)),
         function() e.res.pct = math.max(0, e.res.pct - 10) end,
         function() e.res.pct = math.min(100, e.res.pct + 10) end, { tip = T("IGUI_CHD_ResTip") })
     yy = yy + rh + S(6)
@@ -423,7 +431,7 @@ function W:drawPresets(x, y, w, h, vis)
     local kw = math.floor((rw - S(12)) / 3)
     for i, k in ipairs(CHD.RES_KINDS) do
         local kx = rx + (i - 1) * (kw + S(6))
-        local txt = T("IGUI_CHD_Kind_" .. k) .. ": " .. T("IGUI_CHD_Cut_" .. N(e.res[k]))
+        local txt = T("IGUI_CHD_Kind_" .. k) .. ": " .. cutTxt(e.res[k])
         local col = (e.res.pct > 0 and e.res[k] > 0) and C.gold or C.dim
         CMUI.cycle(self, kx, yy, kw, rh, txt,
             function() self:stepCut(k, -1) end,
