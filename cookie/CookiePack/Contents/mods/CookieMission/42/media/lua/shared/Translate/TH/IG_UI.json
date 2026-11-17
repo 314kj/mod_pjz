@@ -7,7 +7,7 @@
   "IGUI_CM_BanCard": "แบนตึกนี้ + สุ่มใหม่",
   "IGUI_CM_BanHere": "แบนตึกที่ยืนอยู่",
   "IGUI_CM_Bans": "ตึกที่แบน (%1)",
-  "IGUI_CM_Chance": "%1 · โอกาส %2%",
+  "IGUI_CM_Chance": "%1 · โอกาส %2",
   "IGUI_CM_Claimed": "รับรางวัลแล้ววันนี้",
   "IGUI_CM_ClaimedShort": "รับของใบนี้แล้ววันนี้ ไปช่วยได้",
   "IGUI_CM_Close": "ปิด",

@@ -33,7 +33,7 @@ local function rewardLines(tier)
             local name = T("IGUI_CM_Pool_" .. d.p)
             local s
             if c >= 100 then s = name .. " x" .. tostring(d.r)
-            else s = T("IGUI_CM_Chance", name, c) end
+            else s = T("IGUI_CM_Chance", name, tostring(c) .. "%") end
             if d.alt and c < 100 then s = s .. " " .. T("IGUI_CM_Else", T("IGUI_CM_Pool_" .. d.alt)) end
             out[#out + 1] = s
         end
