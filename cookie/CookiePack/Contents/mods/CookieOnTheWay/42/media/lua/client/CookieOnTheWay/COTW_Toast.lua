@@ -1,9 +1,9 @@
--- Cookie On the Way : part damage toasts, bottom right, whenever the player drives a car (autopilot,
--- navigator or neither). Every 250 ms the driven car's parts are read; a part whose condition went
--- down gets a toast: its name, what is left (green / amber / red), a down arrow and how much it
--- lost. Shown 3 s, then it fades out. More hits on the same part while its toast is up update it.
--- Getting into a car (or another one) only takes a first reading, so old damage never shows.
--- Click-through: the toasts never catch the mouse.
+-- Cookie On the Way : part damage toasts, one small row each, centred just above the car's dashboard,
+-- whenever the player drives a car (autopilot, navigator or neither). Every 250 ms the driven car's
+-- parts are read; a part whose condition went down gets a toast: its name, what is left (green /
+-- amber / red), a down arrow and how much it lost. Shown 3 s, then it fades out. More hits on the
+-- same part while its toast is up update it. Getting into a car (or another one) only takes a first
+-- reading, so old damage never shows. Click-through: the toasts never catch the mouse.
 
 require "CookieOnTheWay/COTW_Client"
 require "CookieOnTheWay/COTW_UI"
@@ -13,10 +13,12 @@ COTWToast = ISPanel:derive("COTWToast")
 
 local U = COTW.UI
 local K = U.C
-local MIN_W, MAX_W = 230, 340
-local H = math.max(52, 8 + U.FONT_S + U.FONT_M + 12)
-local GAP = 6
-local RIGHT, BOTTOM = 24, 110      -- px from the screen's right / bottom edge
+local MIN_W, MAX_W = 150, 260
+local H = math.max(24, U.FONT_S + 10)
+local GAP = 3
+local ABOVE_DASH = 6               -- px between the stack and the top of the dashboard
+local BOTTOM = 190                 -- px from the screen's bottom edge when there is no dashboard
+local DIM = 0.75                   -- the whole toast is drawn this see-through
 local IN_MS, SHOW_MS, FADE_MS = 150, 3000, 600
 local MAX = 4
 local POLL_MS = 250
@@ -73,7 +75,7 @@ local function poll(now)
 end
 
 -- ------------------------------------------------------------------------------
--- panel: as tall as the stack, newest at the bottom, right-aligned
+-- panel: as tall as the stack, newest at the bottom, each row centred
 -- ------------------------------------------------------------------------------
 function COTWToast:new()
     local o = ISPanel.new(self, 0, 0, MAX_W, H)
@@ -87,38 +89,62 @@ function COTWToast:instantiate()
     pcall(function() self.javaObject:setConsumeMouseEvents(false) end)
 end
 
+-- one row: badge, part name, what is left, down arrow, how much it lost; a thin condition bar under it
 function COTWToast:drawToast(e, y, now)
     local age = now - e.t
     local a = 1
     if age < IN_MS then a = age / IN_MS elseif age > SHOW_MS then a = 1 - (age - SHOW_MS) / FADE_MS end
     if a <= 0 then return end
-    local w = math.min(MAX_W, math.max(MIN_W, 58 + U.textW(e.name) + 16))
-    -- slides in from the right
-    local x = self.width - w + (age < IN_MS and (1 - age / IN_MS) * 16 or 0)
-    local col = levelColor(e.cond)
-    U.chamfer(self, x + 3, y + 5, w, H, 10, K.black, 0.4 * a)
-    U.chamfer(self, x, y, w, H, 10, K.panel, 0.94 * a)
-    U.rect(self, x + 2, y + 10, 3, H - 20, col, a)
-    U.chamferLine(self, x, y, w, H, 10, col, 0.6 * a)
-    -- badge
-    local bs = 36
-    local by = y + (H - bs) / 2
-    U.hex(self, x + 12, by, bs, bs, col, 0.18 * a)
-    U.hex(self, x + 14, by + 2, bs - 4, bs - 4, col, a)
-    U.icon(self, "car", x + 12 + (bs - 20) / 2, by + (bs - 20) / 2, 20, K.dark, a)
-    -- name, then what is left + arrow + how much it lost
-    local tx = x + 58
-    U.text(self, e.name, tx, y + 7, K.ink, UIFont.Small, a)
-    local py = y + 7 + U.FONT_S
+    a = a * DIM
     local pct = tostring(math.floor(e.cond + 0.5)) .. "%"
-    U.text(self, pct, tx, py, col, UIFont.Medium, a)
-    local ax = tx + U.textW(pct, UIFont.Medium) + 6
-    U.icon(self, "down", ax, py + (U.FONT_M - 16) / 2, 16, K.red, a)
-    U.text(self, "-" .. tostring(math.floor(e.lost + 0.5)), ax + 18, py + (U.FONT_M - U.FONT_S) / 2, K.mute, UIFont.Small, a)
+    local lost = "-" .. tostring(math.floor(e.lost + 0.5))
+    local bs = H - 8
+    local tx = 6 + bs + 6
+    local rightW = U.textW(pct) + 4 + 12 + 2 + U.textW(lost)
+    local w = math.min(MAX_W, math.max(MIN_W, tx + U.textW(e.name) + 10 + rightW + 8))
+    -- long names from car mods: cut with "..." so they never run into the numbers
+    local room = w - tx - 10 - rightW - 8
+    if not e.short or e.shortFor ~= room then
+        local s = e.name
+        if U.textW(s) > room then
+            while #s > 1 and U.textW(s .. "...") > room do s = string.sub(s, 1, -2) end
+            s = s .. "..."
+        end
+        e.short, e.shortFor = s, room
+    end
+    -- rises in from below
+    local x = (self.width - w) / 2
+    y = y + (age < IN_MS and (1 - age / IN_MS) * 8 or 0)
+    local col = levelColor(e.cond)
+    U.chamfer(self, x, y, w, H, 6, K.panel, 0.8 * a)
+    U.rect(self, x + 1, y + 5, 2, H - 10, col, a)
+    U.chamferLine(self, x, y, w, H, 6, col, 0.45 * a)
+    -- badge
+    local by = y + (H - bs) / 2
+    U.hex(self, x + 6, by, bs, bs, col, a)
+    U.icon(self, "car", x + 6 + (bs - 12) / 2, by + (bs - 12) / 2, 12, K.dark, a)
+    -- name on the left, what is left + arrow + how much it lost on the right
+    local ty = y + (H - U.FONT_S) / 2 - 1
+    local rx = x + w - 8 - rightW
+    U.text(self, e.short, x + tx, ty, K.ink, UIFont.Small, a)
+    U.text(self, pct, rx, ty, col, UIFont.Small, a)
+    local ax = rx + U.textW(pct) + 4
+    U.icon(self, "down", ax, y + (H - 12) / 2, 12, K.red, a)
+    U.text(self, lost, ax + 14, ty, K.mute, UIFont.Small, a)
     -- condition bar
-    local bx, bw = tx, w - 58 - 14
-    U.rect(self, bx, y + H - 8, bw, 3, K.white, 0.08 * a)
-    U.rect(self, bx, y + H - 8, bw * math.max(0, math.min(100, e.cond)) / 100, 3, col, a)
+    local bx, bw = x + tx, w - tx - 8
+    U.rect(self, bx, y + H - 4, bw, 2, K.white, 0.08 * a)
+    U.rect(self, bx, y + H - 4, bw * math.max(0, math.min(100, e.cond)) / 100, 2, col, a)
+end
+
+-- centre x and top edge of the vanilla dashboard while it shows a car; nil without one
+local function dashAnchor()
+    if type(getPlayerVehicleDashboard) ~= "function" then return nil end
+    local ok, d = pcall(getPlayerVehicleDashboard, 0)
+    if not ok or not d or not d.vehicle then return nil end
+    local okP, x, y, w = pcall(function() return d:getX(), d:getY(), d:getWidth() end)
+    if not okP or not x or y <= 0 then return nil end
+    return x + w / 2, y
 end
 
 function COTWToast:prerender()
@@ -128,8 +154,10 @@ function COTWToast:prerender()
     end
     local h = math.max(H, #list * (H + GAP) - GAP)
     if self.height ~= h then self:setHeight(h) end
-    self:setX(getCore():getScreenWidth() - self.width - RIGHT)
-    self:setY(getCore():getScreenHeight() - h - BOTTOM)
+    local cx, top = dashAnchor()
+    if not cx then cx, top = getCore():getScreenWidth() / 2, getCore():getScreenHeight() - BOTTOM end
+    self:setX(cx - self.width / 2)
+    self:setY(top - ABOVE_DASH - h)
     for i, e in ipairs(list) do self:drawToast(e, (i - 1) * (H + GAP), now) end
 end
 
