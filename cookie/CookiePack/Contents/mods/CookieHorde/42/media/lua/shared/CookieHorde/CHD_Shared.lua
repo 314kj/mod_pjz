@@ -10,8 +10,8 @@ require "CM_Shared"
 
 CHD = CHD or {}
 CHD.MOD = "CookieHorde"
-CHD.VERSION = "1.1.0"
-CHD.BUILD = "chd-1.1.0"
+CHD.VERSION = "1.1.1"
+CHD.BUILD = "chd-1.1.1"
 
 -- limits per spawn spot
 CHD.MAX_PER_MIN = 100

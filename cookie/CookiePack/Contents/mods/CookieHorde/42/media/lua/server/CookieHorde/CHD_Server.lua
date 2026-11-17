@@ -234,14 +234,15 @@ end
 local function markStep(t)
     if t - lastMarkStep < MARK_STEP_MS then return end
     lastMarkStep = t
-    -- online ids of new zombies (given up after 30 s: died or went away before it had one)
+    -- online ids of new zombies (given up after 30 s: died or went away before it had one); ids are
+    -- shorts that wrap below zero, only -1 means "none yet"
     local keep = {}
     for _, w in ipairs(markWait) do
         local ok, id = pcall(function() return w.z:getOnlineID() end)
         local okD, dead = pcall(function() return w.z:isDead() end)
         if okD and dead then
             -- died before it was sent: nothing to send
-        elseif ok and id and id >= 0 then
+        elseif ok and id and id ~= -1 then
             local m = { z = w.z, f = w.f, r = w.r }
             markRef[id] = m
             pushMark(markAdd, id, m)
