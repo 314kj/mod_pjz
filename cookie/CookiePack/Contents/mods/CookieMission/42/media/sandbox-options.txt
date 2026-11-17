@@ -78,6 +78,18 @@ option CookieMission.CleanupMinutes
     page = CookieMission, translation = CookieMission_CleanupMinutes,
 }
 
+option CookieMission.CorpseEvery
+{
+    type = integer, min = 0, max = 100000, default = 150,
+    page = CookieMission, translation = CookieMission_CorpseEvery,
+}
+
+option CookieMission.CorpseMinutes
+{
+    type = integer, min = 1, max = 120, default = 10,
+    page = CookieMission, translation = CookieMission_CorpseMinutes,
+}
+
 option CookieMission.PinChance
 {
     type = integer, min = 0, max = 100, default = 40,
@@ -172,6 +184,12 @@ option CookieMission.GangOutfits
 {
     type = string, default = PrivateMilitia;Biker;Punk;Survivalist;ArmyCamoGreen,
     page = CookieMission, translation = CookieMission_GangOutfits,
+}
+
+option CookieMission.GangExtra
+{
+    type = integer, min = 0, max = 200, default = 40,
+    page = CookieMission, translation = CookieMission_GangExtra,
 }
 
 option CookieMission.ExcludeTowns

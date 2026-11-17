@@ -115,7 +115,7 @@ local TOAST_COLOR = { farwarn = "bad", left = "bad", busy = "bad", vehicle = "ba
     dodbusy = "bad", dodfew = "bad", dodnopoint = "bad", dodnotready = "bad", dodnowarn = "bad", dodgone = "bad",
     dodvote = "good", dodexpire = "bad", dodsaved = "good",
     dodnoloc = "bad", dodlocbusy = "bad", dodwait = "bad", doddown = "bad", dodyoudown = "bad", dodinbound = "bad",
-    dodc1 = "good", dodsafe = "good", dodsp = "good" }
+    dodc1 = "good", dodsafe = "good", dodsp = "good", ccStart = "bad", ccKeep = "good", ccDone = "good" }
 
 -- ===================================================================== warps
 -- wp = { x, y, z, why, stage = "wait"|"go"|"settle", t0, tries }
@@ -403,6 +403,7 @@ CMC.onServerCommand = onServerCommand
 
 -- ===================================================================== kill fallback
 local sentKill = {}
+local sentIds = {}         -- online ids this run already reported
 local function onZombieDead(z)
     -- a Die or Die soldier my hit killed: tell the server (it counts it only if it found no killer itself)
     local okU, uid = pcall(function() return z:getModData().ProjectALifeUID end)
@@ -424,9 +425,12 @@ local function onZombieDead(z)
     if not ok or not CM.inRect(run.zone, x, y, 20) then return end
     local okA, a = pcall(function() return z:getAttackedBy() end)
     if not okA or a ~= p then return end
+    -- ids wrap to negative numbers: only -1 means "none"; ids come back around, so forget them each run
     local okI, id = pcall(function() return z:getOnlineID() end)
-    if not okI or id == nil or id < 0 or sentKill[id] then return end
-    sentKill[id] = true
+    if not okI or id == nil or id == -1 then return end
+    if sentIds.run ~= run.id then sentIds = { run = run.id } end
+    if sentIds[id] then return end
+    sentIds[id] = true
     CMC.send("kill", { id = id, x = math.floor(x), y = math.floor(y) })
 end
 Events.OnZombieDead.Add(function(z) pcall(onZombieDead, z) end)

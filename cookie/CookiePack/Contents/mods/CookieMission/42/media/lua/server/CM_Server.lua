@@ -916,18 +916,32 @@ local function farFromMembers(run, x, y, minD, arrivalMin)
     return true
 end
 
+local SPAWN_RING = 10      -- spawns: inside the building or up to this many tiles around it
+local STRAY_SITE = 30      -- a tracked zombie this far from the building ...
+local STRAY_NEAR = 25      -- ... with no player this close is taken away and spawned again
+
+local function nearAnyPlayer(x, y, d)
+    for _, p in pairs(online) do
+        local px, py = pos(p)
+        local dx, dy = px - x, py - y
+        if dx * dx + dy * dy < d * d then return true end
+    end
+    return false
+end
+
 local function pickSpawn(card, run, inside)
     local site = card.site
     local c = cell()
     if not c then return nil end
     local graceOn = now() - (run.lastJoin or run.t0) < CM.sv("Grace")
-    for _ = 1, 10 do
+    for _ = 1, 20 do
         local x, y
         if inside then
             x = site.x1 + rand(site.x2 - site.x1 + 1)
             y = site.y1 + rand(site.y2 - site.y1 + 1)
         else
-            local d = 4 + rand(13)
+            -- at most SPAWN_RING tiles out, so the horde reaches the players fast
+            local d = 1 + rand(SPAWN_RING)
             local side = rand(4)
             if side == 0 then x = site.x1 - d; y = site.y1 - d + rand(site.y2 - site.y1 + 1 + d * 2)
             elseif side == 1 then x = site.x2 + d; y = site.y1 - d + rand(site.y2 - site.y1 + 1 + d * 2)
@@ -946,6 +960,7 @@ local function pickSpawn(card, run, inside)
     end
     return nil
 end
+CMS.pickSpawn = pickSpawn
 
 local function gangOutfit()
     local list = {}
@@ -956,9 +971,11 @@ local function gangOutfit()
     return list[rand(#list) + 1]
 end
 
+-- online ids are shorts handed out in a loop that starts at 32767 and wraps to negative numbers:
+-- every value but -1 is a real id
 local function zid(z)
     local ok, id = pcall(function() return z:getOnlineID() end)
-    if ok and id ~= nil and id >= 0 then return id end
+    if ok and id ~= nil and id ~= -1 then return id end
     return nil
 end
 
@@ -1065,14 +1082,25 @@ local function pruneZombies(card, run)
     local aliveN, gangN = 0, 0
     for i = 1, #r.zs do
         local z = r.zs[i]
-        local ok, dead, sq = pcall(function() return z:isDead(), z:getCurrentSquare() end)
+        local ok, dead, sq, x, y = pcall(function() return z:isDead(), z:getCurrentSquare(), z:getX(), z:getY() end)
         if ok and dead then
             countKill(card, run, z, nil, false)
             r.objGang[z] = nil
+        elseif ok and sq ~= nil and CM.rectDist(card.site, x, y) > STRAY_SITE and not nearAnyPlayer(x, y, STRAY_NEAR) then
+            -- wandered off where nobody fights it: take it away, the spawner sends a fresh one
+            removeZombie(z)
+            r.objGang[z] = nil
+            r.strays = (r.strays or 0) + 1
+            stat("strays")
         elseif ok and sq ~= nil then
             keep[#keep + 1] = z
             aliveN = aliveN + 1
-            if r.objGang[z] then gangN = gangN + 1 end
+            if r.objGang[z] then
+                gangN = gangN + 1
+                -- a client reports a kill by online id: make sure the gang's ids are known
+                local id = zid(z)
+                if id then r.gang[id] = true end
+            end
         else
             r.objGang[z] = nil
         end
@@ -1081,6 +1109,7 @@ local function pruneZombies(card, run)
     r.alive = aliveN
     r.gangAlive = gangN
 end
+CMS.pruneZombies = pruneZombies
 
 local function spawnTick(card, run, dt)
     local tier = card.tier
@@ -1095,50 +1124,70 @@ local function spawnTick(card, run, dt)
     if card.type == "survive" then
         perMin = perMin * (0.6 + 0.9 * math.min(1, run.held / math.max(1, card.goal)))
     end
-    -- gang: the gang itself, plus a thinner horde around it
+    local made = 0
+    local hordeCap = maxAlive
+    -- gang: the gang itself (more than the goal, for the ones that get lost), plus a thinner horde around it
     if card.type == "gang" then
-        local need = card.goal - run.gang - r.gangAlive
-        r.gacc = math.min((r.gacc or 0) + perMin * 0.7 * dt / 60, 8)
+        local extra = CM.int(CM.sv("GangExtra"), 40, 0, 200)
+        local need = math.ceil((card.goal - run.gang) * (100 + extra) / 100) - r.gangAlive
+        r.gacc = math.min((r.gacc or 0) + perMin * dt / 60, 8)
         local n = 0
         while need > 0 and r.gacc >= 1 and r.alive < maxAlive and n < 6 do
             if not spawnOne(card, run, true) then break end
             r.gacc = r.gacc - 1; r.alive = r.alive + 1; r.gangAlive = r.gangAlive + 1
             need = need - 1; n = n + 1
         end
+        made = made + n
         perMin = perMin * 0.35
+        -- the horde never takes the gang's room
+        hordeCap = math.floor(maxAlive * 0.35 + 0.5)
     end
     local capTotal = 2500
     if card.type == "kill" then
         -- stop feeding once enough are on the map to finish
-        if run.kills + r.alive >= math.floor(card.goal * 1.15) + 5 then return end
+        if run.kills + r.alive >= math.floor(card.goal * 1.15) + 5 then return made end
         capTotal = card.goal * 2 + 20
     end
-    if run.spawned >= capTotal then return end
+    -- zombies taken away as strays do not use up the cap
+    if run.spawned - (r.strays or 0) >= capTotal then return made end
     r.acc = math.min((r.acc or 0) + perMin * dt / 60, 8)
     local n = 0
-    while r.acc >= 1 and r.alive < maxAlive and n < 6 do
+    while r.acc >= 1 and r.alive < maxAlive and r.alive - (r.gangAlive or 0) < hordeCap and n < 6 do
         if not spawnOne(card, run, false) then break end
         r.acc = r.acc - 1; r.alive = r.alive + 1; n = n + 1
     end
+    return made + n
 end
+CMS.spawnTick = spawnTick
 
--- noise at the building every 25 s: the horde comes to the players
-local function pulseTick(card, run)
-    local r = rt(run)
-    local t = now()
-    if t - (r.pulse or 0) < 25 then return end
-    r.pulse = t
-    local site = card.site
-    local cx, cy = math.floor((site.x1 + site.x2) / 2), math.floor((site.y1 + site.y2) / 2)
-    local rad = math.min(80, math.max(35, math.floor(math.sqrt(site.area)) + 25))
-    pcall(function() getWorldSoundManager():addSound(nil, cx, cy, 0, rad, rad) end)
+-- a noise at the building that the horde walks to (server + the first player in, who may own the zombies)
+local function soundAt(run, x, y, rad)
+    pcall(function() getWorldSoundManager():addSound(nil, x, y, 0, rad, rad) end)
     for _, k in ipairs(CM.sortedKeys(run.members)) do
         local m = run.members[k]
         local p = online[k]
         if m.st == "in" and p then
-            deliver(p, "pulse", { x = cx, y = cy, z = 0, r = rad })
+            deliver(p, "pulse", { x = x, y = y, z = 0, r = rad })
             break
         end
+    end
+end
+
+-- noise at the building every 25 s: the horde comes to the players; right after a spawn
+-- (at most every 5 s) a shorter call reaches the new ones in the spawn ring
+local function pulseTick(card, run, made)
+    local r = rt(run)
+    local t = now()
+    local site = card.site
+    local cx, cy = math.floor((site.x1 + site.x2) / 2), math.floor((site.y1 + site.y2) / 2)
+    if t - (r.pulse or 0) >= 25 then
+        r.pulse = t
+        r.call = t
+        soundAt(run, cx, cy, math.min(80, math.max(35, math.floor(math.sqrt(site.area)) + 25)))
+    elseif (made or 0) > 0 and t - (r.call or 0) >= 5 then
+        r.call = t
+        local hx, hy = (site.x2 - site.x1) / 2, (site.y2 - site.y1) / 2
+        soundAt(run, cx, cy, math.min(80, math.floor(math.sqrt(hx * hx + hy * hy)) + SPAWN_RING + 6))
     end
 end
 
@@ -1352,6 +1401,173 @@ local function progress(card, run)
 end
 CMS.progress = progress
 
+-- ===================================================================== body clearing (the team can vote to keep them)
+-- Every CorpseEvery kills of a run, a CorpseMinutes countdown starts; at zero every zombie body around the building
+-- is removed. Half of the players in the run (rounded up: 2 of 3) pressing "keep" stops it. The next one starts
+-- at the next multiple of CorpseEvery. Player, animal and A-Life bodies are never touched.
+local CC_MARGIN = 20       -- tiles around the building on the ground floor (the building only upstairs)
+
+local function ccNeed(nIn) return math.max(1, math.ceil(nIn / 2)) end
+
+local function ccVotes(run)
+    local n = 0
+    for k in pairs(run.cc and run.cc.votes or {}) do
+        local m = run.members[k]
+        if m and m.st == "in" then n = n + 1 end
+    end
+    return n
+end
+CMS.ccNeed, CMS.ccVotes = ccNeed, ccVotes
+
+-- A player who turned and was killed again leaves a body with isPlayer() false and all their gear on it.
+-- The body copies the zombie's modData when it is made, so turned players are flagged while they walk (every
+-- 10 s near a live run) and when they die; the square of the death is kept too, in case the flag missed.
+local keptSq = {}          -- "x,y,z" -> time a turned player died there (memory only)
+local lastTurnScan = 0
+
+local function sqKey(x, y, z) return math.floor(x) .. "," .. math.floor(y) .. "," .. math.floor(z or 0) end
+
+local function markTurned(z)
+    local ok, rp = pcall(function() return z:isReanimatedPlayer() end)
+    if not ok or rp ~= true then return false end
+    pcall(function() z:getModData().cmKeepBody = true end)
+    return true
+end
+
+local function keepDeathSquare(z)
+    local ok, x, y, zz = pcall(function() return z:getX(), z:getY(), z:getZ() end)
+    if not ok then return end
+    local t = now()
+    for k, at in pairs(keptSq) do
+        if t - at > 6 * 3600 then keptSq[k] = nil end
+    end
+    keptSq[sqKey(x, y, zz)] = t
+end
+
+-- flag turned players near the live runs (loaded zombies only)
+local function turnScan()
+    local t = now()
+    if t - lastTurnScan < 10 then return end
+    lastTurnScan = t
+    local c = cell()
+    local list = c and CM.call(c, "getZombieList")
+    local size = list and CM.call(list, "size") or 0
+    if size == 0 then return end
+    local zones = {}
+    for s = 1, 3 do
+        local card = S.cards[s]
+        if card and card.run and card.run.phase == "live" and card.site then zones[#zones + 1] = zoneOf(card.site, CC_MARGIN + 10) end
+    end
+    if #zones == 0 then return end
+    for i = 0, size - 1 do
+        local z = list:get(i)
+        local ok, x, y = pcall(function() return z:getX(), z:getY() end)
+        if ok then
+            for _, zn in ipairs(zones) do
+                if inZone(zn, x, y) then markTurned(z); break end
+            end
+        end
+    end
+end
+CMS.turnScan = turnScan
+
+local function keptBody(b, x, y, z)
+    local ok, zed, pl, an = pcall(function() return b:isZombie(), b:isPlayer(), b:isAnimal() end)
+    if not ok or zed ~= true or pl == true or an == true then return true end
+    local okM, keep = pcall(function()
+        local md = b:getModData()
+        return md.cmKeepBody == true or md.ProjectALifeOwned == true or md.ProjectALifeActor == true
+            or type(md.ProjectALifeUID) == "string"
+    end)
+    if not okM or keep == true then return true end
+    -- a body can land a tile away from where the zombie died
+    for dx = -1, 1 do
+        for dy = -1, 1 do
+            if keptSq[sqKey(x + dx, y + dy, z)] then return true end
+        end
+    end
+    return false
+end
+
+-- remove zombie bodies around the building (loaded squares only); returns how many
+local function clearBodies(site)
+    local c = cell()
+    if not c then return 0 end
+    local n = 0
+    for z = 0, math.min(3, (site.floors or 1) - 1) do
+        local zn = z == 0 and zoneOf(site, CC_MARGIN) or site
+        for x = zn.x1, zn.x2 do
+            for y = zn.y1, zn.y2 do
+                local sq = c:getGridSquare(x, y, z)
+                local list = sq and CM.call(sq, "getDeadBodys")
+                local size = list and (CM.call(list, "size") or 0) or 0
+                if size > 0 then
+                    local pick = {}
+                    for i = 0, size - 1 do
+                        local b = list:get(i)
+                        if b and not keptBody(b, x, y, z) then pick[#pick + 1] = b end
+                    end
+                    for _, b in ipairs(pick) do
+                        if pcall(function() sq:removeCorpse(b, false) end) then n = n + 1 end
+                    end
+                end
+            end
+        end
+    end
+    return n
+end
+CMS.clearBodies = clearBodies
+
+local function ccToast(run, kind, a)
+    for k, m in pairs(run.members) do
+        if m.st == "in" then toast(k, kind, a) end
+    end
+end
+
+local function ccTick(card, run)
+    local every = CM.int(CM.sv("CorpseEvery"), 150, 0, 100000)
+    if every <= 0 then
+        if run.cc then run.cc = nil; markRun(run) end
+        return
+    end
+    pcall(turnScan)
+    -- the next countdown waits for the next multiple of CorpseEvery after this one ends
+    local function nextAt() run.ccAt = (math.floor(run.kills / every) + 1) * every end
+    if not run.cc then
+        if run.kills < (run.ccAt or every) then return end
+        local mins = CM.int(CM.sv("CorpseMinutes"), 10, 1, 120)
+        run.cc = { till = now() + mins * 60, votes = {} }
+        nextAt()
+        ccToast(run, "ccStart", { run.kills, mins })
+        logLine("run " .. run.id .. " body clearing in " .. mins .. " min (" .. run.kills .. " kills)")
+        markRun(run)
+        return
+    end
+    local nIn = memberCount(run, true)
+    if nIn > 0 and ccVotes(run) >= ccNeed(nIn) then
+        run.cc = nil
+        nextAt()
+        ccToast(run, "ccKeep", {})
+        logLine("run " .. run.id .. " body clearing stopped by vote")
+        markRun(run)
+        return
+    end
+    if now() >= run.cc.till then
+        run.cc = nil
+        nextAt()
+        local ok, n = pcall(clearBodies, card.site)
+        if not ok then
+            CM.log("body clearing failed: " .. tostring(n))
+            n = 0
+        end
+        stat("bodies", n)
+        ccToast(run, "ccDone", { n })
+        logLine("run " .. run.id .. " cleared " .. n .. " bodies")
+        markRun(run)
+    end
+end
+CMS.ccTick = ccTick
+
 local function memberTick(card, run, dt)
     local site = card.site
     local leaveD = CM.sv("LeaveDistance")
@@ -1428,11 +1644,12 @@ local function runTick(card, run, dt)
         end
     end
     if anyIn then
-        spawnTick(card, run, dt)
-        pulseTick(card, run)
+        local made = spawnTick(card, run, dt)
+        pulseTick(card, run, made)
     else
         pruneZombies(card, run)
     end
+    ccTick(card, run)
     local cur, goal = progress(card, run)
     if cur >= goal then
         finishRun(card, run, "ok")
@@ -1737,6 +1954,10 @@ function CMS.meSnapshot(k)
             claimed = S.claims[k] and S.claims[k][card.id] == true or false,
             alive = RT[run.id] and RT[run.id].alive or 0,
         }
+        if run.cc and run.phase == "live" then
+            me.run.cc = { left = math.max(0, run.cc.till - now()), v = ccVotes(run), need = ccNeed(memberCount(run, true)),
+                mine = run.cc.votes[k] == true }
+        end
         if card.type == "find" then
             local cs = {}
             for _, c in ipairs(run.caches) do
@@ -1978,18 +2199,30 @@ function H.kill(p, args)
     local k = keyOf(p)
     local card, run, m = runOf(k)
     if not card or run.phase ~= "live" or m.st ~= "in" then return end
+    -- -1 is the only id that is not one (ids wrap to negative numbers)
     local id = CM.int(args.id, -1)
-    if not id or id < 0 then return end
+    if not id or id == -1 then return end
     local x, y = CM.num(args.x, 0), CM.num(args.y, 0)
-    -- the horde is spawned up to 16 tiles outside the building
+    -- the horde is spawned up to 10 tiles outside the building and may chase a bit further
     if not CM.inRect(card.site, x, y, 20) then return end
     local px, py = pos(p)
     -- guns reach far: only reject reports clearly from somewhere else
     if math.abs(px - x) > 90 or math.abs(py - y) > 90 then return end
     local m2 = run.members[k]
     m2.ckills = (m2.ckills or 0) + 1
-    if m2.ckills > 400 then return end
+    local goalKills = (card.type == "kill" or card.type == "gang") and (card.goal or 0) or 0
+    if m2.ckills > math.max(400, goalKills * 2) then return end
     countKill(card, run, nil, k, true, id)
+end
+
+-- a player in the run votes to keep the bodies (pressed again: takes the vote back)
+function H.ccVote(p, args)
+    local k = keyOf(p)
+    local card, run, m = runOf(k)
+    if not card or run.phase ~= "live" or not run.cc or m.st ~= "in" then return end
+    if run.cc.votes[k] then run.cc.votes[k] = nil else run.cc.votes[k] = true end
+    markRun(run)
+    ccTick(card, run)
 end
 
 -- a supply cache is in this player's inventory
@@ -2569,6 +2802,8 @@ end) end
 
 local function onZombieDead(zombie)
     if not S or not zombie then return end
+    -- before the body is made (it copies modData): a turned player's body is never cleared
+    if markTurned(zombie) then keepDeathSquare(zombie) end
     local c0 = hitCache[zombie]
     hitCache[zombie] = nil
     local okP, x, y = pcall(function() return zombie:getX(), zombie:getY() end)

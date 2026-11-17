@@ -7,8 +7,8 @@
 
 CM = CM or {}
 CM.MOD = "CookieMission"
-CM.VERSION = "1.4.0"
-CM.BUILD = "cm-261114-dod3"
+CM.VERSION = "1.5.0"
+CM.BUILD = "cm-261117-cc"
 CM.CACHE_TYPE = "CookieMission.SupplyCache"
 
 -- ===================================================================== env
@@ -204,7 +204,8 @@ CM.DEFAULTS = {
     TypeWire = true, TypeSafe = true, TypePipe = true, TypeBoard = true, TypeTrap = true,
     TypeMole = true, TypeRush = true, TypeDance = true,
     EasyTasks = 3, MediumTasks = 5, HardTasks = 7, GameTime = 100, FailZombies = 4,
-    GangOutfits = "PrivateMilitia;Biker;Punk;Survivalist;ArmyCamoGreen",
+    GangOutfits = "PrivateMilitia;Biker;Punk;Survivalist;ArmyCamoGreen", GangExtra = 40,
+    CorpseEvery = 150, CorpseMinutes = 10,
     ExcludeTowns = "",
     EasyCap = 4, MediumCap = 6, HardCap = 8,
     EasyTime = 15, MediumTime = 20, HardTime = 25,

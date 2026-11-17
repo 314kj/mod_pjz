@@ -215,6 +215,17 @@ local function drawRun(self, x, y, w, run)
             CMUI.text(self, T("IGUI_CM_HelperShort"), x, y, C.faint)
             y = y + lh
         end
+        -- body clearing countdown + the vote to keep them
+        if run.cc then
+            local ccLeft = CMC.left(run.cc.left, CMC.meAt) or 0
+            CMUI.text(self, T("IGUI_CM_Cc_hud", CM.clock(ccLeft)), x, y, C.gold)
+            y = y + lh
+            local label = T(run.cc.mine and "IGUI_CM_Cc_unvote" or "IGUI_CM_Cc_vote", run.cc.v or 0, run.cc.need or 1)
+            local vw = CMUI.tw(fs, label) + S(20)
+            CMUI.btn(self, x, y, vw, S(22), label, function() CMC.send("ccVote", {}) end,
+                run.cc.mine and "primary" or "ghost", { tip = T("IGUI_CM_Cc_tip") })
+            y = y + S(22) + S(4)
+        end
         local armed = CMC.ms() - confirmLeave < 4000
         local lw = CMUI.tw(fs, T(armed and "IGUI_CM_LeaveSure" or "IGUI_CM_Leave")) + S(20)
         CMUI.btn(self, x + w - lw, y, lw, S(22), T(armed and "IGUI_CM_LeaveSure" or "IGUI_CM_Leave"), function()
