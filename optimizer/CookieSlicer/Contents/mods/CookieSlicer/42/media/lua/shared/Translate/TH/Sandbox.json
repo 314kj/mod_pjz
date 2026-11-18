@@ -1,0 +1,5 @@
+{
+    "Sandbox_CookieSlicer": "Cookie Slicer",
+    "Sandbox_CookieSlicer_PaceModHandlers": "หน่วงงานม็อดในรายการ",
+    "Sandbox_CookieSlicer_PaceModHandlers_tooltip": "ในเกมของผู้เล่น handler ของม็อดที่อยู่ในรายการของ Cookie Slicer (งานที่ม็อดทำกับผีทีละตัว หรือทุกเฟรม) ทำงานน้อยลงกับผีที่ไกลผู้เล่นและอยู่นอกจอ ผีเดินและหน้าตาเหมือนเดิม ปิด: ทุก handler ทำงานทุกเฟรม มีผลภายใน 1 วินาที ไม่ต้องรีสตาร์ท"
+}

@@ -354,5 +354,14 @@
     "UI_CookieSlicer_NavSub_speedNeed": "needs the helper v1.3.0",
     "UI_CookieSlicer_NavSub_speedRec": "recording...",
     "UI_CookieSlicer_Ver_speedOld": "Needs the helper v%2 (now v%1): run CookieSlicer-Setup and press 1",
-    "UI_CookieSlicer_Ver_speedNone": "Install the helper v%1 first (Discord, Cookie Slicer channel)"
+    "UI_CookieSlicer_Ver_speedNone": "Install the helper v%1 first (Discord, Cookie Slicer channel)",
+    "UI_CookieSlicer_Pace_switch": "Pace listed mods' zombie work (admin test)",
+    "UI_CookieSlicer_Pace_note": "Mods on the list do their work for each zombie less often when it is far from players: on screen 1 frame in 3, off screen 1 in 7 (1 in 15 with more than 300 zombies loaded), within 12 tiles every frame. Only admins see this. The switch is for this game only (on again at the next start); for the whole server use the sandbox page Cookie Slicer.",
+    "UI_CookieSlicer_Pace_sandboxOff": "Off on this server (sandbox: Cookie Slicer > Pace listed mod handlers).",
+    "UI_CookieSlicer_Pace_list": "Handlers paced: %1 (list %2)",
+    "UI_CookieSlicer_Pace_off": "Off in this game: every handler runs every frame.",
+    "UI_CookieSlicer_Pace_bands": "Zombie updates per second: near %1 | on screen %2 | off screen %3 (zombies loaded %4)",
+    "UI_CookieSlicer_Pace_crowd": " | more than 300: off screen 1 in 15",
+    "UI_CookieSlicer_Pace_probe": "Test handler ran on %1 of the updates (should be about %2)",
+    "UI_CookieSlicer_Pace_wait": "Counting the zombies around... (needs zombies near you)"
 }

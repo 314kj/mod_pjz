@@ -1,0 +1,5 @@
+{
+    "Sandbox_CookieSlicer": "Cookie Slicer",
+    "Sandbox_CookieSlicer_PaceModHandlers": "Pace listed mod handlers",
+    "Sandbox_CookieSlicer_PaceModHandlers_tooltip": "In players' games, the mod handlers on Cookie Slicer's list (work a mod does for each zombie, or every frame) run less often for zombies far from players and off screen. Zombies move and look the same. Off: every handler runs every frame. Takes effect within a second, no restart."
+}

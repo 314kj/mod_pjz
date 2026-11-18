@@ -354,5 +354,14 @@
     "UI_CookieSlicer_NavSub_speedNeed": "ต้องใช้ตัวช่วย v1.3.0",
     "UI_CookieSlicer_NavSub_speedRec": "กำลังอัด...",
     "UI_CookieSlicer_Ver_speedOld": "ต้องใช้ตัวช่วย v%2 (ตอนนี้ v%1): เปิด CookieSlicer-Setup แล้วกด 1",
-    "UI_CookieSlicer_Ver_speedNone": "ต้องลงตัวช่วย v%1 ก่อน (Discord ห้อง Cookie Slicer)"
+    "UI_CookieSlicer_Ver_speedNone": "ต้องลงตัวช่วย v%1 ก่อน (Discord ห้อง Cookie Slicer)",
+    "UI_CookieSlicer_Pace_switch": "หน่วงงานต่อซอมบี้ของม็อดในรายการ (ทดสอบ แอดมิน)",
+    "UI_CookieSlicer_Pace_note": "ม็อดในรายการทำงานกับผีแต่ละตัวน้อยลงเมื่อผีอยู่ไกลผู้เล่น: บนจอ 1 ใน 3 เฟรม นอกจอ 1 ใน 7 (ผีโหลดเกิน 300 ตัว 1 ใน 15) ใกล้ไม่เกิน 12 ช่องทุกเฟรม เห็นเฉพาะแอดมิน สวิตช์นี้มีผลเฉพาะเกมนี้ (เข้าเกมใหม่กลับมาเปิด) ปิดทั้งเซิฟใช้หน้า sandbox Cookie Slicer",
+    "UI_CookieSlicer_Pace_sandboxOff": "ปิดอยู่ทั้งเซิฟ (sandbox: Cookie Slicer > หน่วงงานม็อดในรายการ)",
+    "UI_CookieSlicer_Pace_list": "handler ที่หน่วง: %1 (ในรายการ %2)",
+    "UI_CookieSlicer_Pace_off": "ปิดในเกมนี้: ทุก handler ทำงานทุกเฟรม",
+    "UI_CookieSlicer_Pace_bands": "อัปเดตผีต่อวินาที: ใกล้ %1 | บนจอ %2 | นอกจอ %3 (ผีที่โหลด %4)",
+    "UI_CookieSlicer_Pace_crowd": " | เกิน 300 ตัว: นอกจอ 1 ใน 15",
+    "UI_CookieSlicer_Pace_probe": "handler ทดสอบทำงาน %1 ของการอัปเดต (ควรใกล้ %2)",
+    "UI_CookieSlicer_Pace_wait": "กำลังนับผีรอบตัว... (ต้องมีผีอยู่ใกล้ๆ)"
 }

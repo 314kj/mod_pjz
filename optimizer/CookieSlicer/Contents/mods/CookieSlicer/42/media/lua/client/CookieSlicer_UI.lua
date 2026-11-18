@@ -1096,10 +1096,55 @@ function CookieSlicerWindow:drawSpeedPage(x, y0, w)
         y = self:para(need, cx, y, cw, C.warn, F.body) + gap
         y = self:para(T("Ver_speedNote"), cx, y, cw, C.dim, F.small) + gap
     end
+    if CookiePace and getPlayer() and CookiePace.isAdmin() then
+        y = self:drawPace(cx, y, cw)
+    end
     self:rect(cx, y, cw, 1, C.track)
     y = y + p
     self.lastH.speed = y - y0
     return y
+end
+
+-- Cookie Pace (shared/02_CookiePace.lua): admins, in game. The switch is for this game
+-- only; while this shows, a test handler counts how often a paced handler runs.
+function CookieSlicerWindow:drawPace(cx, y, cw)
+    local F, gap = self.F, self.gap
+    local P = CookiePace
+    P.wantProbe()
+    self:rect(cx, y, cw, 1, C.track)
+    y = y + gap
+    local on = not P.adminOff
+    y = self:switchRow(cx, y, cw, T("Pace_switch"), on, CookieSlicerWindow.onPace, not on)
+    y = self:para(T("Pace_note"), cx + 4, y + 2, cw - 8, C.dim, F.small) + 2
+    if not P.sandboxOn then
+        y = self:para(T("Pace_sandboxOff"), cx + 4, y, cw - 8, C.warn, F.small) + 2
+    end
+    local listed, paced = 0, {}
+    for _, e in ipairs(P.LIST) do if not e.quiet then listed = listed + 1 end end
+    for _, rec in ipairs(P.paced) do
+        if not rec.entry.quiet then
+            local n = rec.runs + rec.skips
+            paced[#paced + 1] = tostring(rec.entry.mod) .. " " .. tostring(rec.entry.file) .. ":"
+                .. tostring(rec.entry.line or "*") .. (n > 0 and (" " .. round(rec.runs * 100 / n) .. "%") or "")
+        end
+    end
+    y = self:para(T("Pace_list", tostring(#paced), tostring(listed)) .. (#paced > 0 and (" | " .. table.concat(paced, " | ")) or ""),
+        cx + 4, y, cw - 8, C.soft, F.small) + 2
+    local r, last = P.rate, P.probe.last
+    local total = r.near + r.seen + r.unseen + r.crowd
+    if not P.on then
+        y = self:para(T("Pace_off"), cx + 4, y, cw - 8, C.dim, F.small) + 2
+    elseif last and total > 0 then
+        local expect = (r.near + r.seen / P.EVERY_SEEN + r.unseen / P.EVERY_UNSEEN + r.crowd / P.EVERY_CROWD) * 100 / total
+        local n = last.runs + last.skips
+        local ran = n > 0 and round(last.runs * 100 / n) or 0
+        y = self:para(T("Pace_bands", count(r.near), count(r.seen), count(r.unseen + r.crowd), count(P.zombies))
+            .. (P.crowd and T("Pace_crowd") or ""), cx + 4, y, cw - 8, C.soft, F.small) + 2
+        y = self:para(T("Pace_probe", ran .. "%", round(expect) .. "%"), cx + 4, y, cw - 8, C.mint, F.small) + 2
+    else
+        y = self:para(T("Pace_wait"), cx + 4, y, cw - 8, C.dim, F.small) + 2
+    end
+    return y + gap - 2
 end
 
 function CookieSlicerWindow:drawSpeed(cx, y, cw, labelW)
@@ -1458,6 +1503,10 @@ end
 
 function CookieSlicerWindow:onSpeed(on)
     CS.requestSpeed(on)
+end
+
+function CookieSlicerWindow:onPace(on)
+    if CookiePace then CookiePace.setAdminOff(not on) end
 end
 
 function CookieSlicerWindow:onSmoothDrive(on)

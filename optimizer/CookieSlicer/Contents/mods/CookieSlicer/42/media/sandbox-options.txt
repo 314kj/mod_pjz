@@ -1,0 +1,7 @@
+VERSION = 1,
+
+option CookieSlicer.PaceModHandlers
+{
+    type = boolean, default = true,
+    page = CookieSlicer, translation = CookieSlicer_PaceModHandlers,
+}
