@@ -1,0 +1,5 @@
+{
+    "Sandbox_CookieServerPatch": "Cookie - Server Patches",
+    "Sandbox_CSP_RVRequireClaim": "RV Interior: claim needed to enter a room",
+    "Sandbox_CSP_RVRequireClaim_tooltip": "On: a Project RV Interior room can only be entered by players Another Vehicle Claim System lets use the vehicle (owner; faction and safehouse members when AVCS allows). Unclaimed vehicles cannot be entered. Off: unclaimed vehicles can be entered by anyone; claimed ones still only by the people the claim lets in. Admins can always enter. A change made in the admin panel takes effect at once."
+}

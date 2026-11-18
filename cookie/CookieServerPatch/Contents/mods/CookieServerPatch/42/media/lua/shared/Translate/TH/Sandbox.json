@@ -1,0 +1,5 @@
+{
+    "Sandbox_CookieServerPatch": "Cookie - Server Patches",
+    "Sandbox_CSP_RVRequireClaim": "RV Interior: ต้อง claim ก่อนเข้าห้อง",
+    "Sandbox_CSP_RVRequireClaim_tooltip": "เปิด: ห้องของ Project RV Interior เข้าได้เฉพาะผู้เล่นที่ Another Vehicle Claim System ให้ใช้รถคันนั้น (เจ้าของ, คนใน faction และ safehouse เมื่อ AVCS อนุญาต) รถที่ไม่มีเจ้าของเข้าไม่ได้ ปิด: รถที่ไม่มีเจ้าของใครก็เข้าได้ รถที่ claim แล้วยังเข้าได้เฉพาะคนที่ claim ให้สิทธิ์ แอดมินเข้าได้เสมอ แก้ผ่าน Admin panel มีผลทันที"
+}

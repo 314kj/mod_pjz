@@ -1,0 +1,7 @@
+VERSION = 1,
+
+option CookieServerPatch.RVRequireClaim
+{
+    type = boolean, default = true,
+    page = CookieServerPatch, translation = CSP_RVRequireClaim,
+}
